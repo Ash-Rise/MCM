@@ -9,7 +9,7 @@ import re
 from collections import Counter, deque
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
 import numpy as np
 import pandas as pd
@@ -400,6 +400,7 @@ def cumulative_response_loss(
     fleet: list[Ambulance],
     dispatched: Ambulance,
     time_min: float,
+    rate_multiplier: Callable[[float], np.ndarray] | None = None,
 ) -> float:
     start = time_min
     end = time_min + BUSY_MINUTES
@@ -416,7 +417,8 @@ def cumulative_response_loss(
         nodes = 0.5 * (right - left) * _GAUSS_NODES + 0.5 * (left + right)
         weights_in_hours = 0.5 * (right - left) * _GAUSS_WEIGHTS / 60.0
         for future_min, weight in zip(nodes, weights_in_hours, strict=True):
-            rates = data.demand * float(intraday_density(future_min / 60.0))
+            multiplier = 1.0 if rate_multiplier is None else rate_multiplier(float(future_min))
+            rates = data.demand * float(intraday_density(future_min / 60.0)) * multiplier
             response_increase = np.empty(len(data.zone_ids))
             for zone in range(len(data.zone_ids)):
                 baseline = _predicted_zone_response(data, fleet, zone, future_min, time_min, None)
@@ -431,6 +433,7 @@ def cumulative_response_losses(
     fleet: list[Ambulance],
     candidates: Iterable[Ambulance],
     time_min: float,
+    rate_multiplier: Callable[[float], np.ndarray] | None = None,
 ) -> dict[int, float]:
     candidate_list = list(candidates)
     if not candidate_list:
@@ -465,7 +468,8 @@ def cumulative_response_losses(
                 waits[capped] = np.maximum(_next_midnight(time_min), busy_until[capped]) - future_min
             baseline = travel + waits[:, None]
             baseline_min = baseline.min(axis=0)
-            rates = data.demand * float(intraday_density(future_min / 60.0))
+            multiplier = 1.0 if rate_multiplier is None else rate_multiplier(float(future_min))
+            rates = data.demand * float(intraday_density(future_min / 60.0)) * multiplier
             excluded = np.broadcast_to(baseline, (len(candidate_list), *baseline.shape)).copy()
             excluded[np.arange(len(candidate_list)), candidate_indices, :] = np.inf
             other_min = excluded.min(axis=1)
@@ -503,6 +507,7 @@ def _choose_b(
     time_min: float,
     beta: float,
     delta: float,
+    rate_multiplier: Callable[[float], np.ndarray] | None = None,
 ) -> tuple[Ambulance | None, float | None]:
     candidates = _current_candidates(fleet, time_min)
     if not candidates:
@@ -510,7 +515,13 @@ def _choose_b(
     travel = {a.ambulance_id: 60.0 * data.distance[call.zone, a.site] / SPEED_KMH for a in candidates}
     nearest = min(travel.values())
     eligible = [a for a in candidates if travel[a.ambulance_id] - nearest <= delta + EPS]
-    c_losses = cumulative_response_losses(data, fleet, eligible, time_min)
+    c_losses = cumulative_response_losses(
+        data,
+        fleet,
+        eligible,
+        time_min,
+        rate_multiplier=rate_multiplier,
+    )
     scored: list[tuple[float, float, int, int, Ambulance, float]] = []
     for ambulance in eligible:
         delta_t = travel[ambulance.ambulance_id] - nearest
@@ -587,6 +598,8 @@ def simulate(
     delta: float = 1.0,
     reserve_vector: Iterable[int] | None = None,
     tau: float = 5.0,
+    rate_multiplier: Callable[[float], np.ndarray] | None = None,
+    rate_multiplier_active_from: float | None = None,
 ) -> tuple[pd.DataFrame, dict[str, float | int]]:
     fleet = build_fleet(data, reserve_vector if strategy == "C" else None)
     queue: deque[Call] = deque()
@@ -627,7 +640,18 @@ def simulate(
             if strategy == "A":
                 ambulance, c_loss = _choose_a(data, fleet, call, time_min)
             elif strategy == "B":
-                ambulance, c_loss = _choose_b(data, fleet, call, time_min, beta, delta)
+                active_multiplier = rate_multiplier
+                if rate_multiplier_active_from is not None and time_min < rate_multiplier_active_from - EPS:
+                    active_multiplier = None
+                ambulance, c_loss = _choose_b(
+                    data,
+                    fleet,
+                    call,
+                    time_min,
+                    beta,
+                    delta,
+                    rate_multiplier=active_multiplier,
+                )
             elif strategy == "C":
                 ambulance, c_loss = _choose_c(data, fleet, call, time_min, tau)
             else:

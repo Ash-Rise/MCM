@@ -88,6 +88,35 @@ class AProblemTest(unittest.TestCase):
         for ambulance_id, expected in scalar.items():
             self.assertAlmostEqual(batch[ambulance_id], expected, places=10)
 
+    def test_rate_multiplier_changes_future_loss_without_changing_default(self) -> None:
+        fleet = build_fleet(self.data)
+        for ambulance in fleet:
+            ambulance.busy_until = BUSY_MINUTES
+        fleet[0].busy_until = 0.0
+        fleet[-1].busy_until = 0.0
+        candidates = [fleet[0], fleet[-1]]
+
+        baseline = cumulative_response_losses(self.data, fleet, candidates, 0.0)
+
+        def incident_multiplier(_future_min: float) -> np.ndarray:
+            multiplier = np.ones(len(self.data.zone_ids))
+            multiplier[0] = 5.0
+            return multiplier
+
+        incident = cumulative_response_losses(
+            self.data,
+            fleet,
+            candidates,
+            0.0,
+            rate_multiplier=incident_multiplier,
+        )
+
+        self.assertTrue(any(incident[key] > baseline[key] + 1e-9 for key in baseline))
+        self.assertEqual(
+            baseline,
+            cumulative_response_losses(self.data, fleet, candidates, 0.0),
+        )
+
     def test_common_calls_and_all_strategy_constraints(self) -> None:
         calls = generate_calls(self.data, days=2, seed=12345)
         self.assertEqual(len(calls), 280)

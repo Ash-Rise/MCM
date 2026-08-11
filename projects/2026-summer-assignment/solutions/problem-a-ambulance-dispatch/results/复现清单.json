@@ -1,0 +1,83 @@
+{
+  "schema_version": 2,
+  "scope": "task-1-task-2-staged-paper",
+  "status": "task-3-continuous-response-surface-pending",
+  "input_files": [
+    {
+      "path": "../../problem-statements/problem-a-ambulance-dispatch-statement.docx",
+      "sha256": "5f5079815ab8ad6592fee7a4b0b8b01a5df8865983a2871c324b6ab772c39f2d",
+      "bytes": 43241
+    },
+    {
+      "path": "results/task-1/summary.json",
+      "sha256": "f7bdba425798ee0564e1e416c09b1ede3198b8c7416b602f8dc69c1df86710cd",
+      "bytes": 697
+    },
+    {
+      "path": "results/task-1/assignment.csv",
+      "sha256": "b80151ea4eae5e251e4b81b30662bd1a791591d4ae0a9869145a15048a67a66b",
+      "bytes": 306
+    },
+    {
+      "path": "results/task-2/final_replicates_W030.csv",
+      "sha256": "53eaec152986b5c8649deed59f56ec66629a7f3aa846b5118b2f01783213d2c7",
+      "bytes": 32519
+    },
+    {
+      "path": "results/task-2/final_summary.csv",
+      "sha256": "500e6903bcbb0cb2c985829c98d98255047574238635886813840a7200a71086",
+      "bytes": 3802
+    },
+    {
+      "path": "results/task-2/final_paired_response.csv",
+      "sha256": "020486c4ba2f79b13f0c15fda361b10308e77f36b1008839b922a866e1be656a",
+      "bytes": 236
+    },
+    {
+      "path": "results/task-2/selected_policy.json",
+      "sha256": "fecd6c122d908ac78aa61436f16603f682ae5f6254f94a5bf953083388623302",
+      "bytes": 758
+    }
+  ],
+  "runtime": {
+    "name": "python",
+    "version": "3.13.14",
+    "platform": "Windows 11",
+    "dependencies": {
+      "numpy": "2.5.1",
+      "pandas": "3.0.5",
+      "scipy": "1.18.0",
+      "matplotlib": "3.11.1"
+    }
+  },
+  "key_parameters": {
+    "calls_per_day": 140,
+    "daily_dispatch_cap": 12,
+    "preparation_minutes": 3,
+    "speed_kmh": 45,
+    "busy_minutes": 45,
+    "nominal_service_radius_km": 3,
+    "strict_center_proxy_radius_km": 0.75,
+    "delay_penalty_yuan_per_minute": 200,
+    "warmup_days": 30,
+    "task2_tuning_replications": 3,
+    "task2_tuning_measure_days": 7,
+    "task2_tuning_seeds": "200000-200002",
+    "task2_final_replications": 30,
+    "task2_final_measure_days": 30,
+    "task2_final_seeds": "400000-400029",
+    "task2_main_policy": {
+      "strategy": "B",
+      "beta": 4,
+      "delta": 2
+    },
+    "task2_explicit_reserve": {
+      "strategy": "C",
+      "reserve_vector": [0, 0, 1, 0, 0, 0],
+      "release_threshold_min": 7
+    }
+  },
+  "verify_command": "python src/reproduce_all.py --project-root . --mode verify --scope q1-q2",
+  "rebuild_command": "python src/reproduce_all.py --project-root . --mode rebuild --scope q1-q2",
+  "task3_note": "Task 3 legacy discrete-node outputs are excluded from this manifest and are not staged-paper evidence."
+}

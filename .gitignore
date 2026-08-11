@@ -29,6 +29,9 @@ A题.docx
 projects/**/results/p1/
 projects/**/results/task-2/cache/
 projects/**/figures/qa/
+projects/**/paper/qa-*/
+projects/**/paper/template-evidence/
+projects/**/results/figure-*.log
 
 # Temporary Office lock files
 ~$*.doc*

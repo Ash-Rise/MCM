@@ -8,7 +8,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib import colors
 from matplotlib.lines import Line2D
+from scipy import stats
 
 from ambulance_model import (
     PREP_MINUTES,
@@ -35,11 +37,42 @@ GRAY = "#6B7280"
 SITE_COLORS = ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#CC79A7", "#56B4E9"]
 
 
+def vector_heatmap(
+    ax: plt.Axes,
+    values: np.ndarray,
+    cmap: str,
+    vmin: float,
+    vmax: float,
+) -> plt.cm.ScalarMappable:
+    normalization = colors.Normalize(vmin=vmin, vmax=vmax)
+    colormap = plt.get_cmap(cmap)
+    rows, columns = values.shape
+    for row in range(rows):
+        for column in range(columns):
+            ax.add_patch(
+                plt.Rectangle(
+                    (column - 0.5, row - 0.5),
+                    1.0,
+                    1.0,
+                    facecolor=colormap(normalization(values[row, column])),
+                    edgecolor="none",
+                )
+            )
+    ax.set_xlim(-0.5, columns - 0.5)
+    ax.set_ylim(rows - 0.5, -0.5)
+    return plt.cm.ScalarMappable(norm=normalization, cmap=colormap)
+
+
+def keep_colorbar_vector(colorbar) -> None:
+    if colorbar.solids is not None:
+        colorbar.solids.set_rasterized(False)
+
+
 def policy_label(candidate: str) -> str:
     labels = {
         "A": "策略A（就近派车）",
         "B_beta4_delta2": "策略B（保护性派车）",
-        "C_r001000_tau4": "策略C（S3固定备用）",
+        "C_r001000_tau7": "策略C（S3固定备用）",
     }
     return labels.get(candidate, candidate)
 
@@ -58,6 +91,13 @@ def save(fig: plt.Figure, figures: Path, name: str, size: tuple[float, float]) -
     qa_dir.mkdir(parents=True, exist_ok=True)
     for path in paths:
         preview = Path(path)
+        if preview.suffix.lower() == ".svg":
+            content = preview.read_text(encoding="utf-8")
+            preview.write_text(
+                "\n".join(line.rstrip() for line in content.splitlines()) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
         if preview.name.endswith("_grayscale.png"):
             preview.replace(qa_dir / preview.name)
     plt.close(fig)
@@ -74,7 +114,10 @@ def q1_tables(project_root: Path) -> tuple[object, dict[str, object]]:
             "zone_name": data.zone_names,
             "x_km": data.zone_xy[:, 0],
             "y_km": data.zone_xy[:, 1],
+            "area_km2": data.area,
+            "population_10k": data.population,
             "daily_calls": data.demand,
+            "daily_calls_per_km2": data.demand_density,
             "nearest_hospital_km": data.hospital_distance,
             "nearest_site_distance_km": data.distance.min(axis=1),
         }
@@ -185,7 +228,7 @@ def process_q1_distance(data, result: dict[str, object], figures: Path) -> None:
 def process_q1_heatmap(data, result: dict[str, object], figures: Path) -> None:
     assignment = np.asarray(result["assignment"])
     fig, ax = plt.subplots(figsize=(6.3, 4.2))
-    image = ax.imshow(assignment, cmap="Blues", aspect="auto", vmin=0)
+    image = vector_heatmap(ax, assignment, "Blues", 0.0, float(assignment.max()))
     for i in range(assignment.shape[0]):
         for j in range(assignment.shape[1]):
             if assignment[i, j] > 0:
@@ -196,6 +239,7 @@ def process_q1_heatmap(data, result: dict[str, object], figures: Path) -> None:
     ax.set_xlabel("站点")
     ax.set_ylabel("需求区")
     colorbar = fig.colorbar(image, ax=ax, shrink=0.86)
+    keep_colorbar_vector(colorbar)
     colorbar.set_label("日分配呼叫量（次）")
     save(fig, figures, "process_q1_assignment_heatmap", (6.3, 4.2))
 
@@ -218,15 +262,15 @@ def result_q1_capacity(data, result: dict[str, object], figures: Path) -> None:
 
 
 def result_q1_coverages(result: dict[str, object], figures: Path) -> None:
-    labels = ["严格4分钟覆盖", "优化分配3 km覆盖", "潜在3 km覆盖"]
+    labels = ["3 km规划服务覆盖", "严格4分钟中心代理", "潜在3 km覆盖"]
     values = 100 * np.array([
-        result["strict_coverage"],
-        result["assigned_3km_coverage"],
+        result["service_3km_coverage"],
+        result["strict_center_proxy_coverage"],
         result["potential_3km_coverage"],
     ])
     fig, ax = plt.subplots(figsize=(6.3, 3.4))
     y = np.arange(len(labels))
-    ax.barh(y, values, color=[ORANGE, BLUE, GREEN])
+    ax.barh(y, values, color=[BLUE, ORANGE, GREEN])
     for yi, value in enumerate(values):
         ax.text(value + 1.0, yi, f"{value:.3f}%", va="center", fontsize=8)
     ax.set_yticks(y, labels)
@@ -278,38 +322,9 @@ def raw_q1_hospital_distance(data, figures: Path) -> None:
     save(fig, figures, "raw_q1_hospital_distance", (6.3, 3.6))
 
 
-def process_q2_warmup(full: Path, figures: Path) -> None:
-    files = sorted(full.glob("warmup_final_from_W*_daily_h*.csv")) or sorted(full.glob("warmup_coarse_daily_h*.csv"))
-    if not files:
-        return
-    frame = pd.read_csv(files[-1])
-    selected = frame[frame["candidate"].isin(frame["candidate"].drop_duplicates().head(4))]
-    daily = selected.groupby(["candidate", "day"])["mean_response_min"].mean().reset_index()
-    fig, ax = plt.subplots(figsize=(6.3, 3.7))
-    for idx, (candidate, group) in enumerate(daily.groupby("candidate")):
-        group = group.sort_values("day").copy()
-        group["batch"] = group["day"] // 5
-        batched = group.groupby("batch", as_index=False).agg(
-            day=("day", lambda values: float(values.mean() + 1)),
-            mean_response_min=("mean_response_min", "mean"),
-        )
-        ax.plot(
-            batched["day"],
-            batched["mean_response_min"],
-            label=policy_label(candidate),
-            linewidth=1.0,
-            color=SITE_COLORS[idx % len(SITE_COLORS)],
-        )
-    ax.axvline(40, color=GRAY, linestyle="--", linewidth=0.9, label="统一预热期 W=40日")
-    ax.set_xlabel("试运行日")
-    ax.set_ylabel("5日分批平均响应时间（min）")
-    ax.legend(frameon=False, fontsize=6, ncols=2)
-    save(fig, figures, "process_q2_warmup", (6.3, 3.7))
-
-
 def process_q2_b_grid(full: Path, figures: Path) -> None:
     selected_file = full / "selected_policy.json"
-    files = sorted(full.glob("tuning_all_W*.csv"))
+    files = sorted(full.glob("tuning_coarse_W*.csv"))
     if not files or not selected_file.exists():
         return
     frame = pd.read_csv(files[-1])
@@ -318,12 +333,27 @@ def process_q2_b_grid(full: Path, figures: Path) -> None:
     b = pd.concat([b, parsed], axis=1)
     pivot = b.pivot(index="beta", columns="delta", values="mean_response_min").sort_index().sort_index(axis=1)
     fig, ax = plt.subplots(figsize=(6.3, 4.0))
-    image = ax.imshow(pivot, cmap="viridis_r", aspect="auto")
+    values = pivot.to_numpy(dtype=float)
+    image = vector_heatmap(
+        ax,
+        values,
+        "viridis_r",
+        float(np.nanmin(values)),
+        float(np.nanmax(values)),
+    )
     ax.set_xticks(range(len(pivot.columns)), [f"{x:g}" for x in pivot.columns])
     ax.set_yticks(range(len(pivot.index)), [f"{x:g}" for x in pivot.index])
     ax.set_xlabel("允许绕行阈值 δ（min）")
     ax.set_ylabel("负荷权重 β（min）")
+    selected = json.loads(selected_file.read_text(encoding="utf-8"))["best_b"]
+    selected_beta = float(selected["beta"])
+    selected_delta = float(selected["delta"])
+    if selected_beta in pivot.index and selected_delta in pivot.columns:
+        row = pivot.index.get_loc(selected_beta)
+        column = pivot.columns.get_loc(selected_delta)
+        ax.add_patch(plt.Rectangle((column - 0.5, row - 0.5), 1, 1, fill=False, edgecolor=ORANGE, linewidth=1.8))
     colorbar = fig.colorbar(image, ax=ax, shrink=0.85)
+    keep_colorbar_vector(colorbar)
     colorbar.set_label("调参集平均响应时间（min）")
     save(fig, figures, "process_q2_b_grid", (6.3, 4.0))
 
@@ -398,9 +428,164 @@ def result_q2_summary(full: Path, figures: Path) -> None:
             fmt="o", color=PURPLE, capsize=3,
         )
         ax.axvline(0, color=GRAY, linestyle="--", linewidth=0.9)
-        ax.set_yticks(y, ["策略B - 策略A"] * len(p))
+        comparison_labels = {
+            "B_beta4_delta2-A": "策略B - 策略A",
+            "C_r001000_tau7-A": "策略C - 策略A",
+        }
+        ax.set_yticks(y, [comparison_labels.get(value, value) for value in p["comparison"]])
         ax.set_xlabel("相对策略A的成对平均响应差及95%置信区间（min）")
         save(fig, figures, "result_q2_paired_difference", (6.3, 2.4))
+
+
+def raw_q3_incident_load(full: Path, figures: Path) -> None:
+    path = full / "scenarios.csv"
+    if not path.exists():
+        return
+    frame = pd.read_csv(path)
+    sizes = 24 + 4.2 * frame["expected_extra_calls"]
+    fig, ax = plt.subplots(figsize=(6.3, 4.1))
+    normalization = colors.Normalize(
+        vmin=float(frame["expected_extra_calls"].min()),
+        vmax=float(frame["expected_extra_calls"].max()),
+    )
+    colormap = plt.get_cmap("viridis")
+    for (_, row), size in zip(frame.iterrows(), sizes, strict=True):
+        ax.plot(
+            row["duration_hours"],
+            row["incident_zone"],
+            marker="o",
+            markersize=float(np.sqrt(size)),
+            markerfacecolor=colormap(normalization(row["expected_extra_calls"])),
+            markeredgecolor="white",
+            markeredgewidth=0.4,
+            alpha=0.78,
+            linestyle="none",
+        )
+    points = plt.cm.ScalarMappable(norm=normalization, cmap=colormap)
+    ax.set_xticks(sorted(frame["duration_hours"].unique()))
+    ax.tick_params(axis="x", labelrotation=28)
+    for label in ax.get_xticklabels():
+        label.set_horizontalalignment("right")
+    ax.set_yticks(range(1, 11), [f"R{i}" for i in range(1, 11)])
+    ax.set_xlabel("事故持续时间（h）")
+    ax.set_ylabel("事故区域")
+    colorbar = fig.colorbar(points, ax=ax, shrink=0.88)
+    keep_colorbar_vector(colorbar)
+    colorbar.set_label("预期新增呼叫量（次）")
+    save(fig, figures, "raw_q3_incident_load", (6.3, 4.1))
+
+
+def process_q3_duration_zone(full: Path, figures: Path) -> None:
+    path = full / "paired_effects.csv"
+    if not path.exists():
+        return
+    frame = pd.read_csv(path)
+    sub = frame[frame["metric"] == "mean_response_min"]
+    pivot = sub.pivot(
+        index="incident_zone",
+        columns="duration_hours",
+        values="mean_difference_B_E_minus_B_N",
+    ).sort_index().sort_index(axis=1)
+    limit = max(0.05, float(np.nanmax(np.abs(pivot.to_numpy()))))
+    fig, ax = plt.subplots(figsize=(6.3, 4.3))
+    image = vector_heatmap(ax, pivot.to_numpy(dtype=float), "RdBu_r", -limit, limit)
+    ax.set_xticks(range(len(pivot.columns)), [f"{value:g}" for value in pivot.columns])
+    ax.set_yticks(range(len(pivot.index)), [f"R{int(value)}" for value in pivot.index])
+    ax.set_xlabel("事故持续时间（h）")
+    ax.set_ylabel("事故区域")
+    for row in range(len(pivot.index)):
+        for column in range(len(pivot.columns)):
+            value = pivot.iloc[row, column]
+            ax.text(column, row, f"{value:.2f}", ha="center", va="center", fontsize=6.3)
+    colorbar = fig.colorbar(image, ax=ax, shrink=0.88)
+    keep_colorbar_vector(colorbar)
+    colorbar.set_label(r"平均响应差 $B_E-B_N$（min）")
+    save(fig, figures, "process_q3_duration_zone", (6.3, 4.3))
+
+
+def _duration_response_summary(replicates: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    for (mode, duration), group in replicates.groupby(["mode", "duration_hours"], sort=True):
+        seed_means = group.groupby("seed")["mean_response_min"].mean().dropna().to_numpy(dtype=float)
+        mean = float(np.mean(seed_means))
+        half = float(stats.t.ppf(0.975, len(seed_means) - 1) * stats.sem(seed_means))
+        rows.append(
+            {
+                "mode": mode,
+                "duration_hours": duration,
+                "mean": mean,
+                "ci95_low": mean - half,
+                "ci95_high": mean + half,
+                "replications": len(seed_means),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def result_q3_response_curve(full: Path, figures: Path) -> None:
+    path = full / "replicates.csv"
+    if not path.exists():
+        return
+    summary = _duration_response_summary(pd.read_csv(path))
+    fig, ax = plt.subplots(figsize=(6.3, 3.7))
+    styles = {
+        "B_N": (BLUE, "o", "常态预测 $B_N$"),
+        "B_E": (ORANGE, "s", "事故感知 $B_E$"),
+    }
+    for mode in ("B_N", "B_E"):
+        group = summary[summary["mode"] == mode].sort_values("duration_hours")
+        color, marker, label = styles[mode]
+        x = group["duration_hours"].to_numpy(dtype=float)
+        mean = group["mean"].to_numpy(dtype=float)
+        low = group["ci95_low"].to_numpy(dtype=float)
+        high = group["ci95_high"].to_numpy(dtype=float)
+        ax.plot(x, mean, color=color, marker=marker, label=label)
+        ax.fill_between(x, low, high, color=color, alpha=0.14)
+    ax.set_xticks(sorted(summary["duration_hours"].unique()))
+    ax.tick_params(axis="x", labelrotation=28)
+    for label in ax.get_xticklabels():
+        label.set_horizontalalignment("right")
+    ax.set_xlabel("事故持续时间（h）")
+    ax.set_ylabel("事故期全市平均响应时间（min）")
+    ax.legend(frameon=False)
+    save(fig, figures, "result_q3_response_curve", (6.3, 3.7))
+
+
+def result_q3_paired_effect(full: Path, figures: Path) -> None:
+    path = full / "aggregate_paired_effects.csv"
+    if not path.exists():
+        return
+    frame = pd.read_csv(path, dtype={"group_value": str})
+    metrics = [
+        ("mean_response_min", "全市事故期呼叫"),
+        ("incident_zone_mean_response_min", "事故区域呼叫"),
+        ("nonincident_zone_mean_response_min", "非事故区域呼叫"),
+    ]
+    rows = []
+    for metric, label in metrics:
+        selected = frame[
+            (frame["scope"] == "overall")
+            & (frame["metric"] == metric)
+        ].iloc[0]
+        rows.append((label, selected))
+    means = np.array([row[1]["mean_difference_B_E_minus_B_N"] for row in rows], dtype=float)
+    lows = np.array([row[1]["ci95_low"] for row in rows], dtype=float)
+    highs = np.array([row[1]["ci95_high"] for row in rows], dtype=float)
+    y = np.arange(len(rows))
+    fig, ax = plt.subplots(figsize=(6.3, 2.8))
+    ax.errorbar(
+        means,
+        y,
+        xerr=np.vstack([means - lows, highs - means]),
+        fmt="o",
+        color=PURPLE,
+        capsize=3,
+    )
+    ax.axvline(0.0, color=GRAY, linestyle="--", linewidth=0.9)
+    ax.set_yticks(y, [row[0] for row in rows])
+    ax.set_xlabel(r"成对平均响应差 $B_E-B_N$（min，95% CI）")
+    ax.invert_yaxis()
+    save(fig, figures, "result_q3_paired_effect", (6.3, 2.8))
 
 
 def main() -> None:
@@ -410,7 +595,7 @@ def main() -> None:
     project_root = args.project_root.resolve()
     figures = project_root / "figures"
     figures.mkdir(parents=True, exist_ok=True)
-    setup_style(journal="general", lang="zh", serif_for_zh=True, constrained_layout=True)
+    setup_style(journal="general", lang="zh", serif_for_zh=False, constrained_layout=True)
     data, result = q1_tables(project_root)
     raw_q1_demand(data, figures)
     raw_q1_spatial(data, figures)
@@ -423,10 +608,14 @@ def main() -> None:
     result_q1_coverages(result, figures)
     result_q1_response(data, result, figures)
     full = project_root / "results" / "task-2"
-    process_q2_warmup(full, figures)
     process_q2_b_grid(full, figures)
     process_q2_c_screen(full, figures)
     result_q2_summary(full, figures)
+    emergency = project_root / "results" / "task-3"
+    raw_q3_incident_load(emergency, figures)
+    process_q3_duration_zone(emergency, figures)
+    result_q3_response_curve(emergency, figures)
+    result_q3_paired_effect(emergency, figures)
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ from ambulance_model import (  # noqa: E402
     cumulative_response_losses,
     delay_penalty_cost,
     generate_calls,
+    intraday_density,
     problem_statement_path,
     read_problem,
     simulate,
@@ -43,18 +44,35 @@ class AProblemTest(unittest.TestCase):
         self.assertEqual(self.statement.parent.name, "problem-statements")
         self.assertTrue(self.statement.is_file())
 
+    def test_intraday_density_scalar_matches_vector_path(self) -> None:
+        hours = np.array([-0.25, 0.0, 3.25, 9.0, 18.0, 24.25, 49.0])
+        vector_values = np.asarray(intraday_density(hours), dtype=float)
+        scalar_values = np.array([intraday_density(float(hour)) for hour in hours])
+
+        self.assertTrue(all(type(intraday_density(float(hour))) is float for hour in hours))
+        np.testing.assert_allclose(scalar_values, vector_values, rtol=1e-14, atol=1e-14)
+
     def test_q1_matches_frozen_contract(self) -> None:
         result = solve_q1(self.data)
         np.testing.assert_array_equal(result["vehicles"], [3, 2, 2, 2, 1, 2])
         np.testing.assert_array_equal(result["opened"], [1, 1, 1, 1, 1, 1])
         np.testing.assert_allclose(result["loads"], [36, 20, 24, 24, 12, 24], atol=1e-8)
         self.assertAlmostEqual(result["distance_mean"], 0.9415694291208043, places=10)
-        self.assertAlmostEqual(result["strict_coverage"], 85 / 140, places=10)
+        self.assertAlmostEqual(result["service_radius_km"], 3.0, places=10)
+        self.assertAlmostEqual(result["service_3km_coverage"], 121 / 140, places=10)
+        self.assertAlmostEqual(result["strict_center_proxy_coverage"], 85 / 140, places=10)
+        self.assertAlmostEqual(result["potential_3km_coverage"], 136 / 140, places=10)
         self.assertLessEqual(result["max_demand_residual"], 1e-8)
         self.assertLessEqual(result["max_capacity_violation"], 1e-8)
         np.testing.assert_allclose(
             self.data.hospital_distance,
             [3.2, 4.1, 5.8, 6.2, 7.5, 8.3, 5.1, 3.8, 9.2, 10.1],
+        )
+        np.testing.assert_allclose(self.data.area, [3, 2, 4, 5, 6, 7, 5, 3, 6, 4])
+        np.testing.assert_allclose(self.data.population, [12, 6, 10, 8, 5, 3, 14, 9, 7, 2])
+        np.testing.assert_allclose(
+            self.data.demand_density,
+            [28 / 3, 15 / 2, 18 / 4, 10 / 5, 8 / 6, 6 / 7, 20 / 5, 22 / 3, 9 / 6, 4 / 4],
         )
 
     def test_daily_cap_wait_crosses_midnight(self) -> None:

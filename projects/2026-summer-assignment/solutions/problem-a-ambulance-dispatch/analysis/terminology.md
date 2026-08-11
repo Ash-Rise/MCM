@@ -1,8 +1,8 @@
-# A题任务一、任务二术语与符号表
+# A题三项任务术语与符号表
 
-> **状态说明（2026-08-11）**：任务一术语继续有效。任务二采用“每日固定140次的条件NHPP + 相对4 min的延迟惩罚成本”，固定预热30天；最终策略参数与数值已经由干净重跑结果确定。
+> **状态说明（2026-08-11）**：任务一采用3 km名义行驶服务半径，0.75 km仅作严格黄金响应的中心代理诊断。任务二采用“每日固定140次的条件NHPP + 相对4 min总响应的延迟惩罚成本”，固定预热30天；最终策略参数与数值已经由干净重跑结果确定。
 
-> 本表与《题目分析报告》同步。任务三尚未冻结，暂不收录未经确认的第三问符号。
+> 本表与《题目分析报告》同步；任务三事故情景与应急派车符号已收录。
 
 ## 1. 基本集合与空间参数
 
@@ -14,11 +14,14 @@
 | 区域日均需求 | mean daily zone demand | $q_i$ | 区域 $i$ 的日均呼叫量 | 次/日 | 报告1.2 | 是期望量，不是每天固定次数 |
 | 全市每日呼叫量 | fixed total daily calls | $Q$ | $Q=\sum_iq_i=N_d=140$ | 次/日 | 报告1.2 | 仿真中每天固定为140 |
 | 区域坐标 | zone centroid | $(x_i,y_i)$ | 区域中心代表坐标 | km | 报告2.1 | 不代表区域内每个居民位置 |
+| 区域面积 | zone area | $A_i$ | 题面给出的区域面积 | km$^2$ | 报告1.2 | 无边界形状，不能直接生成区内坐标 |
+| 需求密度 | demand density | $\eta_i$ | $q_i/A_i$ | 次/(km$^2\cdot$日) | 报告1.2 | 用于空间需求分析，不重复乘入运输权重 |
 | 站点坐标 | station coordinate | $(X_j,Y_j)$ | 候选站点坐标 | km | 报告2.2 | 与医院位置无关 |
 | 站点—区域距离 | site-to-zone distance | $d_{ij}$ | 区域中心与站点间欧氏距离 | km | 报告2.2 | 不得用“距最近医院距离”替代 |
 | 平均行驶速度 | mean travel speed | $v$ | 题面给定45 | km/h | 报告1.2 | 与站点配车变量 $v_j$ 注意区分；正文优先写数值45 |
 | 黄金响应时限 | golden response threshold | $T_4$ | 接警至到场的4 min时限 | min | 报告2.2 | 包含等待、准备、行驶 |
 | 准备时间 | preparation time | $t_0$ | 车辆出发前准备，题面给定3 | min | 报告2.2 | 不能忽略或重复计入45 min占用 |
+| 名义行驶服务半径 | nominal travel-service radius | $R_s$ | $45\times4/60=3$ | km | 报告2.2 | 任务一规划指标；不含等待和准备 |
 | 严格黄金覆盖半径 | strict four-minute radius | $R_4$ | 无等待时 $45(4-3)/60=0.75$ | km | 报告2.2 | 不是3 km |
 | 等待后的有效半径 | residual coverage radius | $R_4(w)$ | 已等待 $w$ min后剩余可行驶距离 $0.75(1-w)$ | km | 报告2.2 | 只在 $0\le w\le1$ 时非负 |
 | 最近医院距离 | nearest-hospital distance | $h_i$ | 原题表1给出的区域到最近医院距离 | km | 报告1.3 | 不进入站点到现场响应距离 |
@@ -37,8 +40,8 @@
 | 最小总距离 | minimum total distance | $D^*$ | 第一层运输LP最优目标值 | km·次/日 | 报告3.5 | 第二层覆盖优化不得显著超过它 |
 | 平均出车距离 | mean dispatch distance | $\bar d$ | $D/140$ | km | 报告3.2 | 与医院距离加权平均无关 |
 | 静态响应下界 | static response lower bound | $\bar T_{\mathrm{static}}$ | $3+60\bar d/45$，不含排队 | min | 报告3.6 | 不能称为任务二优化后平均响应时间 |
-| 严格覆盖指示量 | strict coverage indicator | $g_{ij}$ | $d_{ij}\le0.75$时为1 | 0/1 | 报告3.5 | 不是3 km覆盖指示量 |
-| 严格静态覆盖量 | strict static covered demand | $C_4$ | $\sum_{ij}g_{ij}x_{ij}$ | 次/日 | 报告3.5 | 除以140才是覆盖率 |
+| 规划服务覆盖指示量 | planning service indicator | $g_{ij}^{s}$ | $d_{ij}\le3$时为1 | 0/1 | 报告3.5 | 不表示严格总响应不超过4 min |
+| 规划服务覆盖量 | planning covered demand | $C_s$ | $\sum_{ij}g_{ij}^{s}x_{ij}$ | 次/日 | 报告3.5 | 除以140才是覆盖率 |
 | 词典序优化 | lexicographic optimization | — | 先最小距离，再在距离最优集中最大覆盖 | — | 报告3.5 | 不把不同单位目标随意加权 |
 | 数值容差 | numerical tolerance | $\varepsilon$ | 第二阶段允许的求解器浮点误差 | km·次/日 | 报告3.5 | 不能成为实质性距离让步 |
 | 站点负荷 | station workload | $\ell_j$ | $\ell_j=\sum_ix_{ij}$ | 次/日 | 报告3.6 | 必须不超过 $12v_j$ |
@@ -49,8 +52,8 @@
 
 | 中文术语 | 英文术语 | 符号 | 定义 | 单位 | 首次出现 | 禁止混用或注意事项 |
 |---|---|---:|---|---|---|---|
-| 严格4分钟静态覆盖率 | strict static four-minute coverage | $\rho_4^{\mathrm{static}}$ | 无等待且实际分配满足 $3+60d/45\le4$ 的需求比例 | % | 报告2.3 | 本题复算为60.714%，不含排队 |
-| 实际分配3 km覆盖率 | assigned-flow 3-km coverage | $\rho_{3\mathrm{km}}^{\mathrm{assigned}}$ | 按分配矩阵判断 $d\le3$ 的需求比例 | % | 报告2.3 | 只给行驶4 min的对照口径 |
+| 3 km规划服务覆盖率 | planning 3-km service coverage | $\rho_s$ | 按实际分配矩阵判断 $d\le3$ 的需求比例 | % | 报告2.3 | 任务一主覆盖指标；本题为86.429% |
+| 严格4分钟中心代理覆盖率 | strict center-proxy four-minute coverage | $\rho_4^{\mathrm{center}}$ | 无等待且区域代表点满足 $3+60d/45\le4$ 的需求比例 | % | 报告2.3 | 本题为60.714%；不是真实面积覆盖 |
 | 静态潜在3 km覆盖率 | potential 3-km spatial coverage | $\rho_{3\mathrm{km}}^{\mathrm{potential}}$ | 只判断附近是否存在3 km内站点 | % | 报告2.3 | 不考虑容量、分配、忙碌；97.143%属于此口径 |
 | 呼叫等待时间 | call waiting time | $T_e^{\mathrm{wait}}$ | 从呼叫到达到车辆接受派车 | min | 报告2.2 | 与3 min准备时间分开 |
 | 呼叫响应时间 | call response time | $T_e^{\mathrm{resp}}$ | 等待+准备+派出位置到现场行驶 | min | 报告2.2 | 不含现场处置和送医 |
@@ -111,7 +114,7 @@
 | 假想下一呼叫响应 | predicted next-call response | $\widehat T_r(u\mid S)$ | 给定当前车辆状态，区域$r$在未来时刻$u$出现呼叫的预计最短响应 | min | 报告4.6 | 不把未知未来呼叫当作已知事件 |
 | 最早合法等待 | earliest eligible wait | $W_b(u\mid S)$ | 车辆$b$从$u$起到满足忙闲与日12次限制所需的等待 | min | 报告4.6 | 同时考虑已有任务和午夜计数重置 |
 | 派车后反事实状态 | post-dispatch counterfactual state | $S^{(-a)}(t)$ | 当前派出车辆$a$、其余已有车辆状态不变的状态 | — | 报告4.6 | 只用于一阶滚动前瞻 |
-| 45分钟期望累计响应损失 | 45-minute expected cumulative response loss | $C_a(t)$ | 派出车辆$a$后，未来45 min预期新增的总响应延误 | min | 报告4.6 | 对全部10区连续计量，不是0.75 km二元覆盖 |
+| 45分钟期望累计响应损失 | 45-minute expected cumulative response loss | $C_a(t)$ | 派出车辆$a$后，未来45 min预期新增的总响应延误 | min | 报告4.6 | 对全部10区连续计量，不是二元覆盖指标 |
 | 当日负荷惩罚 | daily workload penalty | $B_a(t)$ | $(n_{a,d}+1)/12$ | — | 报告4.6 | 防止车辆过早耗尽日额度 |
 | 负荷权重 | workload weight | $\beta$ | 将 $B_a$ 转换成分钟代价 | min | 报告4.6 | 由调参集网格搜索 |
 | B策略评分 | policy-B dispatch score | $J_{ea}$ | $\Delta T_{ea}+C_a+\beta B_a$ | min | 报告4.6 | 仅在 $\Delta T\le\delta$ 候选内比较 |
@@ -128,7 +131,7 @@
 | 中文术语 | 英文术语 | 符号 | 定义 | 单位 | 首次出现 | 禁止混用或注意事项 |
 |---|---|---:|---|---|---|---|
 | 参数筛选集 | tuning set | — | 3个独立复制，每个预热30天后统计7天，用于B参数和C配置选择 | — | 报告4.8 | 不用于最终数值结论 |
-| 最终评价集 | final evaluation set | — | 30个全新复制，每个预热30天后统计30天 | — | 报告4.8 | B、C参数进入该集合前冻结 |
+| 样本外最终评价集 | out-of-sample final evaluation set | — | 30个未参与筛选的新复制，每个预热30天后统计30天 | — | 报告4.8 | B、C参数进入该集合前冻结；不是另一套程序 |
 | 日常主方案 | selected routine policy | — | 按平均响应时间优先规则在A、B之间选出的方案 | — | 报告4.8 | C作为备用配置单独报告 |
 | 独立复制 | independent replication | $m$ | 一条独立随机呼叫轨迹及其策略对照 | — | 报告4.8 | 同一复制内策略使用共同随机数 |
 | 统计日 | measured day | — | 预热后纳入指标的连续日 | 日 | 报告4.8 | 筛选7天，最终评价30天 |
@@ -138,6 +141,22 @@
 | 系统稳定性 | simulation stability | — | 队列不持续发散且呼叫最终可服务 | — | 报告4.6 | 仅“最后能排空”不足以证明连续运行稳定 |
 | 区域公平性 | regional response equity | — | 各区域平均响应差异和最差区域表现 | min | 报告4.6 | 不以全市均值掩盖弱势区域 |
 
-## 8. 状态说明
+## 8. 任务三事故情景
 
-第一问的配置、分配矩阵和静态指标已经独立复算。第二问最终取B的 $(\beta,\delta)=(4,2)$ 作为日常主方案；固定备用方案C取 $r=(0,0,1,0,0,0)$、$\tau=7$ min。任务三以B为日常基线，并把C的备用配置作为可调用保障信息。
+| 中文术语 | 英文术语 | 符号 | 定义 | 单位 | 首次出现 | 禁止混用或注意事项 |
+|---|---|---:|---|---|---|---|
+| 事故区域 | incident zone | $k$ | 呼叫强度临时升至正常5倍的区域 | — | 报告7.1 | 遍历全部10区 |
+| 事故持续时间 | incident duration | $H$ | $[0.5,12]$ 上的连续变量 | h | 报告7.1 | 任何有限节点集都只是数值采样设计，不是定义域 |
+| 事故额外强度 | incident extra intensity | $\lambda_k^{\mathrm{extra}}(t)$ | 事故区叠加的 $4q_kf(t)$ | 次/h | 报告7.1 | 与日常强度合计才是5倍 |
+| 高峰事故起点 | worst-window start | $t^*(H)$ | 使持续时间窗内日内强度积分最大的周期起点 | h | 报告7.1 | 可用网格数值求解；透明压力情景，不是真实历史时刻 |
+| 常态预测模式 | normal-forecast mode | $B_N$ | 事故中继续按日常强度计算B的前瞻损失 | — | 报告7.2 | 与事故感知模式使用同一呼叫流 |
+| 事故感知模式 | emergency-aware mode | $B_E$ | 事故区间按5倍强度计算B的前瞻损失 | — | 报告7.2 | 不改变车辆数、FCFS、45 min或日12次上限 |
+| 事故期呼叫 | incident-arrival call | — | 到达时刻位于 $[t_0,t_0+H)$ 的呼叫 | 次 | 报告7.3 | 事故结束时未派出仍继续观察 |
+| 事故结束积压 | incident-end backlog | $Q_H^{\mathrm{end}}$ | 事故结束时尚未派出的既有呼叫数 | 次 | 报告7.3 | 不等于事故后恢复时间 |
+| 成对应急效应 | paired emergency effect | — | 同一呼叫流下 $B_E-B_N$ 的指标差 | 随指标 | 报告7.3 | 负响应时间差表示事故感知方案改善 |
+| 自适应持续时间节点 | adaptive duration nodes | $\mathcal H_n$ | 从六个初始节点出发，在高曲率或高不确定区间追加的仿真时长 | h | 报告7.1 | $\mathcal H_n$ 不是 $H$ 的定义域；插值不得冒充精确连续结果 |
+| 连续性能曲线 | continuous performance curve | $\bar T_k(H),P95_k(H),C_{4,k}(H),Q_{\max,k}(H)$ | 区域 $k$ 的事故期指标随连续时长变化的响应面及置信带 | 随指标 | 报告7.3 | 题面未给事故时长分布，不作跨时长等权总体汇总 |
+
+## 9. 状态说明
+
+第一问的配置、分配矩阵和静态指标已经独立复算。第二问最终取B的 $(\beta,\delta)=(4,2)$ 作为日常主方案；推荐固定备用方案C取 $r=(0,0,1,0,0,0)$、$\tau=7$ min。任务三目前只冻结连续持续时间、5倍强度、最不利窗口、$B_N/B_E$ 对照和事故期评价边界；正式响应面与数值结论待重新计算，应急模式不与C机械叠加。

@@ -25,6 +25,7 @@ SPEED_KMH = 45.0
 DAILY_CAP = 12
 DAILY_CALLS = 140
 GOLDEN_RESPONSE_MINUTES = 4.0
+SERVICE_RADIUS_KM = SPEED_KMH * GOLDEN_RESPONSE_MINUTES / 60.0
 DELAY_PENALTY_YUAN_PER_MINUTE = 200.0
 EPS = 1e-9
 STATEMENT_FILENAME = "problem-a-ambulance-dispatch-statement.docx"
@@ -44,12 +45,18 @@ class ProblemData:
     zone_ids: tuple[int, ...]
     zone_names: tuple[str, ...]
     zone_xy: np.ndarray
+    area: np.ndarray
+    population: np.ndarray
     demand: np.ndarray
     hospital_distance: np.ndarray
     site_ids: tuple[str, ...]
     site_xy: np.ndarray
     site_caps: np.ndarray
     distance: np.ndarray
+
+    @property
+    def demand_density(self) -> np.ndarray:
+        return self.demand / self.area
 
 
 @dataclass(frozen=True)
@@ -106,6 +113,8 @@ def read_problem(docx_path: Path) -> ProblemData:
         [[_number(row.cells[2].text), _number(row.cells[3].text)] for row in zone_rows],
         dtype=float,
     )
+    area = np.array([_number(row.cells[4].text) for row in zone_rows], dtype=float)
+    population = np.array([_number(row.cells[5].text) for row in zone_rows], dtype=float)
     demand = np.array([_number(row.cells[6].text) for row in zone_rows], dtype=float)
     hospital_distance = np.array([_number(row.cells[7].text) for row in zone_rows], dtype=float)
     site_ids = tuple(row.cells[0].text.strip() for row in site_rows)
@@ -124,6 +133,8 @@ def read_problem(docx_path: Path) -> ProblemData:
         zone_ids=zone_ids,
         zone_names=zone_names,
         zone_xy=zone_xy,
+        area=area,
+        population=population,
         demand=demand,
         hospital_distance=hospital_distance,
         site_ids=site_ids,
@@ -218,9 +229,9 @@ def solve_q1(data: ProblemData) -> dict[str, object]:
         raise RuntimeError(f"Q1 transport LP failed: {phase1.message}")
     d_star = float(phase1.fun)
 
-    strict = (data.distance <= 0.75 + EPS).astype(float).ravel()
+    service = (data.distance <= SERVICE_RADIUS_KM + EPS).astype(float).ravel()
     phase2 = linprog(
-        -strict,
+        -service,
         A_ub=np.vstack([a_ub, data.distance.ravel()]),
         b_ub=np.r_[site_capacity, d_star + 1e-8],
         A_eq=a_eq,
@@ -238,9 +249,11 @@ def solve_q1(data: ProblemData) -> dict[str, object]:
     rounded_distance = float(np.sum(assignment * data.distance))
     if rounded_distance > d_star + 1e-7:
         raise AssertionError("Cleaning the transport solution changed its primary objective")
-    strict_covered = float((assignment * (data.distance <= 0.75 + EPS)).sum())
-    assigned_3km = float((assignment * (data.distance <= 3.0 + EPS)).sum())
-    potential_3km = float(data.demand[(data.distance.min(axis=1) <= 3.0 + EPS)].sum())
+    service_covered = float((assignment * (data.distance <= SERVICE_RADIUS_KM + EPS)).sum())
+    strict_center_proxy = float((assignment * (data.distance <= 0.75 + EPS)).sum())
+    potential_3km = float(
+        data.demand[(data.distance.min(axis=1) <= SERVICE_RADIUS_KM + EPS)].sum()
+    )
 
     return {
         "milp_status": int(mip.status),
@@ -253,8 +266,9 @@ def solve_q1(data: ProblemData) -> dict[str, object]:
         "distance_total": d_star,
         "distance_mean": d_star / data.demand.sum(),
         "static_response_mean": PREP_MINUTES + (60.0 / SPEED_KMH) * d_star / data.demand.sum(),
-        "strict_coverage": strict_covered / data.demand.sum(),
-        "assigned_3km_coverage": assigned_3km / data.demand.sum(),
+        "service_radius_km": SERVICE_RADIUS_KM,
+        "service_3km_coverage": service_covered / data.demand.sum(),
+        "strict_center_proxy_coverage": strict_center_proxy / data.demand.sum(),
         "potential_3km_coverage": potential_3km / data.demand.sum(),
         "max_demand_residual": float(np.max(np.abs(assignment.sum(axis=1) - data.demand))),
         "max_capacity_violation": float(np.max(np.maximum(loads - site_capacity, 0.0))),
@@ -263,9 +277,17 @@ def solve_q1(data: ProblemData) -> dict[str, object]:
 
 
 def _periodic_gaussian(hour: float | np.ndarray, mu: float, sigma: float) -> float | np.ndarray:
-    value = np.zeros_like(np.asarray(hour, dtype=float))
+    if np.isscalar(hour):
+        scalar_hour = float(hour)
+        return sum(
+            math.exp(-((scalar_hour - mu + 24.0 * shift) ** 2) / (2.0 * sigma**2))
+            for shift in range(-3, 4)
+        )
+
+    hour_array = np.asarray(hour, dtype=float)
+    value = np.zeros_like(hour_array)
     for shift in range(-3, 4):
-        value += np.exp(-((np.asarray(hour) - mu + 24.0 * shift) ** 2) / (2.0 * sigma**2))
+        value += np.exp(-((hour_array - mu + 24.0 * shift) ** 2) / (2.0 * sigma**2))
     return value
 
 
@@ -281,7 +303,10 @@ INTRADAY_NORM = quad(lambda x: float(_raw_intraday(x)), 0.0, 24.0, epsabs=1e-12)
 
 
 def intraday_density(hour: float | np.ndarray) -> float | np.ndarray:
-    return _raw_intraday(np.mod(hour, 24.0)) / INTRADAY_NORM
+    density = _raw_intraday(np.mod(hour, 24.0)) / INTRADAY_NORM
+    if np.isscalar(hour):
+        return float(density)
+    return density
 
 
 def delay_penalty_cost(response_minutes: float | np.ndarray) -> float | np.ndarray:

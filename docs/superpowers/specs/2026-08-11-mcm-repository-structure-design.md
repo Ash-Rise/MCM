@@ -53,4 +53,4 @@ MCM/
 
 ## Current Project Boundary
 
-The current solution is `projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch`. The task-one result remains valid. Task two is under revision to use 140 calls per simulated day with conditional NHPP arrival times and a four-minute excess-delay cost; obsolete full-run outputs remain local only.
+The current solution is `projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch`. The task-one result remains valid. Task two is under revision to use 140 calls per simulated day with conditional NHPP arrival times and a four-minute excess-delay cost; all obsolete full-run outputs remain local only.

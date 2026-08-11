@@ -23,6 +23,9 @@ BUSY_MINUTES = 45.0
 PREP_MINUTES = 3.0
 SPEED_KMH = 45.0
 DAILY_CAP = 12
+DAILY_CALLS = 140
+GOLDEN_RESPONSE_MINUTES = 4.0
+DELAY_PENALTY_YUAN_PER_MINUTE = 200.0
 EPS = 1e-9
 STATEMENT_FILENAME = "problem-a-ambulance-dispatch-statement.docx"
 
@@ -281,24 +284,36 @@ def intraday_density(hour: float | np.ndarray) -> float | np.ndarray:
     return _raw_intraday(np.mod(hour, 24.0)) / INTRADAY_NORM
 
 
+def delay_penalty_cost(response_minutes: float | np.ndarray) -> float | np.ndarray:
+    response = np.asarray(response_minutes, dtype=float)
+    cost = DELAY_PENALTY_YUAN_PER_MINUTE * np.maximum(
+        response - GOLDEN_RESPONSE_MINUTES,
+        0.0,
+    )
+    if np.isscalar(response_minutes):
+        return float(cost)
+    return cost
+
+
 def generate_calls(data: ProblemData, days: int, seed: int) -> list[Call]:
+    if days <= 0:
+        raise ValueError("Simulation days must be positive")
     rng = np.random.default_rng(seed)
     grid = np.linspace(0.0, 24.0, 24 * 60 + 1)
-    upper = 1.001 * 140.0 * float(np.max(intraday_density(grid)))
-    horizon_h = 24.0 * days
-    time_h = 0.0
+    density_upper = 1.001 * float(np.max(intraday_density(grid)))
     arrivals: list[tuple[float, int]] = []
     zone_probability = data.demand / data.demand.sum()
-    while True:
-        time_h += rng.exponential(1.0 / upper)
-        if time_h >= horizon_h:
-            break
-        actual_rate = 140.0 * float(intraday_density(time_h))
-        if actual_rate > upper + 1e-10:
-            raise RuntimeError("NHPP thinning upper bound was violated")
-        if rng.random() <= actual_rate / upper:
+    for day in range(days):
+        accepted_hours: list[float] = []
+        while len(accepted_hours) < DAILY_CALLS:
+            remaining = DAILY_CALLS - len(accepted_hours)
+            candidates = rng.uniform(0.0, 24.0, size=max(remaining * 2, 32))
+            acceptance = rng.uniform(0.0, density_upper, size=len(candidates))
+            accepted = candidates[acceptance <= intraday_density(candidates)]
+            accepted_hours.extend(accepted[:remaining].tolist())
+        for hour in sorted(accepted_hours):
             zone = int(rng.choice(len(data.zone_ids), p=zone_probability))
-            arrivals.append((60.0 * time_h, zone))
+            arrivals.append((MINUTES_PER_DAY * day + 60.0 * hour, zone))
     return [Call(i, arrival, zone) for i, (arrival, zone) in enumerate(arrivals)]
 
 
@@ -661,6 +676,7 @@ def simulate(
     frame = pd.DataFrame([record.__dict__ for record in records]).sort_values("call_id")
     responses = frame["response_min"].to_numpy(dtype=float)
     waits = frame["wait_min"].to_numpy(dtype=float)
+    delay_costs = np.asarray(delay_penalty_cost(responses), dtype=float)
     metrics: dict[str, float | int] = {
         "calls": int(len(frame)),
         "mean_response_min": float(np.mean(responses)),
@@ -670,6 +686,8 @@ def simulate(
         "mean_wait_min": float(np.mean(waits)),
         "max_wait_min": float(np.max(waits)),
         "max_queue": int(max_queue),
+        "mean_delay_penalty_yuan_per_call": float(np.mean(delay_costs)),
+        "total_delay_penalty_yuan": float(np.sum(delay_costs)),
         "max_daily_dispatches_per_ambulance": int(max(daily_dispatches.values(), default=0)),
         "simulation_end_min": float(time_min),
     }
@@ -696,6 +714,12 @@ def run_p1(project_root: Path, seed: int, days: int) -> Path:
     calls = generate_calls(data, days=days, seed=seed)
     if not calls:
         raise RuntimeError("P1 call stream is empty")
+    daily_call_counts = np.bincount(
+        [int(call.arrival_min // MINUTES_PER_DAY) for call in calls],
+        minlength=days,
+    )
+    if not np.all(daily_call_counts == DAILY_CALLS):
+        raise AssertionError("Conditional NHPP must generate exactly 140 calls per day")
 
     output_dir = project_root / "results" / "p1"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -725,6 +749,17 @@ def run_p1(project_root: Path, seed: int, days: int) -> Path:
         "input": {"path": str(input_path), "sha256": sha256(input_path)},
         "seed": seed,
         "days": days,
+        "arrival_contract": {
+            "model": "conditional NHPP with periodic double-Gaussian intraday density",
+            "fixed_daily_calls": DAILY_CALLS,
+            "daily_call_counts": daily_call_counts.tolist(),
+            "zone_marking_probability": (data.demand / data.demand.sum()).tolist(),
+        },
+        "delay_penalty_contract": {
+            "golden_response_minutes": GOLDEN_RESPONSE_MINUTES,
+            "yuan_per_excess_minute_per_call": DELAY_PENALTY_YUAN_PER_MINUTE,
+            "formula": "200 * max(response_min - 4, 0)",
+        },
         "q1": {
             key: value.tolist() if isinstance(value, np.ndarray) else value
             for key, value in q1.items()

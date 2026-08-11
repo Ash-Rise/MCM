@@ -14,10 +14,13 @@ sys.path.insert(0, str(SRC_DIR))
 from ambulance_model import (  # noqa: E402
     BUSY_MINUTES,
     DAILY_CAP,
+    DELAY_PENALTY_YUAN_PER_MINUTE,
+    MINUTES_PER_DAY,
     _known_wait,
     build_fleet,
     cumulative_response_loss,
     cumulative_response_losses,
+    delay_penalty_cost,
     generate_calls,
     problem_statement_path,
     read_problem,
@@ -87,7 +90,7 @@ class AProblemTest(unittest.TestCase):
 
     def test_common_calls_and_all_strategy_constraints(self) -> None:
         calls = generate_calls(self.data, days=2, seed=12345)
-        self.assertGreater(len(calls), 0)
+        self.assertEqual(len(calls), 280)
         configurations = {
             "A": {},
             "B": {"beta": 1.0, "delta": 1.0},
@@ -101,8 +104,44 @@ class AProblemTest(unittest.TestCase):
                 self.assertLessEqual(metrics["max_daily_dispatches_per_ambulance"], DAILY_CAP)
                 self.assertTrue(np.isfinite(records["response_min"]).all())
                 self.assertTrue((records["wait_min"] >= -1e-9).all())
+                expected_costs = delay_penalty_cost(records["response_min"].to_numpy())
+                self.assertAlmostEqual(
+                    metrics["mean_delay_penalty_yuan_per_call"],
+                    float(np.mean(expected_costs)),
+                )
+                self.assertAlmostEqual(
+                    metrics["total_delay_penalty_yuan"],
+                    float(np.sum(expected_costs)),
+                )
                 if strategy == "B":
                     self.assertTrue((records["c_loss_min"] >= -1e-9).all())
+
+    def test_conditional_nhpp_generates_exactly_140_calls_each_day(self) -> None:
+        days = 3
+        calls = generate_calls(self.data, days=days, seed=20260811)
+        arrivals = np.array([call.arrival_min for call in calls])
+        arrival_days = np.floor(arrivals / MINUTES_PER_DAY).astype(int)
+
+        self.assertEqual(len(calls), 140 * days)
+        np.testing.assert_array_equal(np.bincount(arrival_days, minlength=days), [140] * days)
+        self.assertTrue(np.all(np.diff(arrivals) >= 0.0))
+        self.assertGreaterEqual(float(arrivals.min()), 0.0)
+        self.assertLess(float(arrivals.max()), days * MINUTES_PER_DAY)
+
+    def test_conditional_nhpp_is_reproducible_for_a_fixed_seed(self) -> None:
+        first = generate_calls(self.data, days=2, seed=20260811)
+        second = generate_calls(self.data, days=2, seed=20260811)
+
+        self.assertEqual(first, second)
+
+    def test_delay_penalty_charges_only_response_beyond_four_minutes(self) -> None:
+        responses = np.array([3.5, 4.0, 5.25])
+        costs = delay_penalty_cost(responses)
+
+        np.testing.assert_allclose(
+            costs,
+            [0.0, 0.0, 1.25 * DELAY_PENALTY_YUAN_PER_MINUTE],
+        )
 
     def test_busy_cycle_is_exactly_45_minutes(self) -> None:
         calls = generate_calls(self.data, days=1, seed=2026)

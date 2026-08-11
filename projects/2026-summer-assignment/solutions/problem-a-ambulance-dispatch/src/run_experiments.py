@@ -20,6 +20,7 @@ from ambulance_model import (
     DAILY_CAP,
     MINUTES_PER_DAY,
     generate_calls,
+    delay_penalty_cost,
     problem_statement_path,
     read_problem,
     sha256,
@@ -126,6 +127,9 @@ def daily_diagnostics(records: pd.DataFrame, total_days: int) -> pd.DataFrame:
                 "end_backlog": int(len(backlog)),
                 "busy_at_midnight": busy_count,
                 "mean_response_min": float(arrivals["response_min"].mean()) if len(arrivals) else np.nan,
+                "total_delay_penalty_yuan": float(
+                    np.sum(delay_penalty_cost(arrivals["response_min"].to_numpy(dtype=float)))
+                ),
             }
         )
     return pd.DataFrame(rows).set_index("day")
@@ -192,6 +196,7 @@ def summarize_measurement(
     response = measured["response_min"].to_numpy(dtype=float)
     chain = response + 60.0 * _WORKER_DATA.hospital_distance[measured["zone"].to_numpy(dtype=int)] / 45.0
     wait = measured["wait_min"].to_numpy(dtype=float)
+    delay_costs = np.asarray(delay_penalty_cost(response), dtype=float)
     maximum_queue, mean_queue, terminal_queue = _queue_statistics(records, start, end)
     daily = daily_diagnostics(records, warmup_days + measure_days).loc[warmup_days:]
     region_means = measured.groupby("zone")["response_min"].mean()
@@ -209,6 +214,8 @@ def summarize_measurement(
         "p90_response_min": float(np.quantile(response, 0.90)),
         "p95_response_min": float(np.quantile(response, 0.95)),
         "mean_wait_min": float(np.mean(wait)),
+        "mean_delay_penalty_yuan_per_call": float(np.mean(delay_costs)),
+        "mean_daily_delay_penalty_yuan": float(np.sum(delay_costs) / measure_days),
         "wait_probability": float(np.mean(wait > 1e-9)),
         "max_wait_min": float(np.max(wait)),
         "max_queue": int(maximum_queue),
@@ -652,6 +659,8 @@ def run_full(project_root: Path, workers: int) -> Path:
 
     metric_columns = [
         "mean_response_min",
+        "mean_delay_penalty_yuan_per_call",
+        "mean_daily_delay_penalty_yuan",
         "strict_4min_rate",
         "p90_response_min",
         "p95_response_min",

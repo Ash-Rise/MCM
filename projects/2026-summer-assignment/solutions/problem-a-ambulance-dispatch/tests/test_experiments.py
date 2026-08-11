@@ -21,6 +21,8 @@ from run_experiments import (  # noqa: E402
     stage_result_path,
 )
 
+from ambulance_model import delay_penalty_cost  # noqa: E402
+
 
 class FullExperimentTest(unittest.TestCase):
     def test_parameter_counts_match_frozen_contract(self) -> None:
@@ -49,6 +51,25 @@ class FullExperimentTest(unittest.TestCase):
         self.assertAlmostEqual(daily.loc[1, "mean_response_min"], 3.0)
         self.assertEqual(daily.loc[1, "end_backlog"], 0)
         self.assertEqual(daily.loc[1, "busy_at_midnight"], 0)
+
+    def test_daily_diagnostics_reports_four_minute_excess_cost(self) -> None:
+        records = pd.DataFrame(
+            [
+                {"call_id": 0, "arrival_min": 10.0, "dispatch_min": 10.0, "response_min": 4.0},
+                {"call_id": 1, "arrival_min": 20.0, "dispatch_min": 20.0, "response_min": 5.5},
+                {"call_id": 2, "arrival_min": 1450.0, "dispatch_min": 1450.0, "response_min": 6.0},
+            ]
+        )
+        daily = daily_diagnostics(records, total_days=2)
+
+        self.assertAlmostEqual(
+            daily.loc[0, "total_delay_penalty_yuan"],
+            float(delay_penalty_cost(5.5)),
+        )
+        self.assertAlmostEqual(
+            daily.loc[1, "total_delay_penalty_yuan"],
+            float(delay_penalty_cost(6.0)),
+        )
 
     def test_constant_daily_series_has_minimum_evidence_warmup(self) -> None:
         series = np.column_stack(

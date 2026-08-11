@@ -1,6 +1,6 @@
 # A题任务一、任务二术语与符号表
 
-> **状态说明（2026-08-11）**：任务一术语继续有效。任务二正在改为“每日固定140次条件NHPP + 相对4 min的延迟惩罚成本”，本表任务二条目须随修订实现更新后才能作为论文合同。
+> **状态说明（2026-08-11）**：任务一术语继续有效。任务二采用“每日固定140次的条件NHPP + 相对4 min的延迟惩罚成本”；最终策略参数与数值仍须由后续真实运行确定。
 
 > 本表与《题目分析报告》同步。任务三尚未冻结，暂不收录未经确认的第三问符号。
 
@@ -12,7 +12,7 @@
 | 候选站集合 | candidate-site set | $J$ | $J=\{1,\ldots,6\}$ | — | 报告1.2 | 下标固定用 $j$ |
 | 车辆集合 | ambulance set | $\mathcal A$ | 任务二中的12辆具体车辆 | — | 报告4.3 | 与站点配车数 $v_j$ 区分 |
 | 区域日均需求 | mean daily zone demand | $q_i$ | 区域 $i$ 的日均呼叫量 | 次/日 | 报告1.2 | 是期望量，不是每天固定次数 |
-| 全市日均需求 | mean total daily demand | $Q$ | $Q=\sum_iq_i=140$ | 次/日 | 报告1.2 | 与每日随机实现值 $N_d$ 区分 |
+| 全市每日呼叫量 | fixed total daily calls | $Q$ | $Q=\sum_iq_i=N_d=140$ | 次/日 | 报告1.2 | 仿真中每天固定为140 |
 | 区域坐标 | zone centroid | $(x_i,y_i)$ | 区域中心代表坐标 | km | 报告2.1 | 不代表区域内每个居民位置 |
 | 站点坐标 | station coordinate | $(X_j,Y_j)$ | 候选站点坐标 | km | 报告2.2 | 与医院位置无关 |
 | 站点—区域距离 | site-to-zone distance | $d_{ij}$ | 区域中心与站点间欧氏距离 | km | 报告2.2 | 不得用“距最近医院距离”替代 |
@@ -57,24 +57,29 @@
 | 严格4分钟服务率 | realized four-minute compliance | $\rho_4$ | 仿真中 $T_e^{\mathrm{resp}}\le4$ 的呼叫比例 | % | 报告4.9 | 与静态覆盖率区分 |
 | P90响应时间 | 90th-percentile response time | P90 | 90%呼叫不超过的响应时间 | min | 报告4.9 | 不是平均值的90% |
 | P95响应时间 | 95th-percentile response time | P95 | 95%呼叫不超过的响应时间 | min | 报告4.9 | 与95%置信区间区分 |
-| 延迟惩罚成本 | delay penalty cost | — | 原题给定200元/(min·次) | 元 | 报告1.2 | 尚未用于前两问主目标，使用时须定义从何时起罚 |
+| 单次超时分钟 | excess response minutes | $L_e$ | $\max(T_e^{\mathrm{resp}}-4,0)$ | min | 报告4.9 | 只计算超过4 min的部分 |
+| 单次延迟惩罚成本 | per-call delay penalty | $C_e$ | $200L_e$ | 元/次 | 报告4.9 | 是辅助评价，不替代平均响应时间主目标 |
+| 平均每次惩罚成本 | mean penalty per call | $\bar C$ | $N^{-1}\sum_eC_e$ | 元/次 | 报告4.9 | 统计窗内逐呼叫平均 |
+| 日均惩罚总成本 | mean daily penalty cost | $\bar C_{\mathrm{day}}$ | $D^{-1}\sum_eC_e$ | 元/日 | 报告4.9 | $D$为统计天数 |
 
 ## 4. 任务二到达过程
 
 | 中文术语 | 英文术语 | 符号 | 定义 | 单位 | 首次出现 | 禁止混用或注意事项 |
 |---|---|---:|---|---|---|---|
-| 非齐次Poisson过程 | nonhomogeneous Poisson process | NHPP | 到达率随时间连续变化的Poisson过程 | — | 报告4.2 | 本题的日内曲线是合成情景，不是历史拟合 |
-| 区域到达率 | zone call-arrival rate | $\lambda_i(t)$ | $q_if(t\bmod24)$ | 次/h | 报告4.2 | 积分一日等于 $q_i$ |
-| 全市到达率 | total call-arrival rate | $\lambda_\Sigma(t)$ | $140f(t)$ | 次/h | 报告4.2 | 日积分为140 |
+| 条件非齐次Poisson过程 | conditional nonhomogeneous Poisson process | conditional NHPP | 给定每日事件总数140后，按NHPP归一化强度生成到达时刻 | — | 报告4.2 | 条件化后每日总数不再是Poisson随机变量 |
+| 区域参考到达率 | reference zone arrival rate | $\lambda_i(t)$ | $q_if(t\bmod24)$ | 次/h | 报告4.2 | 用于定义日内形状；区域日计数由多项分布产生 |
+| 全市参考到达率 | reference total arrival rate | $\lambda_\Sigma(t)$ | $140f(t)$ | 次/h | 报告4.2 | 日积分为140，用于条件NHPP构造 |
 | 归一化日内强度 | normalized intraday intensity | $f(t)$ | 24 h周期且一日积分为1的强度形状 | $\mathrm h^{-1}$ | 报告4.2 | 不是概率密度以外的随意乘子 |
 | 周期高斯核 | periodic Gaussian kernel | $G(t;\mu,\sigma)$ | 普通高斯在24 h周期上的延拓 | — | 报告4.2 | 用于保证0时与24时连续 |
 | 双高斯未归一化强度 | unnormalized double-Gaussian intensity | $g(t)$ | 基线加上午峰与傍晚峰 | — | 报告4.2 | 归一化后才得到 $f(t)$ |
 | 小时到达概率 | hourly arrival share | $p_h$ | $\int_h^{h+1}f(t)dt$ | — | 报告4.2 | 24项和为1；不是历史频率 |
-| 日随机呼叫总数 | realized daily call count | $N_d$ | $N_d\sim\mathrm{Poisson}(140)$ | 次/日 | 报告4.2 | 不固定等于140 |
+| 每日固定呼叫总数 | fixed daily call count | $N_d$ | $N_d=140$ | 次/日 | 报告4.2 | 每个日历日严格生成140次 |
+| 条件到达时刻 | conditional arrival time | $T_{d,k}$ | 给定 $N_d=140$ 后独立服从密度 $f(t)$ | h | 报告4.2 | 每日生成后按时刻排序 |
+| 区域标记概率 | zone-marking probability | $\pi_i$ | $q_i/140$ | — | 报告4.2 | 区域日计数随机，但期望为 $q_i$ |
 | 峰值幅度 | peak amplitude | $a_1,a_2$ | 上午峰和傍晚峰相对幅度 | — | 报告4.2 | 做±10%、±20%情景扰动并重新归一化 |
 | 峰值位置 | peak center | $\mu_1,\mu_2$ | 基准为9 h和18 h | h | 报告4.2 | 是合成情景参数 |
 | 峰宽 | peak width | $\sigma_1,\sigma_2$ | 基准为2 h和2.5 h | h | 报告4.2 | 是合成情景参数 |
-| 稀疏化法 | thinning algorithm | — | 从上界齐次过程筛选NHPP到达时刻 | — | 报告4.2 | 属于实现算法，不是另一到达模型 |
+| 接受—拒绝采样 | acceptance-rejection sampling | — | 从日内均匀候选时刻按 $f(t)$ 比例接受，直至140个 | — | 报告4.2 | 实现给定总数后的条件到达时刻 |
 | 共同随机数 | common random numbers | CRN | 不同策略使用相同呼叫轨迹进行成对比较 | — | 报告4.8 | 不同独立复制仍使用不同种子 |
 
 ## 5. 车辆、队列和跨日状态
@@ -138,4 +143,4 @@
 
 ## 8. 状态说明
 
-第一问的配置、分配矩阵和静态指标已经独立复算。第二问的模型、参数范围和验证流程已经冻结，但预热长度、B的最优参数、C的最优或不可行结论、日常主方案与动态响应指标仍必须由后续真实代码运行得到。任务三以日常主方案为条件输入，具体应急切换规则待任务二结果产生后冻结。
+第一问的配置、分配矩阵和静态指标已经独立复算。第二问的到达、响应、车辆、队列、三种策略与成本口径已经确定，但B的参数、C的最优或不可行结论、日常主方案与动态响应指标仍必须由后续真实代码运行得到。任务三以日常主方案为条件输入，具体应急切换规则待任务二结果产生后确定。

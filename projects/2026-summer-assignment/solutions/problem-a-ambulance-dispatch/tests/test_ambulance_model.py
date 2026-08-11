@@ -1,0 +1,117 @@
+from __future__ import annotations
+
+import math
+import sys
+import unittest
+from pathlib import Path
+
+import numpy as np
+
+SOLUTION_ROOT = Path(__file__).resolve().parents[1]
+SRC_DIR = SOLUTION_ROOT / "src"
+sys.path.insert(0, str(SRC_DIR))
+
+from ambulance_model import (  # noqa: E402
+    BUSY_MINUTES,
+    DAILY_CAP,
+    _known_wait,
+    build_fleet,
+    cumulative_response_loss,
+    cumulative_response_losses,
+    generate_calls,
+    problem_statement_path,
+    read_problem,
+    simulate,
+    solve_q1,
+)
+
+
+class AProblemTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.statement = problem_statement_path(SOLUTION_ROOT)
+        cls.data = read_problem(cls.statement)
+
+    def test_problem_statement_path_is_explicit_and_stable(self) -> None:
+        self.assertEqual(
+            self.statement.name,
+            "problem-a-ambulance-dispatch-statement.docx",
+        )
+        self.assertEqual(self.statement.parent.name, "problem-statements")
+        self.assertTrue(self.statement.is_file())
+
+    def test_q1_matches_frozen_contract(self) -> None:
+        result = solve_q1(self.data)
+        np.testing.assert_array_equal(result["vehicles"], [3, 2, 2, 2, 1, 2])
+        np.testing.assert_array_equal(result["opened"], [1, 1, 1, 1, 1, 1])
+        np.testing.assert_allclose(result["loads"], [36, 20, 24, 24, 12, 24], atol=1e-8)
+        self.assertAlmostEqual(result["distance_mean"], 0.9415694291208043, places=10)
+        self.assertAlmostEqual(result["strict_coverage"], 85 / 140, places=10)
+        self.assertLessEqual(result["max_demand_residual"], 1e-8)
+        self.assertLessEqual(result["max_capacity_violation"], 1e-8)
+        np.testing.assert_allclose(
+            self.data.hospital_distance,
+            [3.2, 4.1, 5.8, 6.2, 7.5, 8.3, 5.1, 3.8, 9.2, 10.1],
+        )
+
+    def test_daily_cap_wait_crosses_midnight(self) -> None:
+        ambulance = build_fleet(self.data)[0]
+        ambulance.day_count = DAILY_CAP
+        ambulance.busy_until = 1420.0
+        self.assertAlmostEqual(_known_wait(ambulance, 1430.0, 1430.0), 10.0)
+        self.assertAlmostEqual(_known_wait(ambulance, 1445.0, 1430.0), 0.0)
+
+    def test_counterfactual_loss_is_finite_and_nonnegative(self) -> None:
+        fleet = build_fleet(self.data)
+        fleet[1].busy_until = 25.0
+        fleet[2].day_count = DAILY_CAP - 1
+        value = cumulative_response_loss(self.data, fleet, fleet[2], 0.0)
+        self.assertTrue(math.isfinite(value))
+        self.assertGreaterEqual(value, 0.0)
+
+    def test_batch_losses_match_scalar_reference(self) -> None:
+        fleet = build_fleet(self.data)
+        for ambulance in fleet:
+            ambulance.busy_until = BUSY_MINUTES
+        fleet[0].busy_until = 0.0
+        fleet[-1].busy_until = 0.0
+        candidates = [fleet[0], fleet[-1]]
+        scalar = {
+            ambulance.ambulance_id: cumulative_response_loss(self.data, fleet, ambulance, 0.0)
+            for ambulance in candidates
+        }
+        batch = cumulative_response_losses(self.data, fleet, candidates, 0.0)
+        self.assertGreater(max(scalar.values()), 0.0)
+        for ambulance_id, expected in scalar.items():
+            self.assertAlmostEqual(batch[ambulance_id], expected, places=10)
+
+    def test_common_calls_and_all_strategy_constraints(self) -> None:
+        calls = generate_calls(self.data, days=2, seed=12345)
+        self.assertGreater(len(calls), 0)
+        configurations = {
+            "A": {},
+            "B": {"beta": 1.0, "delta": 1.0},
+            "C": {"reserve_vector": [1, 0, 0, 0, 0, 0], "tau": 5.0},
+        }
+        for strategy, settings in configurations.items():
+            with self.subTest(strategy=strategy):
+                records, metrics = simulate(self.data, calls, strategy=strategy, **settings)
+                self.assertEqual(len(records), len(calls))
+                self.assertEqual(records["call_id"].tolist(), list(range(len(calls))))
+                self.assertLessEqual(metrics["max_daily_dispatches_per_ambulance"], DAILY_CAP)
+                self.assertTrue(np.isfinite(records["response_min"]).all())
+                self.assertTrue((records["wait_min"] >= -1e-9).all())
+                if strategy == "B":
+                    self.assertTrue((records["c_loss_min"] >= -1e-9).all())
+
+    def test_busy_cycle_is_exactly_45_minutes(self) -> None:
+        calls = generate_calls(self.data, days=1, seed=2026)
+        records, _ = simulate(self.data, calls, strategy="A")
+        for _, group in records.groupby("ambulance_id"):
+            dispatches = group["dispatch_min"].to_numpy()
+            if len(dispatches) > 1:
+                self.assertTrue(np.all(np.diff(dispatches) >= BUSY_MINUTES - 1e-9))
+
+
+if __name__ == "__main__":
+    unittest.main()

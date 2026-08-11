@@ -1,0 +1,43 @@
+# Large reference archives
+*.zip
+
+# Python caches and local tool state
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local backups are kept on disk, outside version history
+backups/
+local-archives/
+
+# Locked legacy copies retained locally after the English-path migration
+A题.docx
+模板资料/
+
+# Generated simulation, review, and figure artifacts
+/results/full/
+/results/p1/
+/results/review_original/
+/results/review_teammate/
+/figures/
+
+# Per-project generated artifacts
+projects/**/results/p1/
+projects/**/results/task-2/cache/
+projects/**/figures/qa/
+
+# Temporary Office lock files
+~$*.doc*
+~$*.xls*
+~$*.ppt*
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.bak

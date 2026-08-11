@@ -1,0 +1,38 @@
+{
+  "milp_status": 0,
+  "phase1_status": 0,
+  "phase2_status": 0,
+  "vehicles": [
+    3,
+    2,
+    2,
+    2,
+    1,
+    2
+  ],
+  "opened": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "loads": [
+    36.0,
+    20.0,
+    24.0,
+    24.0,
+    12.0,
+    24.0
+  ],
+  "distance_total": 131.8197200769126,
+  "distance_mean": 0.9415694291208043,
+  "static_response_mean": 4.2554259054944055,
+  "strict_coverage": 0.6071428571428571,
+  "assigned_3km_coverage": 0.8642857142857143,
+  "potential_3km_coverage": 0.9714285714285714,
+  "max_demand_residual": 0.0,
+  "max_capacity_violation": 0.0,
+  "mip_lp_objective_gap": 0.0
+}

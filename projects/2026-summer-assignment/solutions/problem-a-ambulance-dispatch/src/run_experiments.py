@@ -265,8 +265,12 @@ def _replication_worker(task: dict[str, object]) -> dict[str, object] | list[dic
 
 def _append_rows(path: Path, rows: list[dict[str, object]]) -> None:
     exists = path.exists() and path.stat().st_size > 0
+    fieldnames = list(rows[0].keys())
+    if exists:
+        with path.open("r", newline="", encoding="utf-8-sig") as handle:
+            fieldnames = next(csv.reader(handle))
     with path.open("a", newline="", encoding="utf-8-sig") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()), extrasaction="ignore")
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
         if not exists:
             writer.writeheader()
         writer.writerows(rows)

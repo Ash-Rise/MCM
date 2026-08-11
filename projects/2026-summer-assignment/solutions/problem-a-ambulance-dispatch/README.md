@@ -15,4 +15,4 @@ Modeling solution for ambulance station location, vehicle allocation, routine di
 
 ## Current Status
 
-Task 1 is verified. Task 2 is being revised to generate exactly 140 calls per day with conditional NHPP arrival times while retaining the per-vehicle 12-dispatch limit and continuous cross-midnight vehicle state. Previous Task 2 outputs are obsolete and are not part of this project history.
+Tasks 1 and 2 are verified. Task 2 uses exactly 140 calls per day, a fixed 30-day warmup, conditional-NHPP arrival times, a per-vehicle 12-dispatch limit, and continuous cross-midnight vehicle state. Task 3 emergency experiments are in progress.

@@ -1,0 +1,35 @@
+{
+  "warmup_days": 30,
+  "tuning_replications": 3,
+  "tuning_measure_days": 7,
+  "final_replications": 30,
+  "final_measure_days": 30,
+  "best_b": {
+    "candidate": "B_beta4_delta2",
+    "strategy": "B",
+    "beta": 4.0,
+    "delta": 2.0
+  },
+  "best_c": {
+    "candidate": "C_r001000_tau7",
+    "strategy": "C",
+    "reserve_vector": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "tau": 7.0
+  },
+  "c_one_sided_95_upper_min": -0.009146940977217095,
+  "c_noninferior_to_a": true,
+  "main_policy": {
+    "candidate": "B_beta4_delta2",
+    "strategy": "B",
+    "beta": 4.0,
+    "delta": 2.0
+  },
+  "selection_rule": "A/B mean response first; if paired 95% CI includes zero, strict-4 rate, P95, fairness"
+}

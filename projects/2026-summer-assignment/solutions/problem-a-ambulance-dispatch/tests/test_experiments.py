@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from run_experiments import (  # noqa: E402
     FIXED_WARMUP_DAYS,
     TUNING_MEASURE_DAYS,
     TUNING_REPLICATIONS,
+    _append_rows,
     b_candidates,
     b_fine_candidates,
     c_candidates,
@@ -29,6 +31,36 @@ from ambulance_model import delay_penalty_cost  # noqa: E402
 
 
 class FullExperimentTest(unittest.TestCase):
+    def test_append_rows_preserves_existing_csv_header_order(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "results.csv"
+            _append_rows(
+                path,
+                [
+                    {
+                        "candidate": "A",
+                        "strategy": "A",
+                        "mean_c_loss_min": None,
+                        "reserve_dispatches": None,
+                    }
+                ],
+            )
+            _append_rows(
+                path,
+                [
+                    {
+                        "candidate": "C",
+                        "strategy": "C",
+                        "reserve_dispatches": 17,
+                        "mean_c_loss_min": 2.5,
+                    }
+                ],
+            )
+
+            appended = pd.read_csv(path)
+            self.assertEqual(appended.loc[1, "reserve_dispatches"], 17)
+            self.assertEqual(appended.loc[1, "mean_c_loss_min"], 2.5)
+
     def test_parameter_counts_match_frozen_contract(self) -> None:
         self.assertEqual(len(b_candidates()), 20)
         self.assertEqual(len(c_candidates()), 235)

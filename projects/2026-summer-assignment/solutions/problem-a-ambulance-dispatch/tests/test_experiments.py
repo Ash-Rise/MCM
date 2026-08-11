@@ -12,12 +12,11 @@ SRC_DIR = SOLUTION_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 from run_experiments import (  # noqa: E402
-    _mser5_deletion,
+    FIXED_WARMUP_DAYS,
     b_candidates,
     b_fine_candidates,
     c_candidates,
     daily_diagnostics,
-    detect_warmup,
     stage_result_path,
 )
 
@@ -71,42 +70,8 @@ class FullExperimentTest(unittest.TestCase):
             float(delay_penalty_cost(6.0)),
         )
 
-    def test_constant_daily_series_has_minimum_evidence_warmup(self) -> None:
-        series = np.column_stack(
-            [np.full(90, 2.0), np.full(90, 4.0), np.full(90, 7.0)]
-        )
-        self.assertEqual(detect_warmup(series), 0)
-
-    def test_stationary_noise_is_not_mistaken_for_initialization_bias(self) -> None:
-        rng = np.random.default_rng(20260811)
-        stable = np.column_stack(
-            [
-                11.0 + rng.normal(0.0, 2.0, 90),
-                1.4 + rng.normal(0.0, 0.35, 90),
-                23.0 + rng.normal(0.0, 4.7, 90),
-            ]
-        )
-        warmup = detect_warmup(stable)
-        self.assertGreaterEqual(warmup, 0)
-        self.assertLessEqual(warmup, 90)
-
-    def test_transient_bias_delays_warmup(self) -> None:
-        rng = np.random.default_rng(7)
-        stable = np.column_stack(
-            [
-                11.0 + rng.normal(0.0, 0.2, 90),
-                1.4 + rng.normal(0.0, 0.05, 90),
-                23.0 + rng.normal(0.0, 0.4, 90),
-            ]
-        )
-        stable[:25] += np.array([5.0, 0.8, 10.0])
-        self.assertGreaterEqual(detect_warmup(stable), 25)
-
-    def test_slow_transient_requests_longer_pilot(self) -> None:
-        days = np.arange(90)
-        slow = 10.0 + 10.0 * np.exp(-days / 30.0) + 0.2 * np.sin(days)
-        _, at_boundary = _mser5_deletion(slow)
-        self.assertTrue(at_boundary)
+    def test_fixed_warmup_contract_is_thirty_days(self) -> None:
+        self.assertEqual(FIXED_WARMUP_DAYS, 30)
 
     def test_stage_result_path_binds_warmup_length(self) -> None:
         root = Path("results")

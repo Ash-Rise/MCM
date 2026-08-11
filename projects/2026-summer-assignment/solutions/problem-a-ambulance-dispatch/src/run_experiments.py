@@ -33,8 +33,7 @@ TUNING_REPLICATIONS = 30
 SELECTION_REPLICATIONS = 30
 FINAL_REPLICATIONS = 100
 MEASURE_DAYS = 100
-WARMUP_PILOT_DAYS = 90
-WARMUP_PILOT_REPLICATIONS = 20
+FIXED_WARMUP_DAYS = 30
 
 _WORKER_DATA = None
 
@@ -133,32 +132,6 @@ def daily_diagnostics(records: pd.DataFrame, total_days: int) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows).set_index("day")
-
-
-def _mser5_deletion(series: np.ndarray) -> tuple[int, bool]:
-    values = np.asarray(series, dtype=float)
-    usable = (len(values) // 5) * 5
-    if usable < 30:
-        raise ValueError("MSER-5 requires at least 30 daily observations")
-    batches = np.nanmean(values[:usable].reshape(-1, 5), axis=1)
-    candidates = np.arange(len(batches) // 2 + 1)
-    scores = []
-    for deletion in candidates:
-        tail = batches[deletion:]
-        centered = tail - np.nanmean(tail)
-        scores.append(float(np.nansum(centered**2) / len(tail) ** 2))
-    best_index = int(np.nanargmin(scores))
-    return int(candidates[best_index] * 5), best_index == len(candidates) - 1
-
-
-def detect_warmup(series: np.ndarray) -> int:
-    values = np.asarray(series, dtype=float)
-    if values.ndim != 2 or values.shape[0] < 30:
-        raise ValueError("Warm-up diagnostics require enough daily rows and three metrics")
-    deletions = [_mser5_deletion(values[:, column]) for column in range(values.shape[1])]
-    if any(at_boundary for _, at_boundary in deletions):
-        return -1
-    return max(deletion for deletion, _ in deletions)
 
 
 def _queue_statistics(records: pd.DataFrame, start: float, end: float) -> tuple[int, float, int]:
@@ -457,51 +430,6 @@ def _candidate_map() -> dict[str, dict[str, object]]:
     return {str(candidate["candidate"]): candidate for candidate in candidates}
 
 
-def run_warmup_diagnostics(
-    input_path: Path,
-    results_dir: Path,
-    candidates: list[dict[str, object]],
-    seeds: list[int],
-    workers: int,
-    label: str,
-) -> pd.DataFrame:
-    horizon = WARMUP_PILOT_DAYS
-    while True:
-        tasks = [
-            {
-                "candidate": candidate,
-                "seed": seed,
-                "warmup_days": 0,
-                "measure_days": horizon,
-            }
-            for candidate in candidates
-            for seed in seeds
-        ]
-        daily_frame = run_tasks(
-            input_path,
-            results_dir / f"{label}_daily_h{horizon:03d}.csv",
-            tasks,
-            workers,
-            daily_only=True,
-        )
-        rows = []
-        for candidate in [str(item["candidate"]) for item in candidates]:
-            group = daily_frame[daily_frame["candidate"] == candidate]
-            daily = group.groupby("day")[["end_backlog", "busy_at_midnight", "mean_response_min"]].mean()
-            warmup = detect_warmup(daily.to_numpy())
-            rows.append(
-                {
-                    "candidate": candidate,
-                    "warmup_days": warmup,
-                    "pilot_horizon_days": horizon,
-                }
-            )
-        table = pd.DataFrame(rows).sort_values("candidate").reset_index(drop=True)
-        if (table["warmup_days"] >= 0).all():
-            return table
-        horizon += 30
-
-
 def stage_result_path(results_dir: Path, stage: str, warmup_days: int) -> Path:
     return results_dir / f"{stage}_W{warmup_days:03d}.csv"
 
@@ -513,89 +441,57 @@ def run_full(project_root: Path, workers: int) -> Path:
     results_dir = project_root / "results" / "task-2"
     results_dir.mkdir(parents=True, exist_ok=True)
     candidate_map = _candidate_map()
-
-    warmup_candidates = list(candidate_map.values())
-    warmup_table = run_warmup_diagnostics(
+    warmup_days = FIXED_WARMUP_DAYS
+    tuning_candidates = [a_candidate(), *b_candidates(), *c_candidates()]
+    tuning_tasks = [
+        {
+            "candidate": candidate,
+            "seed": seed,
+            "warmup_days": warmup_days,
+            "measure_days": MEASURE_DAYS,
+        }
+        for candidate in tuning_candidates
+        for seed in _seed_block(200_000, TUNING_REPLICATIONS)
+    ]
+    tuning_coarse = run_tasks(
         input_path,
-        results_dir,
-        warmup_candidates,
-        _seed_block(100_000, WARMUP_PILOT_REPLICATIONS),
+        stage_result_path(results_dir, "tuning_coarse", warmup_days),
+        tuning_tasks,
         workers,
-        label="warmup_coarse",
+        daily_only=False,
     )
-    warmup_days = int(math.ceil(warmup_table["warmup_days"].max() / 5.0) * 5)
-    warmup_table.to_csv(results_dir / "warmup_coarse_lengths.csv", index=False, encoding="utf-8-sig")
-
-    while True:
-        tuning_candidates = [a_candidate(), *b_candidates(), *c_candidates()]
-        tuning_tasks = [
+    coarse_b_name = select_b(tuning_coarse)
+    fine_candidates = b_fine_candidates(coarse_b_name)
+    for candidate in fine_candidates:
+        candidate_map[str(candidate["candidate"])] = candidate
+    if fine_candidates:
+        fine_tasks = [
             {
                 "candidate": candidate,
                 "seed": seed,
                 "warmup_days": warmup_days,
                 "measure_days": MEASURE_DAYS,
             }
-            for candidate in tuning_candidates
+            for candidate in fine_candidates
             for seed in _seed_block(200_000, TUNING_REPLICATIONS)
         ]
-        tuning_coarse = run_tasks(
+        tuning_fine = run_tasks(
             input_path,
-            stage_result_path(results_dir, "tuning_coarse", warmup_days),
-            tuning_tasks,
+            stage_result_path(results_dir, "tuning_fine", warmup_days),
+            fine_tasks,
             workers,
             daily_only=False,
         )
-        coarse_b_name = select_b(tuning_coarse)
-        fine_candidates = b_fine_candidates(coarse_b_name)
-        for candidate in fine_candidates:
-            candidate_map[str(candidate["candidate"])] = candidate
-        if fine_candidates:
-            fine_tasks = [
-                {
-                    "candidate": candidate,
-                    "seed": seed,
-                    "warmup_days": warmup_days,
-                    "measure_days": MEASURE_DAYS,
-                }
-                for candidate in fine_candidates
-                for seed in _seed_block(200_000, TUNING_REPLICATIONS)
-            ]
-            tuning_fine = run_tasks(
-                input_path,
-                stage_result_path(results_dir, "tuning_fine", warmup_days),
-                fine_tasks,
-                workers,
-                daily_only=False,
-            )
-            tuning = pd.concat([tuning_coarse, tuning_fine], ignore_index=True)
-        else:
-            tuning = tuning_coarse
-        tuning.to_csv(
-            stage_result_path(results_dir, "tuning_all", warmup_days),
-            index=False,
-            encoding="utf-8-sig",
-        )
-        best_b_name = select_b(tuning)
-        best_c_name = select_c(tuning_coarse)
-
-        final_warmup_names = ["A", best_b_name] + ([best_c_name] if best_c_name else [])
-        final_warmup_table = run_warmup_diagnostics(
-            input_path,
-            results_dir,
-            [candidate_map[name] for name in final_warmup_names],
-            _seed_block(500_000, WARMUP_PILOT_REPLICATIONS),
-            workers,
-            label=f"warmup_final_from_W{warmup_days:03d}",
-        )
-        final_warmup_table.to_csv(
-            results_dir / f"warmup_final_lengths_from_W{warmup_days:03d}.csv",
-            index=False,
-            encoding="utf-8-sig",
-        )
-        verified_warmup = int(math.ceil(final_warmup_table["warmup_days"].max() / 5.0) * 5)
-        if verified_warmup <= warmup_days:
-            break
-        warmup_days = verified_warmup
+        tuning = pd.concat([tuning_coarse, tuning_fine], ignore_index=True)
+    else:
+        tuning = tuning_coarse
+    tuning.to_csv(
+        stage_result_path(results_dir, "tuning_all", warmup_days),
+        index=False,
+        encoding="utf-8-sig",
+    )
+    best_b_name = select_b(tuning)
+    best_c_name = select_c(tuning_coarse)
 
     selection_names = ["A", best_b_name] + ([best_c_name] if best_c_name else [])
     selection_tasks = [

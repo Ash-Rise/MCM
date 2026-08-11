@@ -29,10 +29,10 @@ from ambulance_model import (
 
 
 INPUT_SHA256 = "5F5079815AB8AD6592FEE7A4B0B8B01A5DF8865983A2871C324B6AB772C39F2D"
-TUNING_REPLICATIONS = 30
-SELECTION_REPLICATIONS = 30
-FINAL_REPLICATIONS = 100
-MEASURE_DAYS = 100
+TUNING_REPLICATIONS = 3
+TUNING_MEASURE_DAYS = 7
+FINAL_REPLICATIONS = 30
+FINAL_MEASURE_DAYS = 30
 FIXED_WARMUP_DAYS = 30
 
 _WORKER_DATA = None
@@ -365,27 +365,32 @@ def select_b(tuning: pd.DataFrame) -> str:
 
 def select_c(tuning: pd.DataFrame) -> str | None:
     a = tuning[tuning["candidate"] == "A"].set_index("seed")["mean_response_min"]
-    candidates = []
+    rows = []
     for candidate, group in tuning[tuning["strategy"] == "C"].groupby("candidate"):
         c = group.set_index("seed")["mean_response_min"]
         common = a.index.intersection(c.index)
-        if float((c.loc[common] - a.loc[common]).mean()) <= 0:
-            candidates.append(candidate)
-    if not candidates:
+        if common.empty:
+            continue
+        rows.append(
+            {
+                "candidate": candidate,
+                "mean_difference_min": float((c.loc[common] - a.loc[common]).mean()),
+                "strict_4min_rate": float(group["strict_4min_rate"].mean()),
+                "p95_response_min": float(group["p95_response_min"].mean()),
+                "regional_mean_gap_min": float(group["regional_mean_gap_min"].mean()),
+            }
+        )
+    if not rows:
         return None
-    ranked = (
-        tuning[tuning["candidate"].isin(candidates)]
-        .groupby("candidate")
-        .agg(
-            strict_4min_rate=("strict_4min_rate", "mean"),
-            p95_response_min=("p95_response_min", "mean"),
-            regional_mean_gap_min=("regional_mean_gap_min", "mean"),
-        )
-        .reset_index()
-        .sort_values(
-            ["strict_4min_rate", "p95_response_min", "regional_mean_gap_min", "candidate"],
-            ascending=[False, True, True, True],
-        )
+    ranked = pd.DataFrame(rows).sort_values(
+        [
+            "mean_difference_min",
+            "strict_4min_rate",
+            "p95_response_min",
+            "regional_mean_gap_min",
+            "candidate",
+        ],
+        ascending=[True, False, True, True, True],
     )
     return str(ranked.iloc[0]["candidate"])
 
@@ -448,7 +453,7 @@ def run_full(project_root: Path, workers: int) -> Path:
             "candidate": candidate,
             "seed": seed,
             "warmup_days": warmup_days,
-            "measure_days": MEASURE_DAYS,
+            "measure_days": TUNING_MEASURE_DAYS,
         }
         for candidate in tuning_candidates
         for seed in _seed_block(200_000, TUNING_REPLICATIONS)
@@ -470,7 +475,7 @@ def run_full(project_root: Path, workers: int) -> Path:
                 "candidate": candidate,
                 "seed": seed,
                 "warmup_days": warmup_days,
-                "measure_days": MEASURE_DAYS,
+                "measure_days": TUNING_MEASURE_DAYS,
             }
             for candidate in fine_candidates
             for seed in _seed_block(200_000, TUNING_REPLICATIONS)
@@ -493,54 +498,13 @@ def run_full(project_root: Path, workers: int) -> Path:
     best_b_name = select_b(tuning)
     best_c_name = select_c(tuning_coarse)
 
-    selection_names = ["A", best_b_name] + ([best_c_name] if best_c_name else [])
-    selection_tasks = [
-        {
-            "candidate": candidate_map[name],
-            "seed": seed,
-            "warmup_days": warmup_days,
-            "measure_days": MEASURE_DAYS,
-        }
-        for name in selection_names
-        for seed in _seed_block(300_000, SELECTION_REPLICATIONS)
-    ]
-    selection = run_tasks(
-        input_path,
-        stage_result_path(results_dir, "selection_replicates", warmup_days),
-        selection_tasks,
-        workers,
-        daily_only=False,
-    )
-    c_upper = None
-    c_qualified = False
-    if best_c_name:
-        pivot = selection.pivot(index="seed", columns="candidate", values="mean_response_min")
-        c_upper = one_sided_upper((pivot[best_c_name] - pivot["A"]).dropna().to_numpy())
-        c_qualified = c_upper <= 0
-    eligible = ["A", best_b_name] + ([best_c_name] if c_qualified and best_c_name else [])
-    main_policy = choose_main_policy(selection, eligible)
-
-    decision = {
-        "warmup_days": warmup_days,
-        "best_b": candidate_map[best_b_name],
-        "best_c": candidate_map[best_c_name] if best_c_name else None,
-        "c_one_sided_95_upper_min": c_upper,
-        "c_qualified": c_qualified,
-        "eligible_daily_policies": eligible,
-        "main_policy": candidate_map[main_policy],
-        "selection_rule": "mean response first; if paired 95% CI includes zero, strict-4 rate, P95, fairness",
-    }
-    (results_dir / "selected_policy.json").write_text(
-        json.dumps(decision, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-
-    final_names = list(dict.fromkeys(["A", best_b_name] + ([best_c_name] if c_qualified else [])))
+    final_names = list(dict.fromkeys(["A", best_b_name] + ([best_c_name] if best_c_name else [])))
     final_tasks = [
         {
             "candidate": candidate_map[name],
             "seed": seed,
             "warmup_days": warmup_days,
-            "measure_days": MEASURE_DAYS,
+            "measure_days": FINAL_MEASURE_DAYS,
         }
         for name in final_names
         for seed in _seed_block(400_000, FINAL_REPLICATIONS)
@@ -551,6 +515,30 @@ def run_full(project_root: Path, workers: int) -> Path:
         final_tasks,
         workers,
         daily_only=False,
+    )
+    main_policy = choose_main_policy(final, ["A", best_b_name])
+    c_upper = None
+    c_noninferior = False
+    if best_c_name:
+        pivot = final.pivot(index="seed", columns="candidate", values="mean_response_min")
+        c_upper = one_sided_upper((pivot[best_c_name] - pivot["A"]).dropna().to_numpy())
+        c_noninferior = c_upper <= 0
+
+    decision = {
+        "warmup_days": warmup_days,
+        "tuning_replications": TUNING_REPLICATIONS,
+        "tuning_measure_days": TUNING_MEASURE_DAYS,
+        "final_replications": FINAL_REPLICATIONS,
+        "final_measure_days": FINAL_MEASURE_DAYS,
+        "best_b": candidate_map[best_b_name],
+        "best_c": candidate_map[best_c_name] if best_c_name else None,
+        "c_one_sided_95_upper_min": c_upper,
+        "c_noninferior_to_a": c_noninferior,
+        "main_policy": candidate_map[main_policy],
+        "selection_rule": "A/B mean response first; if paired 95% CI includes zero, strict-4 rate, P95, fairness",
+    }
+    (results_dir / "selected_policy.json").write_text(
+        json.dumps(decision, ensure_ascii=False, indent=2), encoding="utf-8"
     )
 
     metric_columns = [

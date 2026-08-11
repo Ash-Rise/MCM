@@ -12,11 +12,16 @@ SRC_DIR = SOLUTION_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
 from run_experiments import (  # noqa: E402
+    FINAL_MEASURE_DAYS,
+    FINAL_REPLICATIONS,
     FIXED_WARMUP_DAYS,
+    TUNING_MEASURE_DAYS,
+    TUNING_REPLICATIONS,
     b_candidates,
     b_fine_candidates,
     c_candidates,
     daily_diagnostics,
+    select_c,
     stage_result_path,
 )
 
@@ -72,6 +77,49 @@ class FullExperimentTest(unittest.TestCase):
 
     def test_fixed_warmup_contract_is_thirty_days(self) -> None:
         self.assertEqual(FIXED_WARMUP_DAYS, 30)
+
+    def test_compact_experiment_contract(self) -> None:
+        self.assertEqual(TUNING_REPLICATIONS, 3)
+        self.assertEqual(TUNING_MEASURE_DAYS, 7)
+        self.assertEqual(FINAL_REPLICATIONS, 30)
+        self.assertEqual(FINAL_MEASURE_DAYS, 30)
+
+    def test_select_c_returns_best_reserve_even_when_all_are_slower_than_a(self) -> None:
+        rows = []
+        for seed in range(3):
+            rows.extend(
+                [
+                    {
+                        "candidate": "A",
+                        "strategy": "A",
+                        "seed": seed,
+                        "mean_response_min": 5.0,
+                        "strict_4min_rate": 0.50,
+                        "p95_response_min": 8.0,
+                        "regional_mean_gap_min": 2.0,
+                    },
+                    {
+                        "candidate": "C_slow",
+                        "strategy": "C",
+                        "seed": seed,
+                        "mean_response_min": 5.4,
+                        "strict_4min_rate": 0.49,
+                        "p95_response_min": 9.0,
+                        "regional_mean_gap_min": 2.2,
+                    },
+                    {
+                        "candidate": "C_best",
+                        "strategy": "C",
+                        "seed": seed,
+                        "mean_response_min": 5.2,
+                        "strict_4min_rate": 0.48,
+                        "p95_response_min": 8.5,
+                        "regional_mean_gap_min": 2.1,
+                    },
+                ]
+            )
+
+        self.assertEqual(select_c(pd.DataFrame(rows)), "C_best")
 
     def test_stage_result_path_binds_warmup_length(self) -> None:
         root = Path("results")

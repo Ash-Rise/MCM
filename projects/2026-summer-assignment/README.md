@@ -11,4 +11,4 @@ This project contains the three supplied problem statements and the solutions de
 
 ## Solutions
 
-- [`problem-a-ambulance-dispatch`](solutions/problem-a-ambulance-dispatch/README.md): current solution project for Problem A.
+- [`problem-a-ambulance-dispatch`](solutions/problem-a-ambulance-dispatch/README.md): complete Problem A solution, including the versioned paper, reproducible results, figures, and source code.

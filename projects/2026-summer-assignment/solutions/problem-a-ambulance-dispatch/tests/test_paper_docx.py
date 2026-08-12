@@ -9,7 +9,7 @@ from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DOCX_PATH = PROJECT_ROOT / "paper" / "A题论文-任务一任务二阶段稿.docx"
+DOCX_PATH = PROJECT_ROOT / "paper" / "A题论文(v2.1).docx"
 POSTPROCESS_PATH = PROJECT_ROOT / "src" / "postprocess_paper_docx.py"
 
 
@@ -34,9 +34,9 @@ def _page_field_count(footer):
     return len(footer._element.findall(".//" + qn("w:instrText")))
 
 
-def test_stage_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp_path):
+def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp_path):
     module = _load_postprocessor()
-    output = tmp_path / "stage-paper.docx"
+    output = tmp_path / "complete-paper.docx"
     module.postprocess_docx(DOCX_PATH, output)
 
     document = Document(output)
@@ -48,9 +48,11 @@ def test_stage_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp
     assert document.sections[0].footer.paragraphs[0].alignment == 1
     assert document.sections[0].first_page_footer.paragraphs[0].alignment == 1
 
-    assert len(document.tables) == len(module.TABLE_WIDTH_WEIGHTS)
+    assert len(document.tables) == len(module.COMPLETE_TABLE_WIDTH_WEIGHTS)
     assert document.tables[0].cell(8, 2).text == "1/h，次/h"
-    for table, weights in zip(document.tables, module.TABLE_WIDTH_WEIGHTS, strict=True):
+    for table, weights in zip(
+        document.tables, module.COMPLETE_TABLE_WIDTH_WEIGHTS, strict=True
+    ):
         assert table._tbl.tblPr.find(qn("w:tblStyle")) is None
         tbl_w = table._tbl.tblPr.find(qn("w:tblW"))
         assert tbl_w is not None
@@ -81,7 +83,7 @@ def test_postprocessor_rejects_unknown_table_count():
     try:
         module.table_width_weights_for_count(7)
     except ValueError as error:
-        assert "5 or 8 tables" in str(error)
+        assert "8 tables" in str(error)
     else:
         raise AssertionError("Unknown paper table count was accepted")
 

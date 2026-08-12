@@ -14,28 +14,22 @@ from docx.oxml.ns import qn
 from docx.shared import Pt, Twips
 
 
-STAGE_TABLE_WIDTH_WEIGHTS = (
+COMPLETE_TABLE_WIDTH_WEIGHTS = (
     (1.2, 4.4, 1.2),
     (0.9, 0.9, 1.2, 1.5, 1.5, 1.5),
     (1.0, 1.0, 1.0),
     (2.6, 1.4, 1.4, 1.4),
     (1.2, 1.7, 1.8, 3.1),
-)
-COMPLETE_TABLE_WIDTH_WEIGHTS = STAGE_TABLE_WIDTH_WEIGHTS + (
     (0.8, 1.0, 1.4, 1.8, 1.0),
     (0.8, 1.0, 1.0, 1.0, 2.0),
     (0.7, 1.0, 1.6, 1.0, 1.6),
 )
-# Kept for the staged-paper regression test and external callers.
-TABLE_WIDTH_WEIGHTS = STAGE_TABLE_WIDTH_WEIGHTS
 
 
 def table_width_weights_for_count(table_count: int) -> tuple[tuple[float, ...], ...]:
-    if table_count == len(STAGE_TABLE_WIDTH_WEIGHTS):
-        return STAGE_TABLE_WIDTH_WEIGHTS
     if table_count == len(COMPLETE_TABLE_WIDTH_WEIGHTS):
         return COMPLETE_TABLE_WIDTH_WEIGHTS
-    raise ValueError(f"Expected 5 or 8 tables, found {table_count}")
+    raise ValueError(f"Expected 8 tables, found {table_count}")
 
 
 def sha256_file(path: Path) -> str:
@@ -357,7 +351,7 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Postprocess the staged paper DOCX")
+    parser = argparse.ArgumentParser(description="Postprocess the complete paper DOCX")
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--manifest", type=Path)

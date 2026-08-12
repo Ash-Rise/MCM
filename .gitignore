@@ -10,14 +10,6 @@ __pycache__/
 .venv/
 venv/
 
-# Local backups are kept on disk, outside version history
-backups/
-local-archives/
-
-# Locked legacy copies retained locally after the English-path migration
-A题.docx
-模板资料/
-
 # Generated simulation, review, and figure artifacts
 /results/full/
 /results/p1/

@@ -14,13 +14,26 @@ from scipy import stats
 
 from ambulance_model import DAILY_CAP, problem_statement_path, read_problem, sha256, solve_q1
 from run_emergency_experiments import _summaries as emergency_summaries
-from run_emergency_experiments import aggregate_absolute_metrics
-from run_emergency_experiments import aggregate_paired_effects
-from run_emergency_experiments import build_paper_metrics
+from run_emergency_experiments import (
+    BASE_SEED,
+    INITIAL_DURATIONS_HOURS,
+    MAX_DURATION_NODES,
+    REPLICATIONS,
+    RESPONSE_SURFACE_METRICS,
+    build_citywide_duration_table,
+    build_duration_table,
+    build_response_surfaces,
+    build_scoped_paired_surfaces,
+)
 
 
 INPUT_SHA256 = "5F5079815AB8AD6592FEE7A4B0B8B01A5DF8865983A2871C324B6AB772C39F2D"
 Q2_CANDIDATES = ("A", "B_beta4_delta2", "C_r001000_tau7")
+LEGACY_Q3_EVIDENCE_FILENAMES = (
+    "aggregate_absolute_metrics.csv",
+    "aggregate_paired_effects.csv",
+    "paper_metrics.csv",
+)
 Q2_METRICS = (
     "mean_response_min",
     "mean_delay_penalty_yuan_per_call",
@@ -37,17 +50,6 @@ Q2_METRICS = (
     "mean_ideal_chain_min",
     "p95_ideal_chain_min",
 )
-Q3_REPORT_LABELS = {
-    "mean_response_min": "全市事故期平均响应/min",
-    "incident_zone_mean_response_min": "事故区平均响应/min",
-    "nonincident_zone_mean_response_min": "非事故区平均响应/min",
-    "p95_response_min": "全市P95响应/min",
-    "strict_4min_rate": "严格4分钟率",
-    "mean_wait_min": "平均等待/min",
-    "mean_delay_penalty_yuan_per_call": "平均每次延迟惩罚/元",
-}
-
-
 def _assert_close_frame(actual: pd.DataFrame, expected: pd.DataFrame, keys: list[str]) -> None:
     actual = actual.sort_values(keys).reset_index(drop=True)
     expected = expected.sort_values(keys).reset_index(drop=True)
@@ -60,23 +62,14 @@ def _paired_ci(values: np.ndarray) -> tuple[float, float]:
     return mean - half, mean + half
 
 
-def format_q3_report_row(row: pd.Series) -> str:
-    metric = str(row["metric"])
-    label = Q3_REPORT_LABELS[metric]
-    decimals = 2 if metric == "mean_delay_penalty_yuan_per_call" else 4
-    values = [
-        float(row["B_N_mean"]),
-        float(row["B_E_mean"]),
-        float(row["mean_difference_B_E_minus_B_N"]),
-        float(row["ci95_low"]),
-        float(row["ci95_high"]),
-    ]
-    formatted = [f"{value:.{decimals}f}" for value in values]
-    return (
-        f"| {label} | {formatted[0]} | {formatted[1]} | "
-        f"${formatted[2]}\\ [{formatted[3]},\\ {formatted[4]}]$ | "
-        f"{int(row['valid_scenario_pairs'])} |"
-    )
+def remove_legacy_q3_outputs(output: Path) -> list[str]:
+    removed: list[str] = []
+    for name in LEGACY_Q3_EVIDENCE_FILENAMES:
+        path = output / name
+        if path.is_file():
+            path.unlink()
+            removed.append(name)
+    return removed
 
 
 def q2_aggregates(replicates: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -127,18 +120,26 @@ def rebuild_stage(project_root: Path, scope: str) -> None:
         raise ValueError(f"Unknown rebuild scope: {scope}")
 
     q3_dir = project_root / "results" / "task-3"
+    remove_legacy_q3_outputs(q3_dir)
     q3_replicates = pd.read_csv(q3_dir / "replicates.csv")
     q3_summary, q3_paired = emergency_summaries(q3_replicates)
     q3_summary.to_csv(q3_dir / "summary.csv", index=False, encoding="utf-8-sig")
     q3_paired.to_csv(q3_dir / "paired_effects.csv", index=False, encoding="utf-8-sig")
-    aggregate_paired_effects(q3_replicates).to_csv(
-        q3_dir / "aggregate_paired_effects.csv", index=False, encoding="utf-8-sig"
+    build_duration_table(q3_replicates).to_csv(
+        q3_dir / "duration_table.csv", index=False, encoding="utf-8-sig"
     )
-    aggregate_absolute_metrics(q3_replicates).to_csv(
-        q3_dir / "aggregate_absolute_metrics.csv", index=False, encoding="utf-8-sig"
+    build_citywide_duration_table(q3_replicates).to_csv(
+        q3_dir / "citywide_duration_table.csv", index=False, encoding="utf-8-sig"
     )
-    build_paper_metrics(q3_replicates).to_csv(
-        q3_dir / "paper_metrics.csv", index=False, encoding="utf-8-sig"
+    q3_surfaces, q3_paired_surfaces = build_response_surfaces(q3_replicates)
+    q3_surfaces.to_csv(
+        q3_dir / "response_surfaces.csv", index=False, encoding="utf-8-sig"
+    )
+    q3_paired_surfaces.to_csv(
+        q3_dir / "paired_response_surfaces.csv", index=False, encoding="utf-8-sig"
+    )
+    build_scoped_paired_surfaces(q3_replicates).to_csv(
+        q3_dir / "scoped_paired_response_surfaces.csv", index=False, encoding="utf-8-sig"
     )
 
 
@@ -208,23 +209,63 @@ def verify_q2(project_root: Path) -> None:
 
 def verify_q3(project_root: Path) -> None:
     output = project_root / "results" / "task-3"
+    stale = [name for name in LEGACY_Q3_EVIDENCE_FILENAMES if (output / name).exists()]
+    if stale:
+        raise AssertionError(f"Legacy cross-duration Task 3 evidence remains: {stale}")
     replicates = pd.read_csv(output / "replicates.csv")
-    if len(replicates) != 1_200:
-        raise AssertionError(f"Task 3 expected 1200 paired rows, received {len(replicates)}")
-    if set(replicates["seed"]) != set(range(600_000, 600_010)):
+    scenarios = pd.read_csv(output / "scenarios.csv")
+    durations = sorted(replicates["duration_hours"].unique())
+    if len(durations) != MAX_DURATION_NODES:
+        raise AssertionError(
+            f"Task 3 expected {MAX_DURATION_NODES} adaptive duration nodes, received {len(durations)}"
+        )
+    if not set(INITIAL_DURATIONS_HOURS).issubset(durations):
+        raise AssertionError("Task 3 is missing one or more frozen initial duration nodes")
+    expected_rows = MAX_DURATION_NODES * 10 * REPLICATIONS * 2
+    if len(replicates) != expected_rows:
+        raise AssertionError(
+            f"Task 3 expected {expected_rows} duration-resolved rows, received {len(replicates)}"
+        )
+    if set(replicates["seed"]) != set(range(BASE_SEED, BASE_SEED + REPLICATIONS)):
         raise AssertionError("Task 3 seed block has drifted")
+    if set(replicates["incident_zone"]) != set(range(1, 11)):
+        raise AssertionError("Task 3 must evaluate all ten incident zones")
+    if set(replicates["mode"]) != {"B_N", "B_E"}:
+        raise AssertionError("Task 3 policy modes have drifted")
     pair_keys = ["incident_zone", "duration_hours", "seed"]
     if not (replicates.groupby(pair_keys)["mode"].nunique() == 2).all():
         raise AssertionError("Task 3 contains an incomplete B_N/B_E pair")
+    if not (replicates.groupby(["incident_zone", "duration_hours", "mode"]).size() == REPLICATIONS).all():
+        raise AssertionError("Task 3 duration-zone-mode cells do not contain all replications")
     if not (replicates.groupby(pair_keys)["call_digest"].nunique() == 1).all():
         raise AssertionError("Task 3 paired policies did not receive identical calls")
     if replicates["max_daily_dispatches_per_ambulance"].max() > DAILY_CAP:
         raise AssertionError("Task 3 violated the per-ambulance daily dispatch cap")
+    boundary_columns = {
+        "calls",
+        "incident_zone_calls",
+        "nonincident_zone_calls",
+        "max_incident_queue",
+        "incident_end_backlog",
+    }
+    if not boundary_columns.issubset(replicates.columns):
+        raise AssertionError("Task 3 incident-window boundary fields are incomplete")
+    if replicates[list(boundary_columns)].isna().any().any():
+        raise AssertionError("Task 3 incident-window boundary fields contain missing values")
+
+    scenario_keys = ["incident_zone", "duration_hours"]
+    if len(scenarios) != MAX_DURATION_NODES * 10 or scenarios.duplicated(scenario_keys).any():
+        raise AssertionError("Task 3 scenario design is incomplete or duplicated")
+    if set(scenarios["duration_hours"]) != set(durations):
+        raise AssertionError("Task 3 scenario and replicate duration nodes differ")
+    if set(scenarios["incident_zone"]) != set(range(1, 11)):
+        raise AssertionError("Task 3 scenario design does not cover all ten zones")
 
     expected_summary, expected_paired = emergency_summaries(replicates)
-    expected_aggregate = aggregate_paired_effects(replicates)
-    expected_absolute = aggregate_absolute_metrics(replicates)
-    expected_paper = build_paper_metrics(replicates)
+    expected_duration = build_duration_table(replicates)
+    expected_citywide_duration = build_citywide_duration_table(replicates)
+    expected_surfaces, expected_paired_surfaces = build_response_surfaces(replicates)
+    expected_scoped_surfaces = build_scoped_paired_surfaces(replicates)
     _assert_close_frame(
         pd.read_csv(output / "summary.csv"),
         expected_summary,
@@ -236,25 +277,38 @@ def verify_q3(project_root: Path) -> None:
         ["incident_zone", "duration_hours", "start_hour", "metric"],
     )
     _assert_close_frame(
-        pd.read_csv(output / "aggregate_paired_effects.csv", dtype={"group_value": str}),
-        expected_aggregate.astype({"group_value": str}),
-        ["scope", "group_value", "metric"],
+        pd.read_csv(output / "duration_table.csv"),
+        expected_duration,
+        ["incident_zone", "duration_hours", "metric"],
     )
     _assert_close_frame(
-        pd.read_csv(output / "aggregate_absolute_metrics.csv"),
-        expected_absolute,
-        ["mode", "metric"],
+        pd.read_csv(output / "citywide_duration_table.csv"),
+        expected_citywide_duration,
+        ["duration_hours", "metric"],
+    )
+    if not (expected_citywide_duration["incident_zone_scenarios"] == 10).all():
+        raise AssertionError("Task 3 citywide effects did not average all ten incident-zone scenarios")
+    _assert_close_frame(
+        pd.read_csv(output / "response_surfaces.csv"),
+        expected_surfaces,
+        ["incident_zone", "mode", "metric", "duration_hours"],
     )
     _assert_close_frame(
-        pd.read_csv(output / "paper_metrics.csv"),
-        expected_paper,
-        ["metric"],
+        pd.read_csv(output / "paired_response_surfaces.csv"),
+        expected_paired_surfaces,
+        ["incident_zone", "metric", "duration_hours"],
     )
-    report = (project_root / "analysis" / "modeling-report.md").read_text(encoding="utf-8")
-    for _, row in expected_paper.iterrows():
-        expected_line = format_q3_report_row(row)
-        if expected_line not in report:
-            raise AssertionError(f"Task 3 report row has drifted: {expected_line}")
+    _assert_close_frame(
+        pd.read_csv(output / "scoped_paired_response_surfaces.csv"),
+        expected_scoped_surfaces,
+        ["metric", "duration_hours"],
+    )
+    if not (expected_scoped_surfaces["incident_zone_scenarios"] == 10).all():
+        raise AssertionError("Task 3 scoped effects did not pool all ten incident-zone scenarios")
+    if set(expected_duration["duration_hours"]) != set(durations):
+        raise AssertionError("Task 3 evidence table pooled or omitted duration nodes")
+    if set(expected_duration["metric"]) != set(RESPONSE_SURFACE_METRICS):
+        raise AssertionError("Task 3 duration-resolved metric set has drifted")
 
 
 def verify_figures(project_root: Path, questions: tuple[str, ...] = ("q1", "q2", "q3")) -> None:

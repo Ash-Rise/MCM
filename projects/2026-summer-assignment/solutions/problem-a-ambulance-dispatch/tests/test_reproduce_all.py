@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 from pathlib import Path
@@ -12,7 +13,14 @@ SOLUTION_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = SOLUTION_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
-from reproduce_all import format_q3_report_row, q2_aggregates, rebuild_stage, verify_stage  # noqa: E402
+from reproduce_all import (  # noqa: E402
+    LEGACY_Q3_EVIDENCE_FILENAMES,
+    q2_aggregates,
+    rebuild_stage,
+    remove_legacy_q3_outputs,
+    verify_stage,
+)
+from generate_figures import q3_evidence_sources  # noqa: E402
 
 
 class ReproduceAllTest(unittest.TestCase):
@@ -81,23 +89,50 @@ class ReproduceAllTest(unittest.TestCase):
         self.assertAlmostEqual(differences["C_r001000_tau7-A"], -0.05)
         self.assertTrue(np.isfinite(paired[["ci95_low", "ci95_high"]]).all().all())
 
-    def test_q3_report_row_has_machine_checkable_rounding_and_valid_count(self) -> None:
-        row = pd.Series(
-            {
-                "metric": "mean_response_min",
-                "B_N_mean": 15.295128,
-                "B_E_mean": 15.276950151,
-                "mean_difference_B_E_minus_B_N": -0.018178,
-                "ci95_low": -0.037230,
-                "ci95_high": 0.000874,
-                "valid_scenario_pairs": 592,
-            }
-        )
+    def test_task_three_rebuild_uses_duration_resolved_outputs(self) -> None:
+        with (
+            patch("reproduce_all.q2_aggregates", return_value=(pd.DataFrame(), pd.DataFrame())),
+            patch("reproduce_all.emergency_summaries", return_value=(pd.DataFrame(), pd.DataFrame())),
+            patch("reproduce_all.build_duration_table", return_value=pd.DataFrame()) as duration_table,
+            patch("reproduce_all.build_citywide_duration_table", return_value=pd.DataFrame()) as citywide_table,
+            patch("reproduce_all.build_response_surfaces", return_value=(pd.DataFrame(), pd.DataFrame())) as surfaces,
+            patch("reproduce_all.build_scoped_paired_surfaces", return_value=pd.DataFrame()) as scoped_surfaces,
+            patch.object(pd.DataFrame, "to_csv"),
+            patch("pandas.read_csv", return_value=pd.DataFrame()),
+        ):
+            rebuild_stage(SOLUTION_ROOT, "all")
+
+        duration_table.assert_called_once()
+        citywide_table.assert_called_once()
+        surfaces.assert_called_once()
+        scoped_surfaces.assert_called_once()
+
+    def test_task_three_figures_reject_cross_duration_aggregate_sources(self) -> None:
+        sources = q3_evidence_sources()
         self.assertEqual(
-            format_q3_report_row(row),
-            "| 全市事故期平均响应/min | 15.2951 | 15.2770 | "
-            "$-0.0182\\ [-0.0372,\\ 0.0009]$ | 592 |",
+            sources,
+            {
+                "raw_q3_incident_load": "scenarios.csv",
+                "process_q3_duration_zone": "response_surfaces.csv",
+                "result_q3_response_curve": "response_surfaces.csv",
+                "result_q3_paired_effect": "scoped_paired_response_surfaces.csv",
+            },
         )
+        self.assertFalse(any("aggregate" in source for source in sources.values()))
+
+    def test_legacy_cross_duration_outputs_are_removed_by_exact_name(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            for name in LEGACY_Q3_EVIDENCE_FILENAMES:
+                (output / name).write_text("stale", encoding="utf-8")
+            keep = output / "duration_table.csv"
+            keep.write_text("current", encoding="utf-8")
+
+            removed = remove_legacy_q3_outputs(output)
+
+            self.assertEqual(set(removed), set(LEGACY_Q3_EVIDENCE_FILENAMES))
+            self.assertTrue(keep.is_file())
+            self.assertFalse(any((output / name).exists() for name in LEGACY_Q3_EVIDENCE_FILENAMES))
 
 
 if __name__ == "__main__":

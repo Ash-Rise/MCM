@@ -15,18 +15,22 @@ Summer-assignment modeling solution for ambulance station location, vehicle allo
 
 ## Current Status
 
-Tasks 1 and 2 have frozen result tables and publication figures. Task 2 uses exactly 140 calls per day, a fixed 30-day warmup, conditional-NHPP arrival times, a per-vehicle 12-dispatch limit, and continuous cross-midnight vehicle state. Task 3 is currently frozen at the model-contract level: incident duration is continuous on `[0.5, 12]` hours, while finite simulation nodes are only an adaptive numerical design. The old six-duration aggregate results and figures are not current paper evidence.
+Tasks 1--3 have frozen result tables and publication figures. Task 2 uses exactly 140 calls per day, a fixed 30-day warmup, conditional-NHPP arrival times, a per-vehicle 12-dispatch limit, and continuous cross-midnight vehicle state. Task 3 treats incident duration as continuous on `[0.5, 12]` hours: the six initial durations are expanded adaptively to ten simulation nodes, and replication-level PCHIP surfaces with 95% confidence bands are used only as numerical response approximations. No result is pooled across incident durations.
 
 ## Reproduction
 
 Run commands from this directory:
 
 ```powershell
-# Read-only validation of the staged Task 1 and Task 2 evidence.
-python src/reproduce_all.py --project-root . --mode verify --scope q1-q2
+# Read-only validation of all frozen evidence. This is the manifest command.
+python src/reproduce_all.py --project-root . --mode verify --scope all
 
-# Rebuild only the Task 2 aggregate tables, then validate Task 1 and Task 2.
-python src/reproduce_all.py --project-root . --mode rebuild --scope q1-q2
+# Rebuild aggregate tables and response surfaces from versioned replication data,
+# regenerate figures, and then validate all three tasks.
+python src/reproduce_all.py --project-root . --mode rebuild --scope all
+
+# Optional full rerun, including the expensive stochastic experiments.
+python src/reproduce_all.py --project-root . --mode full --scope all
 ```
 
-The versioned replication-level CSV files are intentional scientific evidence, not disposable caches. `results/复现清单.json` currently binds only the staged Task 1 and Task 2 evidence. No Task 3 reproduction command is published until the continuous-duration adaptive response surface has been implemented and revalidated.
+The versioned replication-level CSV files are intentional scientific evidence, not disposable caches. `results/复现清单.json` binds the statement and the frozen results for all three tasks. The verification command does not rerun the long simulation; it recomputes deterministic checks and validates every frozen table, paired scenario, hard constraint, and required figure.

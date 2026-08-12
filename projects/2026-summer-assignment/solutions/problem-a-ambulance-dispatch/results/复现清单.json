@@ -1,48 +1,103 @@
 {
-  "schema_version": 2,
-  "scope": "task-1-task-2-staged-paper",
-  "status": "task-3-continuous-response-surface-pending",
+  "schema_version": 1,
+  "created_at_utc": "2026-08-12T06:28:08.019413+00:00",
+  "random_seed": 600000,
   "input_files": [
     {
-      "path": "../../problem-statements/problem-a-ambulance-dispatch-statement.docx",
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\problem-statements\\problem-a-ambulance-dispatch-statement.docx",
       "sha256": "5f5079815ab8ad6592fee7a4b0b8b01a5df8865983a2871c324b6ab772c39f2d",
       "bytes": 43241
     },
     {
-      "path": "results/task-1/summary.json",
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-1\\summary.json",
       "sha256": "f7bdba425798ee0564e1e416c09b1ede3198b8c7416b602f8dc69c1df86710cd",
       "bytes": 697
     },
     {
-      "path": "results/task-1/assignment.csv",
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-1\\assignment.csv",
       "sha256": "b80151ea4eae5e251e4b81b30662bd1a791591d4ae0a9869145a15048a67a66b",
       "bytes": 306
     },
     {
-      "path": "results/task-2/final_replicates_W030.csv",
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-1\\site_solution.csv",
+      "sha256": "7d56e5a6bc357a6e7dd8c6324e50185e079878058c2e91154d41d2d9d4e00f10",
+      "bytes": 215
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-2\\final_replicates_W030.csv",
       "sha256": "53eaec152986b5c8649deed59f56ec66629a7f3aa846b5118b2f01783213d2c7",
       "bytes": 32519
     },
     {
-      "path": "results/task-2/final_summary.csv",
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-2\\final_summary.csv",
       "sha256": "500e6903bcbb0cb2c985829c98d98255047574238635886813840a7200a71086",
       "bytes": 3802
     },
     {
-      "path": "results/task-2/final_paired_response.csv",
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-2\\final_paired_response.csv",
       "sha256": "020486c4ba2f79b13f0c15fda361b10308e77f36b1008839b922a866e1be656a",
       "bytes": 236
     },
     {
-      "path": "results/task-2/selected_policy.json",
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-2\\selected_policy.json",
       "sha256": "fecd6c122d908ac78aa61436f16603f682ae5f6254f94a5bf953083388623302",
       "bytes": 758
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\replicates.csv",
+      "sha256": "268aa704d431c40e7271179abddeecde443e43c760c5c5cd23d50830572a4d50",
+      "bytes": 692472
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\scenarios.csv",
+      "sha256": "770edab36ef3f6163d1dc89de26177deff2e6fb31d0096b08f18a57de51f41be",
+      "bytes": 3704
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\adaptive_design.csv",
+      "sha256": "3c17f7342ad8f6c2803f2fd17e6a4fcb0aaf271c7db943e1b116183682a01f12",
+      "bytes": 468
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\duration_table.csv",
+      "sha256": "83e70e64df0e7d8e4523bc4034b5f9b63e06dc14ee450a1f64ddc756dcac3325",
+      "bytes": 40027
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\citywide_duration_table.csv",
+      "sha256": "7d21d27f1974d0ae10a5877d8b40c75ac5bedf4fb205b67f7f6ea64f91dc7035",
+      "bytes": 1422
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\summary.csv",
+      "sha256": "2528f2b26ea3211c4ee622c7dc86a589e50168f56b775ca49240c73da03112fe",
+      "bytes": 412794
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\paired_effects.csv",
+      "sha256": "8670b9871266ad61b71d05a033442eb1f946f1eda302449e71099559d114f3e9",
+      "bytes": 172053
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\response_surfaces.csv",
+      "sha256": "2916bc6a3720c30fa7d471149440751227981ff5c5792c56d0f0a0ce79c4bb2c",
+      "bytes": 1057212
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\paired_response_surfaces.csv",
+      "sha256": "14f3abd691ad70e03fc48b44f96f9261f32a4f01f756cf2241f2a72293889198",
+      "bytes": 476680
+    },
+    {
+      "path": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\results\\task-3\\scoped_paired_response_surfaces.csv",
+      "sha256": "c0ec56e57e1019dafec217fffb64a3865bd19fdc148e7f9a1d6f3848ce0415c8",
+      "bytes": 31519
     }
   ],
   "runtime": {
     "name": "python",
     "version": "3.13.14",
-    "platform": "Windows 11",
+    "platform": "Windows-11-10.0.26200-SP0",
     "dependencies": {
       "numpy": "2.5.1",
       "pandas": "3.0.5",
@@ -51,6 +106,7 @@
     }
   },
   "key_parameters": {
+    "scope": "task-1-task-2-task-3-final",
     "calls_per_day": 140,
     "daily_dispatch_cap": 12,
     "preparation_minutes": 3,
@@ -60,11 +116,7 @@
     "strict_center_proxy_radius_km": 0.75,
     "delay_penalty_yuan_per_minute": 200,
     "warmup_days": 30,
-    "task2_tuning_replications": 3,
-    "task2_tuning_measure_days": 7,
-    "task2_tuning_seeds": "200000-200002",
     "task2_final_replications": 30,
-    "task2_final_measure_days": 30,
     "task2_final_seeds": "400000-400029",
     "task2_main_policy": {
       "strategy": "B",
@@ -73,11 +125,46 @@
     },
     "task2_explicit_reserve": {
       "strategy": "C",
-      "reserve_vector": [0, 0, 1, 0, 0, 0],
+      "reserve_vector": [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
       "release_threshold_min": 7
-    }
+    },
+    "task3_duration_domain_hours": [
+      0.5,
+      12
+    ],
+    "task3_initial_duration_nodes_hours": [
+      0.5,
+      1,
+      2,
+      4,
+      8,
+      12
+    ],
+    "task3_adaptive_duration_nodes_hours": [
+      0.5,
+      1,
+      2,
+      4,
+      5,
+      6,
+      8,
+      10,
+      11,
+      12
+    ],
+    "task3_replications": 10,
+    "task3_seeds": "600000-600009",
+    "task3_incident_intensity_multiplier": 5,
+    "task3_surface_method": "replication_level_PCHIP_t95",
+    "task3_scoped_aggregation": "call_weighted_across_10_incident_scenarios",
+    "task3_no_cross_duration_pooling": true
   },
-  "verify_command": "python src/reproduce_all.py --project-root . --mode verify --scope q1-q2",
-  "rebuild_command": "python src/reproduce_all.py --project-root . --mode rebuild --scope q1-q2",
-  "task3_note": "Task 3 legacy discrete-node outputs are excluded from this manifest and are not staged-paper evidence."
+  "reproduce_command": "python src/reproduce_all.py --project-root . --mode verify --scope all"
 }

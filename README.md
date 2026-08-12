@@ -1,59 +1,61 @@
 # MCM
 
-Long-lived workspace for mathematical-modeling coursework, practice, and competitions.
+[English](README_EN.md)
 
-## Projects
+用于长期管理数学建模课程作业、练习与竞赛项目的仓库。
 
-- [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)
-- Current deliverable: [`A题论文(v2.3).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.3/A题论文(v2.3).docx)
+## 项目
 
-## Release Notes
+- [`2026 暑期作业`](projects/2026-summer-assignment/README.md)
+- 当前交付物：[`A题论文(v2.3).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.3/A题论文(v2.3).docx)
+
+## 发行说明
 
 ### v2.3 (2026-08-12 19:27 UTC+8)
 
-- Matched the reference paper's paragraph density: 1.5-line body text, 1.25-line references and appendix notes, and 1.15-line table cells.
-- Corrected paragraph alignment so body text remains justified while only titles, major headings, figures, and captions are centered.
-- Organized every paper release under `paper/vX.Y/`, with the Markdown source, Word paper, and conversion manifest kept together.
+- 参照样例论文调整段落疏密：正文采用1.5倍行距，参考文献和附录短说明采用1.25倍行距，表格单元格采用1.15倍行距。
+- 修正段落对齐方式：正文保持两端对齐，仅论文标题、主要标题、图片和图表标题居中。
+- 按 `paper/vX.Y/` 整理各版论文，每个版本统一保存 Markdown 源文档、Word 论文和转换清单。
 
 ### v2.2 (2026-08-12 18:45 UTC+8)
 
-- Condensed repetitive passages without changing the three tasks' models, frozen numerical results, or conclusions.
-- Repaired Markdown math notation that triggered conversion warnings and tightened the reproducibility note in the appendix.
-- Standardized Chinese typography, heading alignment, captions, table geometry, page numbers, and figure alternative text against the reference layout.
+- 精简重复表述，不改变三个任务的模型、冻结数值结果和结论。
+- 修复会触发转换警告的 Markdown 数学语法，并精简附录中的复现说明。
+- 参照样例排版统一中文字体、标题对齐、图表标题、表格尺寸、页码和图片替代文本。
 
 ### v2.1 (2026-08-12 16:41 UTC+8)
 
-- Published the first complete three-task paper, including the transport LP for vehicle allocation, conditional-NHPP dispatch simulation, and continuous-duration emergency-response analysis.
-- Included all 13 data-driven figures, eight result tables, native Word equations, references, and the reproducibility appendix.
-- Established the version naming rule: minor revisions advance `v2.x`, while a substantial model or paper rewrite advances to `v3`.
+- 发布首个包含三个任务的完整论文，涵盖车辆配置运输型线性规划、条件非齐次 Poisson 过程调度仿真和连续事故时长应急响应分析。
+- 收录13幅数据驱动图、8张结果表、Word 原生公式、参考文献和复现附录。
+- 确立版本命名规则：小幅修订递增 `v2.x`，模型或论文发生大幅重写时升级至 `v3`。
 
-## Repository Layout
+## 仓库结构
 
 ```text
 MCM/
 |-- projects/
 |   `-- 2026-summer-assignment/
-|       |-- problem-statements/       # Original assignment statements
+|       |-- problem-statements/       # 作业原题
 |       `-- solutions/
 |           `-- problem-a-ambulance-dispatch/
-|               |-- analysis/         # Modeling report and terminology
-|               |-- figures/          # Publication figures (PNG and SVG)
-|               |-- paper/vX.Y/       # One Markdown, DOCX, and manifest set per release
-|               |-- results/          # Reproducible result tables and manifest
-|               |-- src/              # Optimization, simulation, and plotting code
-|               |-- tests/            # Model and document regression tests
-|               `-- utils/            # Project-specific helpers
+|               |-- analysis/         # 建模报告与术语表
+|               |-- figures/          # 论文插图（PNG 与 SVG）
+|               |-- paper/vX.Y/       # 各版 Markdown、DOCX 与转换清单
+|               |-- results/          # 可复现结果表与清单
+|               |-- src/              # 优化、仿真与绘图代码
+|               |-- tests/            # 模型与文档回归测试
+|               `-- utils/            # 项目专用工具
 `-- shared/
-    |-- references/                    # Reusable modeling references
-    `-- templates/                     # Retained Word template and inspection tools
+    |-- references/                    # 通用数学建模参考资料
+    `-- templates/                     # 保留的 Word 模板与检查工具
 ```
 
-## Repository Conventions
+## 仓库规范
 
-- Original prompts use the suffix `-statement` and live under each assignment's `problem-statements/` directory.
-- Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
-- Every new paper release must add its version directory and update the release notes in the same commit; release timestamps use `YYYY-MM-DD HH:MM UTC+8`.
-- Reusable templates and reference material live under `shared/`.
-- Generated caches and local scratch files remain outside version history.
+- 原题文件名使用 `-statement` 后缀，并存放在对应作业的 `problem-statements/` 目录中。
+- 每份解答独立存放在 `solutions/` 下，并分别管理源码、测试、分析、结果、插图和论文。
+- 每次发布新版论文时，必须在同一提交中新增对应版本目录，并同步更新中文 `README.md` 与英文 `README_EN.md` 的发行说明；发布时间统一使用 `YYYY-MM-DD HH:MM UTC+8` 格式。
+- 通用模板和参考资料存放在 `shared/` 下。
+- 生成的缓存和本地临时文件不纳入版本控制。
 
-No license is granted by default. Problem statements and third-party reference material remain subject to their original rights.
+本仓库默认不授予任何许可。题目和第三方参考资料仍受其原有权利约束。

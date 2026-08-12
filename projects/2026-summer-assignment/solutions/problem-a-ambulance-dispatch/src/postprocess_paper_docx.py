@@ -3,12 +3,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.style import WD_STYLE_TYPE
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt, Twips
@@ -224,12 +225,179 @@ def _format_title(document) -> None:
         title_style = document.styles.add_style("Title", WD_STYLE_TYPE.PARAGRAPH)
     paragraph.style = title_style
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title = paragraph.text.replace("仿真的急救", "仿真的\n急救")
+    title = paragraph.text.replace("\n", "")
     paragraph.clear()
     run = paragraph.add_run(title)
     run.bold = True
-    run.font.size = Pt(22)
-    paragraph.paragraph_format.space_after = Pt(18)
+    _set_run_font(run, east_asia="宋体", size=Pt(16))
+    paragraph.paragraph_format.line_spacing = 1.0
+    paragraph.paragraph_format.space_after = Pt(3)
+
+
+def _set_run_font(run, *, east_asia: str, size) -> None:
+    run.font.name = "Times New Roman"
+    run.font.size = size
+    run._r.get_or_add_rPr().get_or_add_rFonts().set(qn("w:eastAsia"), east_asia)
+
+
+def _disable_paragraph_grid(paragraph) -> None:
+    p_pr = paragraph._p.get_or_add_pPr()
+    snap_to_grid = p_pr.find(qn("w:snapToGrid"))
+    if snap_to_grid is not None:
+        p_pr.remove(snap_to_grid)
+    snap_to_grid = OxmlElement("w:snapToGrid")
+    p_pr.insert_element_before(
+        snap_to_grid,
+        "w:spacing",
+        "w:ind",
+        "w:contextualSpacing",
+        "w:mirrorIndents",
+        "w:suppressOverlap",
+        "w:jc",
+        "w:textDirection",
+        "w:textAlignment",
+        "w:textboxTightWrap",
+        "w:outlineLvl",
+        "w:divId",
+        "w:cnfStyle",
+        "w:rPr",
+        "w:sectPr",
+        "w:pPrChange",
+    )
+    snap_to_grid.set(qn("w:val"), "0")
+
+
+def _set_compact_body_spacing(paragraph, line_height=Pt(16)) -> None:
+    paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+    paragraph.paragraph_format.line_spacing = line_height
+
+
+def _set_document_line_grid(document, line_pitch: int = 320) -> None:
+    """Keep Word's page grid aligned with the 16 pt body line height."""
+    for section in document.sections:
+        section_properties = section._sectPr
+        document_grid = _ensure_child(section_properties, "w:docGrid")
+        document_grid.set(qn("w:type"), "lines")
+        document_grid.set(qn("w:linePitch"), str(line_pitch))
+        document_grid.set(qn("w:charSpace"), "0")
+
+
+def _is_figure_or_table_caption(text: str) -> bool:
+    return re.match(r"^[图表]\s*\d+\s+\S", text) is not None
+
+
+def _format_document_typography(document) -> None:
+    body_style = document.styles["Body Text"]
+    for paragraph in document.paragraphs:
+        text = paragraph.text.strip()
+        style_name = paragraph.style.name if paragraph.style is not None else ""
+        if style_name == "Title":
+            continue
+
+        if style_name in {"Heading 1", "Heading 2"}:
+            _disable_paragraph_grid(paragraph)
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            paragraph.paragraph_format.first_line_indent = Pt(0)
+            paragraph.paragraph_format.line_spacing = 1.0
+            paragraph.paragraph_format.space_before = Pt(2.5)
+            paragraph.paragraph_format.space_after = Pt(2.5)
+            for run in paragraph.runs:
+                _set_run_font(run, east_asia="黑体", size=Pt(14))
+                run.bold = True
+            continue
+
+        if style_name == "Heading 3":
+            _disable_paragraph_grid(paragraph)
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            paragraph.paragraph_format.first_line_indent = Pt(0)
+            paragraph.paragraph_format.line_spacing = 1.0
+            paragraph.paragraph_format.space_before = Pt(2.5)
+            paragraph.paragraph_format.space_after = Pt(2.5)
+            for run in paragraph.runs:
+                _set_run_font(run, east_asia="宋体", size=Pt(12))
+                run.bold = True
+            continue
+
+        # Pandoc may emit dangling FirstParagraph/Compact style references.
+        # Normalize all non-heading content so renderers cannot inherit different line grids.
+        paragraph.style = body_style
+
+        if _is_figure_or_table_caption(text):
+            _disable_paragraph_grid(paragraph)
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            paragraph.paragraph_format.first_line_indent = Pt(0)
+            _set_compact_body_spacing(paragraph)
+            paragraph.paragraph_format.space_before = Pt(0)
+            paragraph.paragraph_format.space_after = Pt(0)
+            for run in paragraph.runs:
+                _set_run_font(run, east_asia="宋体", size=Pt(10.5))
+            continue
+
+        if re.match(r"^\[\d+\]", text):
+            _disable_paragraph_grid(paragraph)
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            paragraph.paragraph_format.left_indent = Pt(21)
+            paragraph.paragraph_format.first_line_indent = Pt(-21)
+            paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.AT_LEAST
+            paragraph.paragraph_format.line_spacing = Pt(13)
+            paragraph.paragraph_format.space_before = Pt(0)
+            paragraph.paragraph_format.space_after = Pt(0)
+            for run in paragraph.runs:
+                _set_run_font(run, east_asia="宋体", size=Pt(10.5))
+            continue
+
+        if text.startswith("三问权威结果分别位于"):
+            _disable_paragraph_grid(paragraph)
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+            paragraph.paragraph_format.first_line_indent = Pt(21)
+            paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.AT_LEAST
+            paragraph.paragraph_format.line_spacing = Pt(13)
+            paragraph.paragraph_format.space_before = Pt(0)
+            paragraph.paragraph_format.space_after = Pt(0)
+            for run in paragraph.runs:
+                _set_run_font(run, east_asia="宋体", size=Pt(10.5))
+            continue
+
+        if paragraph._p.findall(".//" + qn("w:drawing")):
+            _disable_paragraph_grid(paragraph)
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            paragraph.paragraph_format.first_line_indent = Pt(0)
+            paragraph.paragraph_format.space_before = Pt(0)
+            paragraph.paragraph_format.space_after = Pt(0)
+            continue
+
+        if not text:
+            if paragraph._p.findall(".//" + qn("m:oMath")):
+                _disable_paragraph_grid(paragraph)
+                paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.AT_LEAST
+                paragraph.paragraph_format.line_spacing = Pt(16)
+                paragraph.paragraph_format.space_before = Pt(0)
+                paragraph.paragraph_format.space_after = Pt(0)
+            continue
+
+        _disable_paragraph_grid(paragraph)
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        _set_compact_body_spacing(paragraph)
+        paragraph.paragraph_format.space_before = Pt(0)
+        paragraph.paragraph_format.space_after = Pt(0)
+        p_pr = paragraph._p.pPr
+        is_list = p_pr is not None and p_pr.numPr is not None
+        paragraph.paragraph_format.first_line_indent = None if is_list else Pt(24)
+        if text.startswith("关键词"):
+            paragraph.paragraph_format.first_line_indent = Pt(0)
+        for run in paragraph.runs:
+            _set_run_font(run, east_asia="宋体", size=Pt(12))
+
+    for table in document.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    _disable_paragraph_grid(paragraph)
+                    _set_compact_body_spacing(paragraph)
+                    paragraph.paragraph_format.space_before = Pt(0)
+                    paragraph.paragraph_format.space_after = Pt(0)
+                    for run in paragraph.runs:
+                        _set_run_font(run, east_asia="宋体", size=Pt(10.5))
 
 
 def _set_body_image_alt_text(document) -> int:
@@ -302,6 +470,8 @@ def _set_page_field(footer) -> None:
 def postprocess_docx(input_path: Path, output_path: Path) -> None:
     document = Document(input_path)
     _format_title(document)
+    _set_document_line_grid(document)
+    _format_document_typography(document)
     _set_body_image_alt_text(document)
     _keep_abstract_on_first_page(document)
     _remove_style_numbering(document.styles["Heading 1"])
@@ -342,7 +512,7 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
                         else WD_ALIGN_PARAGRAPH.LEFT
                     )
                     for run in paragraph.runs:
-                        run.font.size = Pt(9)
+                        _set_run_font(run, east_asia="宋体", size=Pt(10.5))
                         if row_index == 0:
                             run.bold = True
 

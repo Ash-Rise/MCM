@@ -1,15 +1,19 @@
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
 from docx.oxml.ns import qn
+from docx.shared import Pt
 from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DOCX_PATH = PROJECT_ROOT / "paper" / "A题论文(v2.1).docx"
+MARKDOWN_PATH = PROJECT_ROOT / "paper" / "A题论文(v2.2).md"
 POSTPROCESS_PATH = PROJECT_ROOT / "src" / "postprocess_paper_docx.py"
 
 
@@ -34,6 +38,104 @@ def _page_field_count(footer):
     return len(footer._element.findall(".//" + qn("w:instrText")))
 
 
+def _east_asia_font(run):
+    return run._r.get_or_add_rPr().get_or_add_rFonts().get(qn("w:eastAsia"))
+
+
+def test_paper_typography_matches_reference_document():
+    module = _load_postprocessor()
+    document = Document()
+    heading = document.add_heading("1 问题重述", level=2)
+    body = document.add_paragraph("正文段落")
+    caption = document.add_paragraph("图1 测试图")
+    table = document.add_table(rows=1, cols=1)
+    table.cell(0, 0).text = "表格文字"
+
+    module._format_document_typography(document)
+
+    assert heading.alignment == WD_ALIGN_PARAGRAPH.CENTER
+    assert heading.runs[0].font.size == Pt(14)
+    assert heading.runs[0].bold is True
+    assert _east_asia_font(heading.runs[0]) == "黑体"
+    assert body.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY
+    assert body.style.name == "Body Text"
+    assert body.paragraph_format.first_line_indent == Pt(24)
+    assert body.paragraph_format.line_spacing == Pt(16)
+    assert body.paragraph_format.line_spacing_rule == WD_LINE_SPACING.EXACTLY
+    assert body._p.pPr.find(qn("w:snapToGrid")).get(qn("w:val")) == "0"
+    assert body.runs[0].font.size == Pt(12)
+    assert _east_asia_font(body.runs[0]) == "宋体"
+    assert caption.alignment == WD_ALIGN_PARAGRAPH.CENTER
+    assert caption.runs[0].font.size == Pt(10.5)
+    assert table.cell(0, 0).paragraphs[0].runs[0].font.size == Pt(10.5)
+
+
+def test_typography_normalizes_dangling_pandoc_body_styles():
+    module = _load_postprocessor()
+    document = Document()
+    first = document.add_paragraph("标题后的首段")
+    first._p.get_or_add_pPr().get_or_add_pStyle().val = "FirstParagraph"
+    listed = document.add_paragraph("编号正文")
+    listed_p_pr = listed._p.get_or_add_pPr()
+    listed_p_pr.get_or_add_pStyle().val = "Compact"
+    listed_p_pr.get_or_add_numPr().get_or_add_numId().val = 1
+
+    module._format_document_typography(document)
+
+    assert first.style.name == "Body Text"
+    assert listed.style.name == "Body Text"
+    assert listed._p.pPr.numPr.numId.val == 1
+    for paragraph in (first, listed):
+        assert paragraph.paragraph_format.line_spacing == Pt(16)
+        assert paragraph.paragraph_format.line_spacing_rule == WD_LINE_SPACING.EXACTLY
+
+
+def test_caption_detection_does_not_center_narrative_sentences():
+    module = _load_postprocessor()
+    document = Document()
+    caption = document.add_paragraph("表3 优化后的服务分配")
+    narrative = document.add_paragraph("表3给出非零服务分配。")
+
+    module._format_document_typography(document)
+
+    assert caption.alignment == WD_ALIGN_PARAGRAPH.CENTER
+    assert narrative.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY
+
+
+def test_document_grid_matches_exact_body_line_height():
+    module = _load_postprocessor()
+    document = Document()
+
+    module._set_document_line_grid(document)
+
+    document_grid = document.sections[0]._sectPr.find(qn("w:docGrid"))
+    assert document_grid is not None
+    assert document_grid.get(qn("w:type")) == "lines"
+    assert document_grid.get(qn("w:linePitch")) == "320"
+    assert document_grid.get(qn("w:charSpace")) == "0"
+
+
+def test_disable_grid_places_snap_before_spacing_and_alignment():
+    module = _load_postprocessor()
+    document = Document()
+    paragraph = document.add_paragraph("正文")
+    paragraph.paragraph_format.space_after = Pt(6)
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+
+    module._disable_paragraph_grid(paragraph)
+
+    child_tags = [child.tag for child in paragraph._p.pPr]
+    snap_index = child_tags.index(qn("w:snapToGrid"))
+    assert snap_index < child_tags.index(qn("w:spacing"))
+    assert snap_index < child_tags.index(qn("w:jc"))
+
+
+def test_markdown_math_avoids_bare_star_superscripts():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+
+    assert not re.search(r"\^\*", markdown)
+
+
 def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp_path):
     module = _load_postprocessor()
     output = tmp_path / "complete-paper.docx"
@@ -47,6 +149,22 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
     assert _page_field_count(document.sections[0].first_page_footer) == 1
     assert document.sections[0].footer.paragraphs[0].alignment == 1
     assert document.sections[0].first_page_footer.paragraphs[0].alignment == 1
+    document_grid = document.sections[0]._sectPr.find(qn("w:docGrid"))
+    assert document_grid is not None
+    assert document_grid.get(qn("w:linePitch")) == "320"
+
+    for paragraph in document.paragraphs:
+        if paragraph.alignment != WD_ALIGN_PARAGRAPH.CENTER:
+            continue
+        text = paragraph.text.strip()
+        style_name = paragraph.style.name if paragraph.style is not None else ""
+        is_expected_center = (
+            style_name in {"Title", "Heading 1", "Heading 2"}
+            or module._is_figure_or_table_caption(text)
+            or bool(paragraph._p.findall(".//" + qn("w:drawing")))
+            or (not text and bool(paragraph._p.findall(".//" + qn("m:oMath"))))
+        )
+        assert is_expected_center, f"Unexpected centered paragraph: {text[:80]}"
 
     assert len(document.tables) == len(module.COMPLETE_TABLE_WIDTH_WEIGHTS)
     assert document.tables[0].cell(8, 2).text == "1/h，次/h"

@@ -7,9 +7,16 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 ## Projects
 
 - [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)
-- Current deliverable: [`A题论文(v2.3).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.3/A题论文(v2.3).docx)
+- Current deliverable: [`A题论文(v2.4).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4).docx)
 
 ## Release Notes
+
+### v2.4 (2026-08-12 23:21 UTC+8)
+
+- Shortened the paper title to fit on one line and standardized top-level body headings to Chinese numerals from “一、” through “八、”.
+- Revised the problem analysis, model boundaries, and evaluation into formal academic prose without changing models, data, metrics, or numerical conclusions.
+- Converted all four in-text reference markers to superscript while retaining normal numbering in the reference list.
+- Added implementation-aligned three-line algorithm-design tables for Tasks 1, 2, and 3.
 
 ### v2.3 (2026-08-12 19:27 UTC+8)
 

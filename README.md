@@ -7,9 +7,16 @@
 ## 项目
 
 - [`2026 暑期作业`](projects/2026-summer-assignment/README.md)
-- 当前交付物：[`A题论文(v2.3).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.3/A题论文(v2.3).docx)
+- 当前交付物：[`A题论文(v2.4).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4).docx)
 
 ## 发行说明
+
+### v2.4 (2026-08-12 23:21 UTC+8)
+
+- 将论文标题压缩为单行，并把正文一级标题统一为“一、”至“八、”的中文序号格式。
+- 学术化修订问题分析、模型边界和评价表述，不改变模型、数据、指标或数值结论。
+- 将4处正文文献序号改为上标，并保留参考文献表编号的常规格式。
+- 为任务一、任务二和任务三分别增加与实际实现一致的“算法设计”三线表。
 
 ### v2.3 (2026-08-12 19:27 UTC+8)
 

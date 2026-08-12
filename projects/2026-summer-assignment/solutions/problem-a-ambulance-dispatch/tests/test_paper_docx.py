@@ -12,8 +12,8 @@ from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DOCX_PATH = PROJECT_ROOT / "paper" / "v2.1" / "A题论文(v2.1).docx"
-MARKDOWN_PATH = PROJECT_ROOT / "paper" / "v2.3" / "A题论文(v2.3).md"
+DOCX_PATH = PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).docx"
+MARKDOWN_PATH = PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).md"
 POSTPROCESS_PATH = PROJECT_ROOT / "src" / "postprocess_paper_docx.py"
 
 
@@ -138,6 +138,41 @@ def test_markdown_math_avoids_bare_star_superscripts():
     assert not re.search(r"\^\*", markdown)
 
 
+def test_markdown_uses_chinese_top_level_headings_and_superscript_citations():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+    expected_headings = (
+        "## 一、问题重述",
+        "## 二、问题分析",
+        "## 三、模型假设",
+        "## 四、符号说明",
+        "## 五、任务一：容量约束站点与服务分配",
+        "## 六、任务二：连续多日随机呼叫与车辆调度",
+        "## 七、任务三：连续事故时长下的动态应急响应",
+        "## 八、模型评价",
+    )
+
+    for heading in expected_headings:
+        assert heading in markdown
+    assert not re.search(r"^## [1-8] ", markdown, flags=re.MULTILINE)
+    assert len(re.findall(r"\^\\\[[1-4]\\\]\^", markdown)) == 4
+    body, references = markdown.split("## 参考文献", maxsplit=1)
+    assert not re.search(r"(?<!\\)\[[1-4]\]", body)
+    assert all(f"[{index}]" in references for index in range(1, 5))
+
+
+def test_markdown_has_algorithm_design_for_all_three_tasks():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+
+    assert markdown.count("算法设计") == 3
+    assert "### 5.5 算法设计" in markdown
+    assert "### 6.7 算法设计" in markdown
+    assert "### 7.5 算法设计" in markdown
+    assert markdown.count("| Step ") == 20
+    assert "表2 任务一算法步骤" in markdown
+    assert "表5 任务二算法步骤" in markdown
+    assert "表9 任务三算法步骤" in markdown
+
+
 def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp_path):
     module = _load_postprocessor()
     output = tmp_path / "complete-paper.docx"
@@ -191,19 +226,19 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
 def test_postprocessor_selects_complete_paper_table_geometry():
     module = _load_postprocessor()
 
-    weights = module.table_width_weights_for_count(8)
+    weights = module.table_width_weights_for_count(11)
 
-    assert len(weights) == 8
-    assert tuple(len(item) for item in weights) == (3, 6, 3, 4, 4, 5, 5, 5)
+    assert len(weights) == 11
+    assert tuple(len(item) for item in weights) == (3, 2, 6, 3, 2, 4, 4, 5, 2, 5, 5)
 
 
 def test_postprocessor_rejects_unknown_table_count():
     module = _load_postprocessor()
 
     try:
-        module.table_width_weights_for_count(7)
+        module.table_width_weights_for_count(10)
     except ValueError as error:
-        assert "8 tables" in str(error)
+        assert "11 tables" in str(error)
     else:
         raise AssertionError("Unknown paper table count was accepted")
 
@@ -256,7 +291,7 @@ def test_postprocessor_keeps_abstract_on_first_page():
     module = _load_postprocessor()
     document = Document()
     document.add_paragraph("摘要内容")
-    body_heading = document.add_paragraph("1 问题重述")
+    body_heading = document.add_paragraph("一、问题重述")
 
     module._keep_abstract_on_first_page(document)
 

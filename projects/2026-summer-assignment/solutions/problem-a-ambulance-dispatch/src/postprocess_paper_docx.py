@@ -17,11 +17,14 @@ from docx.shared import Pt, Twips
 
 COMPLETE_TABLE_WIDTH_WEIGHTS = (
     (1.2, 4.4, 1.2),
+    (1.8, 5.2),
     (0.9, 0.9, 1.2, 1.5, 1.5, 1.5),
     (1.0, 1.0, 1.0),
+    (1.8, 5.2),
     (2.6, 1.4, 1.4, 1.4),
     (1.2, 1.7, 1.8, 3.1),
     (0.8, 1.0, 1.4, 1.8, 1.0),
+    (1.8, 5.2),
     (0.8, 1.0, 1.0, 1.0, 2.0),
     (0.7, 1.0, 1.6, 1.0, 1.6),
 )
@@ -30,7 +33,7 @@ COMPLETE_TABLE_WIDTH_WEIGHTS = (
 def table_width_weights_for_count(table_count: int) -> tuple[tuple[float, ...], ...]:
     if table_count == len(COMPLETE_TABLE_WIDTH_WEIGHTS):
         return COMPLETE_TABLE_WIDTH_WEIGHTS
-    raise ValueError(f"Expected 8 tables, found {table_count}")
+    raise ValueError(f"Expected 11 tables, found {table_count}")
 
 
 def sha256_file(path: Path) -> str:
@@ -422,10 +425,10 @@ def _set_body_image_alt_text(document) -> int:
 
 def _keep_abstract_on_first_page(document) -> None:
     for paragraph in document.paragraphs:
-        if paragraph.text.strip().startswith("1 问题重述"):
+        if re.match(r"^(?:1\s+|一、)问题重述", paragraph.text.strip()):
             paragraph.paragraph_format.page_break_before = True
             return
-    raise ValueError("Could not find the first body heading '1 问题重述'")
+    raise ValueError("Could not find the first body heading for 问题重述")
 
 
 def _set_page_field(footer) -> None:

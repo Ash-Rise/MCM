@@ -1,6 +1,6 @@
 # MCM
 
-[English](README_EN.md)
+[English Version](README_EN.md)
 
 用于长期管理数学建模课程作业、练习与竞赛项目的仓库。
 

@@ -1,0 +1,145 @@
+profile_version: 1.0
+name: ash-rise-chinese-modeling-paper
+priority:
+  - current_official_rules
+  - user_provided_current_template
+  - user_approved_reference_paper
+  - this_profile
+
+page:
+  size: A4
+  width_cm: 21.0
+  height_cm: 29.7
+  margins_cm:
+    top: 2.5
+    bottom: 2.5
+    left: 2.5
+    right: 2.5
+  document_grid_line_pitch_twips: 360
+
+typography:
+  latin_font: Times New Roman
+  title:
+    east_asia_font: 宋体
+    size_pt: 15
+    bold: true
+    alignment: center
+    line_spacing_multiple: 1.0
+    space_after_pt: 3
+    prefer_single_line: true
+  heading_level_1:
+    numbering: chinese_comma
+    example: 一、问题分析
+    east_asia_font: 黑体
+    size_pt: 14
+    bold: true
+    alignment: center
+    line_spacing_multiple: 1.0
+    space_before_pt: 2.5
+    space_after_pt: 2.5
+  heading_level_2_and_3:
+    numbering: decimal
+    example: 2.1 任务一分析
+    east_asia_font: 宋体
+    size_pt: 12
+    bold: true
+    alignment: left
+    line_spacing_multiple: 1.0
+    space_before_pt: 2.5
+    space_after_pt: 2.5
+  body:
+    east_asia_font: 宋体
+    size_pt: 12
+    alignment: justify
+    first_line_indent_pt: 24
+    line_spacing_multiple: 1.5
+    space_before_pt: 0
+    space_after_pt: 0
+  caption:
+    east_asia_font: 宋体
+    size_pt: 10.5
+    alignment: center
+    line_spacing_multiple: 1.5
+    space_before_pt: 0
+    space_after_pt: 0
+  reference_and_short_appendix:
+    east_asia_font: 宋体
+    size_pt: 10.5
+    line_spacing_multiple: 1.25
+    hanging_indent_pt: 21
+  table_text:
+    east_asia_font: 宋体
+    size_pt: 10
+    line_spacing_multiple: 1.15
+    vertical_alignment: center
+
+equations:
+  format: native_omml
+  display_alignment: center
+  citation_markers_superscript: true
+  compound_scripts_single_run: true
+  avoid_numeric_only_display: true
+  markdown_safe_star: '^{\ast}'
+  standard_modulo: '%'
+  standard_exponential: '\exp(·) or e^{·}'
+
+tables:
+  style: three_line
+  top_border_ooxml_size: 10
+  header_bottom_border_ooxml_size: 4
+  bottom_border_ooxml_size: 10
+  inside_horizontal: nil
+  inside_vertical: nil
+  left_border: nil
+  right_border: nil
+  remove_row_tblPrEx_borders: true
+  prefer_single_line_short_fields: true
+  layout_priority:
+    - semantic_column_widths
+    - compact_cell_margins
+    - concise_labels
+    - font_reduction_last
+  algorithm_table:
+    header_alignment: center
+    body_column_1_alignment: left
+    body_column_2_alignment: left
+
+figures:
+  vector_format: svg
+  raster_format: png
+  raster_dpi_min: 300
+  color_palette: colorblind_safe
+  redundant_encoding: true
+  grayscale_preview: true
+  in_paper_label_size_pt: 7-9
+  minimum_label_size_pt: 6
+  require_figure_contract: true
+  avoid_redundant_table_and_figure: true
+  no_jpeg_for_quantitative_charts: true
+
+workflow:
+  default_delivery: docx
+  latex_only_when_explicitly_requested: true
+  decision_log_required: true
+  model_gate: M1
+  minimum_run_gate: P1
+  minimum_implementation_gate: P1
+  figure_and_implementation_gate: P2
+  evidence_outline_gate: W1
+  final_review_gate: W2
+  final_review_only_after_user_changes_closed: true
+  parameter_study_timebox_minutes: 20
+  hash_policy: final_freeze_only
+  pdf_role: temporary_visual_qa_only
+
+release:
+  paper_directory_pattern: paper/vX.Y
+  required_artifacts:
+    - markdown
+    - docx
+    - conversion_manifest
+  bilingual_readme: true
+  timestamp_format: YYYY-MM-DD HH:mm UTC+8
+  attach_latest_docx_to_release: true
+  explicit_staging_only: true
+  author_identity: user_github_identity

@@ -55,6 +55,7 @@ MCM/
 |               |-- paper/vX.Y/       # One Markdown, DOCX, and manifest set per release
 |               |-- results/          # Reproducible result tables and manifest
 |               |-- src/              # Optimization, simulation, and plotting code
+|               |-- templates/        # Personalized workflow, paper profile, and reusable prompts
 |               |-- tests/            # Model and document regression tests
 |               `-- utils/            # Project-specific helpers
 `-- shared/
@@ -66,6 +67,7 @@ MCM/
 
 - Original prompts use the suffix `-statement` and live under each assignment's `problem-statements/` directory.
 - Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
+- Retrospectives and personalized workflows live under each solution's `analysis/` and `templates/` directories for future project kickoff and context recovery.
 - Every new paper release must add its version directory and update the release notes in both the Chinese `README.md` and English `README_EN.md` in the same commit; release timestamps use `YYYY-MM-DD HH:MM UTC+8`.
 - Reusable templates and reference material live under `shared/`.
 - Generated caches and local scratch files remain outside version history.

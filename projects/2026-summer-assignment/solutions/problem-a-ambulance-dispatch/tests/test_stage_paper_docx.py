@@ -1,9 +1,11 @@
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
 from docx import Document
 from docx.oxml.ns import qn
+from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -62,3 +64,78 @@ def test_stage_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
                     assert paragraph._p.pPr.find(qn("w:pStyle")) is None
+
+
+def test_postprocessor_selects_complete_paper_table_geometry():
+    module = _load_postprocessor()
+
+    weights = module.table_width_weights_for_count(8)
+
+    assert len(weights) == 8
+    assert tuple(len(item) for item in weights) == (3, 6, 3, 4, 4, 5, 5, 5)
+
+
+def test_postprocessor_rejects_unknown_table_count():
+    module = _load_postprocessor()
+
+    try:
+        module.table_width_weights_for_count(7)
+    except ValueError as error:
+        assert "5 or 8 tables" in str(error)
+    else:
+        raise AssertionError("Unknown paper table count was accepted")
+
+
+def test_rebind_conversion_manifest_tracks_postprocessed_output(tmp_path):
+    module = _load_postprocessor()
+    output = tmp_path / "complete.docx"
+    output.write_bytes(b"postprocessed-docx")
+    manifest_path = tmp_path / "intermediate.conversion.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "output": str(tmp_path / "intermediate.docx"),
+                "output_sha256": "stale",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    final_manifest = module.rebind_conversion_manifest(manifest_path, output)
+
+    assert final_manifest == output.with_suffix(".conversion.json")
+    data = json.loads(final_manifest.read_text(encoding="utf-8"))
+    assert data["output"] == str(output.resolve())
+    assert data["output_sha256"] == module.sha256_file(output)
+    assert data["postprocess"]["tool"] == "src/postprocess_paper_docx.py"
+
+
+def test_body_image_alt_text_uses_following_figure_caption(tmp_path):
+    module = _load_postprocessor()
+    image_path = tmp_path / "figure.png"
+    Image.new("RGB", (4, 4), "white").save(image_path)
+    document = Document()
+    document.add_picture(str(image_path))
+    document.add_paragraph("图1 测试图像")
+    document.add_picture(str(image_path))
+    document.add_paragraph("普通段落")
+
+    assert module._set_body_image_alt_text(document) == 1
+    properties = document.paragraphs[0]._p.find(".//" + qn("wp:docPr"))
+    assert properties is not None
+    assert properties.get("descr") == "图1 测试图像"
+    assert properties.get("title") == "图1"
+    untouched = document.paragraphs[2]._p.find(".//" + qn("wp:docPr"))
+    assert untouched is not None
+    assert untouched.get("descr") is None
+
+
+def test_postprocessor_keeps_abstract_on_first_page():
+    module = _load_postprocessor()
+    document = Document()
+    document.add_paragraph("摘要内容")
+    body_heading = document.add_paragraph("1 问题重述")
+
+    module._keep_abstract_on_first_page(document)
+
+    assert body_heading.paragraph_format.page_break_before is True

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 from pathlib import Path
 
 from docx import Document
@@ -12,13 +14,56 @@ from docx.oxml.ns import qn
 from docx.shared import Pt, Twips
 
 
-TABLE_WIDTH_WEIGHTS = (
+STAGE_TABLE_WIDTH_WEIGHTS = (
     (1.2, 4.4, 1.2),
     (0.9, 0.9, 1.2, 1.5, 1.5, 1.5),
     (1.0, 1.0, 1.0),
     (2.6, 1.4, 1.4, 1.4),
     (1.2, 1.7, 1.8, 3.1),
 )
+COMPLETE_TABLE_WIDTH_WEIGHTS = STAGE_TABLE_WIDTH_WEIGHTS + (
+    (0.8, 1.0, 1.4, 1.8, 1.0),
+    (0.8, 1.0, 1.0, 1.0, 2.0),
+    (0.7, 1.0, 1.6, 1.0, 1.6),
+)
+# Kept for the staged-paper regression test and external callers.
+TABLE_WIDTH_WEIGHTS = STAGE_TABLE_WIDTH_WEIGHTS
+
+
+def table_width_weights_for_count(table_count: int) -> tuple[tuple[float, ...], ...]:
+    if table_count == len(STAGE_TABLE_WIDTH_WEIGHTS):
+        return STAGE_TABLE_WIDTH_WEIGHTS
+    if table_count == len(COMPLETE_TABLE_WIDTH_WEIGHTS):
+        return COMPLETE_TABLE_WIDTH_WEIGHTS
+    raise ValueError(f"Expected 5 or 8 tables, found {table_count}")
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def rebind_conversion_manifest(manifest_path: Path, output_path: Path) -> Path:
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["output"] = str(output_path.resolve())
+    manifest["output_sha256"] = sha256_file(output_path)
+    manifest["postprocess"] = {
+        "tool": "src/postprocess_paper_docx.py",
+        "source_manifest": manifest_path.name,
+        "reason": (
+            "Removed template numbering, applied exact table geometry, installed "
+            "centered PAGE fields, kept the abstract on its own page, and added "
+            "caption-derived alt text to body figures without changing paper content."
+        ),
+    }
+    output_manifest = output_path.with_suffix(".conversion.json")
+    output_manifest.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return output_manifest
 
 
 def _ensure_child(parent, tag: str):
@@ -193,6 +238,38 @@ def _format_title(document) -> None:
     paragraph.paragraph_format.space_after = Pt(18)
 
 
+def _set_body_image_alt_text(document) -> int:
+    paragraphs = document.paragraphs
+    updated = 0
+    for index, paragraph in enumerate(paragraphs):
+        drawing_properties = paragraph._p.findall(".//" + qn("wp:docPr"))
+        if not drawing_properties:
+            continue
+        caption = next(
+            (
+                candidate.text.strip()
+                for candidate in paragraphs[index + 1 :]
+                if candidate.text.strip()
+            ),
+            "",
+        )
+        if not caption.startswith("图"):
+            continue
+        for properties in drawing_properties:
+            properties.set("descr", caption)
+            properties.set("title", caption.split(maxsplit=1)[0])
+            updated += 1
+    return updated
+
+
+def _keep_abstract_on_first_page(document) -> None:
+    for paragraph in document.paragraphs:
+        if paragraph.text.strip().startswith("1 问题重述"):
+            paragraph.paragraph_format.page_break_before = True
+            return
+    raise ValueError("Could not find the first body heading '1 问题重述'")
+
+
 def _set_page_field(footer) -> None:
     element = footer._element
     for child in list(element):
@@ -231,6 +308,8 @@ def _set_page_field(footer) -> None:
 def postprocess_docx(input_path: Path, output_path: Path) -> None:
     document = Document(input_path)
     _format_title(document)
+    _set_body_image_alt_text(document)
+    _keep_abstract_on_first_page(document)
     _remove_style_numbering(document.styles["Heading 1"])
     _remove_style_numbering(document.styles["Heading 2"])
     _remove_style_numbering(document.styles["Heading 3"])
@@ -238,10 +317,7 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
         _set_page_field(section.footer)
         _set_page_field(section.first_page_footer)
 
-    if len(document.tables) != len(TABLE_WIDTH_WEIGHTS):
-        raise ValueError(
-            f"Expected {len(TABLE_WIDTH_WEIGHTS)} tables, found {len(document.tables)}"
-        )
+    table_width_weights = table_width_weights_for_count(len(document.tables))
     section = document.sections[0]
     content_width = int(
         round(
@@ -254,7 +330,7 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
         )
     )
     table_width = content_width - 200
-    for table, weights in zip(document.tables, TABLE_WIDTH_WEIGHTS, strict=True):
+    for table, weights in zip(document.tables, table_width_weights, strict=True):
         _set_table_geometry(table, weights, table_width)
         _set_table_borders(table)
         for row_index, row in enumerate(table.rows):
@@ -284,8 +360,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Postprocess the staged paper DOCX")
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--manifest", type=Path)
     args = parser.parse_args()
     postprocess_docx(args.input, args.output)
+    if args.manifest is not None:
+        rebind_conversion_manifest(args.manifest, args.output)
 
 
 if __name__ == "__main__":

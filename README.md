@@ -7,9 +7,9 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 - [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)
 - Current deliverable: [`A题论文(v2.3).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.3/A题论文(v2.3).docx)
 
-## Paper Changelog
+## Release Notes
 
-### v2.3 (2026-08-12)
+### v2.3 (2026-08-12 19:27 CST)
 
 - Matched the reference paper's paragraph density: 1.5-line body text, 1.25-line references and appendix notes, and 1.15-line table cells.
 - Corrected paragraph alignment so body text remains justified while only titles, major headings, figures, and captions are centered.
@@ -52,7 +52,7 @@ MCM/
 
 - Original prompts use the suffix `-statement` and live under each assignment's `problem-statements/` directory.
 - Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
-- Every new paper release must add its version directory and update the paper changelog in the same commit.
+- Every new paper release must add its version directory and update the release notes in the same commit.
 - Reusable templates and reference material live under `shared/`.
 - Generated caches and local scratch files remain outside version history.
 

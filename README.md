@@ -15,13 +15,13 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 - Corrected paragraph alignment so body text remains justified while only titles, major headings, figures, and captions are centered.
 - Organized every paper release under `paper/vX.Y/`, with the Markdown source, Word paper, and conversion manifest kept together.
 
-### v2.2 (2026-08-12)
+### v2.2 (2026-08-12 18:45 CST)
 
 - Condensed repetitive passages without changing the three tasks' models, frozen numerical results, or conclusions.
 - Repaired Markdown math notation that triggered conversion warnings and tightened the reproducibility note in the appendix.
 - Standardized Chinese typography, heading alignment, captions, table geometry, page numbers, and figure alternative text against the reference layout.
 
-### v2.1 (2026-08-12)
+### v2.1 (2026-08-12 16:41 CST)
 
 - Published the first complete three-task paper, including the transport LP for vehicle allocation, conditional-NHPP dispatch simulation, and continuous-duration emergency-response analysis.
 - Included all 13 data-driven figures, eight result tables, native Word equations, references, and the reproducibility appendix.
@@ -52,7 +52,7 @@ MCM/
 
 - Original prompts use the suffix `-statement` and live under each assignment's `problem-statements/` directory.
 - Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
-- Every new paper release must add its version directory and update the release notes in the same commit.
+- Every new paper release must add its version directory and update the release notes in the same commit; release timestamps use `YYYY-MM-DD HH:MM CST`.
 - Reusable templates and reference material live under `shared/`.
 - Generated caches and local scratch files remain outside version history.
 

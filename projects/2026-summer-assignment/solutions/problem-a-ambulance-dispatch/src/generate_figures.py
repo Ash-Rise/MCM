@@ -237,19 +237,24 @@ def process_q1_distance(data, result: dict[str, object], figures: Path) -> None:
 def process_q1_heatmap(data, result: dict[str, object], figures: Path) -> None:
     assignment = np.asarray(result["assignment"])
     fig, ax = plt.subplots(figsize=(6.3, 4.2))
-    image = vector_heatmap(ax, assignment, "Blues", 0.0, float(assignment.max()))
-    for i in range(assignment.shape[0]):
-        for j in range(assignment.shape[1]):
-            if assignment[i, j] > 0:
-                ax.text(j, i, f"{assignment[i, j]:.0f}", ha="center", va="center", fontsize=7,
-                        color="white" if assignment[i, j] > assignment.max() * 0.45 else "black")
-    ax.set_xticks(range(len(data.site_ids)), data.site_ids)
-    ax.set_yticks(range(len(data.zone_ids)), [f"R{i}" for i in data.zone_ids])
-    ax.set_xlabel("站点")
+    y = np.arange(len(data.zone_ids))
+    left = np.zeros(len(data.zone_ids))
+    for j, site_id in enumerate(data.site_ids):
+        values = assignment[:, j]
+        ax.barh(y, values, left=left, color=SITE_COLORS[j], label=site_id, height=0.66)
+        for i, amount in enumerate(values):
+            if amount <= 1e-8:
+                continue
+            ax.text(left[i] + amount / 2, i, f"{amount:.0f}", ha="center", va="center",
+                    fontsize=7, color="white" if amount >= 5 else "black")
+        left += values
+    ax.set_yticks(y, [f"R{i}" for i in data.zone_ids])
+    ax.set_xlabel("日分配呼叫量（次/日）")
     ax.set_ylabel("需求区")
-    colorbar = fig.colorbar(image, ax=ax, shrink=0.86)
-    keep_colorbar_vector(colorbar)
-    colorbar.set_label("日分配呼叫量（次）")
+    ax.invert_yaxis()
+    ax.set_xlim(0, max(data.demand) * 1.08)
+    ax.legend(title="服务站点", frameon=False, ncols=6, loc="lower center",
+              bbox_to_anchor=(0.5, 1.01), columnspacing=0.8, handlelength=1.2)
     save(fig, figures, "process_q1_assignment_heatmap", (6.3, 4.2))
 
 
@@ -384,7 +389,7 @@ def process_q2_c_screen(full: Path, figures: Path) -> None:
     ax.scatter(frame["difference"], 100 * frame["coverage"], s=14, c=np.where(frame["difference"] <= 0, GREEN, GRAY), alpha=0.68)
     ax.axvline(0, color=ORANGE, linestyle="--", linewidth=0.9)
     ax.set_xlabel("相对策略A的平均响应时间差（min）")
-    ax.set_ylabel("严格4分钟率（%）")
+    ax.set_ylabel("4分钟内到达率（%）")
     save(fig, figures, "process_q2_c_screen", (6.3, 3.7))
 
 
@@ -408,7 +413,7 @@ def result_q2_summary(full: Path, figures: Path) -> None:
     save(fig, figures, "result_q2_mean_response", (6.3, 2.7))
 
     metrics = ["strict_4min_rate", "p95_response_min", "mean_wait_min", "regional_mean_gap_min"]
-    labels = ["严格4分钟率", "P95响应时间", "平均等待时间", "区域均值极差"]
+    labels = ["4分钟内到达率", "P95响应时间", "平均等待时间", "区域均值极差"]
     means = frame[frame["metric"].isin(metrics)].pivot(index="candidate", columns="metric", values="mean")
     if "A" in means.index and "B_beta4_delta2" in means.index:
         baseline = means.loc["A", metrics].to_numpy(dtype=float)
@@ -426,24 +431,44 @@ def result_q2_summary(full: Path, figures: Path) -> None:
         ax.invert_yaxis()
         save(fig, figures, "result_q2_multi_metric", (6.3, 3.2))
 
-    paired = full / "final_paired_response.csv"
-    if paired.exists() and paired.stat().st_size > 5:
-        p = pd.read_csv(paired)
-        fig, ax = plt.subplots(figsize=(6.3, 2.4))
-        y = np.arange(len(p))
-        ax.errorbar(
-            p["mean_difference_min"], y,
-            xerr=np.vstack([p["mean_difference_min"] - p["ci95_low"], p["ci95_high"] - p["mean_difference_min"]]),
-            fmt="o", color=PURPLE, capsize=3,
-        )
-        ax.axvline(0, color=GRAY, linestyle="--", linewidth=0.9)
-        comparison_labels = {
-            "B_beta4_delta2-A": "策略B - 策略A",
-            "C_r001000_tau7-A": "策略C - 策略A",
-        }
-        ax.set_yticks(y, [comparison_labels.get(value, value) for value in p["comparison"]])
-        ax.set_xlabel("相对策略A的成对平均响应差及95%置信区间（min）")
-        save(fig, figures, "result_q2_paired_difference", (6.3, 2.4))
+    replicate_path = full / "final_replicates_W030.csv"
+    if replicate_path.exists():
+        replicates = pd.read_csv(replicate_path)
+        metric_specs = [
+            ("mean_response_min", "平均响应", "min", False),
+            ("p95_response_min", "P95响应", "min", False),
+            ("mean_wait_min", "平均等待", "min", False),
+            ("strict_4min_rate", "4分钟内到达率", "百分点", True),
+            ("regional_mean_gap_min", "区域均值极差", "min", False),
+            ("mean_delay_penalty_yuan_per_call", "单次延迟成本", "元/次", False),
+        ]
+        comparisons = [
+            ("B_beta4_delta2", "B-A", BLUE, "o"),
+            ("C_r001000_tau7", "C-A", PURPLE, "s"),
+        ]
+        fig, axes = plt.subplots(2, 3, figsize=(6.3, 4.5))
+        for ax, (metric, title, unit, percentage_points) in zip(
+            axes.flat, metric_specs, strict=True
+        ):
+            baseline = replicates[replicates["candidate"] == "A"].set_index("seed")[metric]
+            for candidate, label, color, marker in comparisons:
+                selected = replicates[replicates["candidate"] == candidate].set_index("seed")[metric]
+                common = baseline.index.intersection(selected.index)
+                differences = selected.loc[common] - baseline.loc[common]
+                if percentage_points:
+                    differences = 100 * differences
+                mean = float(differences.mean())
+                half_width = float(differences.sem() * 2.045229642)
+                ax.errorbar(
+                    [mean], [label], xerr=[half_width], fmt=marker,
+                    color=color, capsize=2.5, markersize=4,
+                )
+            ax.axvline(0, color=GRAY, linestyle="--", linewidth=0.7)
+            ax.set_title(title, fontsize=8)
+            ax.set_xlabel(f"成对差（{unit}）", fontsize=7)
+            ax.tick_params(axis="both", labelsize=6.5)
+        fig.suptitle("策略B、C相对策略A的多指标成对差（点为均值，线为95%置信区间）", fontsize=8.5)
+        save(fig, figures, "result_q2_paired_difference", (6.3, 4.5))
 
 
 def raw_q3_incident_load(full: Path, figures: Path) -> None:
@@ -604,13 +629,20 @@ def result_q3_paired_effect(full: Path, figures: Path) -> None:
     if not path.exists():
         return
     frame = pd.read_csv(path)
-    fig, ax = plt.subplots(figsize=(6.3, 3.2))
+    citywide = pd.read_csv(full / "citywide_duration_table.csv")
+    citywide = citywide[citywide["metric"] == "mean_response_min"].sort_values("duration_hours")
+    fig, ax = plt.subplots(figsize=(6.3, 3.6))
     styles = {
+        "citywide": (BLUE, ":", "全市"),
         "incident_zone_mean_response_min": (PURPLE, "-", "事故区呼叫"),
         "nonincident_zone_mean_response_min": (GREEN, "--", "非事故区呼叫"),
     }
     for metric, (color, linestyle, label) in styles.items():
-        group = frame[frame["metric"] == metric].sort_values("duration_hours")
+        group = (
+            citywide.assign(sampled_node=True)
+            if metric == "citywide"
+            else frame[frame["metric"] == metric].sort_values("duration_hours")
+        )
         x = group["duration_hours"].to_numpy(dtype=float)
         mean = group["mean_difference_B_E_minus_B_N"].to_numpy(dtype=float)
         ax.plot(x, mean, color=color, linestyle=linestyle, linewidth=1.1, label=label)
@@ -632,17 +664,17 @@ def result_q3_paired_effect(full: Path, figures: Path) -> None:
     ax.axhline(0.0, color=GRAY, linestyle=":", linewidth=0.9)
     ax.set_xlabel("事故持续时间 H（h）")
     ax.set_ylabel(r"成对平均响应差 $B_E-B_N$（min）")
-    ax.legend(frameon=False, loc="lower left")
+    ax.legend(frameon=False, loc="lower left", ncol=3, fontsize=7)
     ax.text(
         0.02,
         0.97,
-        "阴影为复制级95%置信带；每个H单独汇总10个事故区",
+        "阴影为95%置信区间；负值表示事故感知预测改善响应",
         transform=ax.transAxes,
         va="top",
         fontsize=6.5,
         color=GRAY,
     )
-    save(fig, figures, "result_q3_paired_effect", (6.3, 3.2))
+    save(fig, figures, "result_q3_paired_effect", (6.3, 3.6))
 
 
 def main() -> None:

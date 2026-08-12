@@ -138,6 +138,28 @@ def test_markdown_math_avoids_bare_star_superscripts():
     assert not re.search(r"\^\*", markdown)
 
 
+def test_title_and_abstract_meet_frozen_review_contract():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+    title, remainder = markdown.split("\n", maxsplit=1)
+    abstract = remainder.split("## 摘 要", maxsplit=1)[1].split(
+        "## 一、问题重述", maxsplit=1
+    )[0]
+    abstract_paragraphs = [
+        paragraph.strip()
+        for paragraph in re.split(r"\n\s*\n", abstract)
+        if paragraph.strip() and not paragraph.startswith("**关键词：**")
+    ]
+
+    assert title == "# 基于容量约束运输规划与条件NHPP仿真的急救车辆配置调度优化"
+    assert len(title.removeprefix("# ")) <= 32
+    assert len(abstract_paragraphs) == 5
+    assert all(f"针对任务{number}" in abstract for number in "一二三")
+    assert "求解器状态为最优" in abstract
+    assert "共同随机数" in abstract
+    assert "适用边界" in abstract
+    assert "$" not in abstract
+
+
 def test_markdown_uses_chinese_top_level_headings_and_superscript_citations():
     markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
     expected_headings = (
@@ -160,6 +182,33 @@ def test_markdown_uses_chinese_top_level_headings_and_superscript_citations():
     assert all(f"[{index}]" in references for index in range(1, 5))
 
 
+def test_markdown_uses_standard_periodic_and_exponential_notation():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+    body = markdown.split("## 参考文献", maxsplit=1)[0]
+
+    assert r"\bmod" not in body
+    assert r"\exp" not in body
+    assert body.count(r"f(t\%24)") == 4
+    assert r"\mathrm e^{-\frac{(t-\mu+24k)^2}{2\sigma^2}}" in body
+
+
+def test_arrival_rate_term_normalization_preserves_run_structure():
+    module = _load_postprocessor()
+    document = Document()
+    paragraph = document.add_paragraph()
+    first = paragraph.add_run("纵轴为严格4")
+    paragraph.add_run(" ")
+    last = paragraph.add_run("min响应率，继续说明。")
+    first.bold = True
+    last.italic = True
+
+    assert module.normalize_arrival_rate_terms(document) == 1
+    assert paragraph.text == "纵轴为4分钟内到达率，继续说明。"
+    assert len(paragraph.runs) == 3
+    assert paragraph.runs[0].bold is True
+    assert paragraph.runs[2].italic is True
+
+
 def test_markdown_has_algorithm_design_for_all_three_tasks():
     markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
 
@@ -168,9 +217,33 @@ def test_markdown_has_algorithm_design_for_all_three_tasks():
     assert "### 6.7 算法设计" in markdown
     assert "### 7.5 算法设计" in markdown
     assert markdown.count("| Step ") == 20
-    assert "表2 任务一算法步骤" in markdown
-    assert "表5 任务二算法步骤" in markdown
-    assert "表9 任务三算法步骤" in markdown
+    assert "表2 任务一混合整数线性规划模型" in markdown
+    assert "表4 任务一算法步骤" in markdown
+    assert "表6 任务二算法步骤" in markdown
+    assert "表10 任务三算法步骤" in markdown
+
+
+def test_figure_numbers_are_continuous_and_appendix_matches():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+    captions = [
+        int(number)
+        for number in re.findall(r"^图(\d+)\s", markdown, flags=re.MULTILINE)
+    ]
+
+    assert captions == list(range(1, 12))
+    assert "图1至图11均由" in markdown
+
+
+def test_task_one_uses_only_planning_coverage_and_compact_capacity_proof():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+    task_one = markdown.split("## 五、任务一", 1)[1].split("## 六、任务二", 1)[0]
+
+    assert "表3 各建站规模运力可行性" in task_one
+    assert "| 最大配车/辆 | 3 | 5 | 7 | 9 | 11 | 12 |" in task_one
+    assert "严格4 min中心代理" not in task_one
+    assert "0.75 km" not in task_one
+    assert "60.714%" not in task_one
+    assert "3 km规划服务覆盖率为86.429%" in task_one
 
 
 def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp_path):
@@ -180,6 +253,7 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
 
     document = Document(output)
     assert document.paragraphs[0].style.name == "Title"
+    assert document.paragraphs[0].runs[0].font.size == Pt(15)
     assert _style_num_id(document.styles["Heading 2"]) == 0
     assert _style_num_id(document.styles["Heading 3"]) == 0
     assert _page_field_count(document.sections[0].footer) == 1
@@ -189,6 +263,55 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
     document_grid = document.sections[0]._sectPr.find(qn("w:docGrid"))
     assert document_grid is not None
     assert document_grid.get(qn("w:linePitch")) == "360"
+
+    display_math_paragraphs = [
+        paragraph
+        for paragraph in document.paragraphs
+        if not paragraph.text.strip()
+        and paragraph._p.findall(".//" + qn("m:oMath"))
+    ]
+    assert display_math_paragraphs
+    assert all(
+        paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
+        for paragraph in display_math_paragraphs
+    )
+    table_math_paragraphs = [
+        paragraph
+        for table in document.tables
+        for row in table.rows
+        for cell in row.cells
+        for paragraph in cell.paragraphs
+        if paragraph._p.findall(".//" + qn("m:oMath"))
+    ]
+    assert table_math_paragraphs
+    allowed_left_math_ids = {
+        id(paragraph._p)
+        for table_index in (3, 5, 9)
+        for row in document.tables[table_index].rows[1:]
+        for column_index in (0, 1)
+        for paragraph in row.cells[column_index].paragraphs
+        if paragraph._p.findall(".//" + qn("m:oMath"))
+    }
+    allowed_left_math_ids.update(
+        id(paragraph._p)
+        for row in document.tables[0].rows[1:]
+        for paragraph in row.cells[1].paragraphs
+        if paragraph._p.findall(".//" + qn("m:oMath"))
+    )
+    assert all(
+        paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
+        or id(paragraph._p) in allowed_left_math_ids
+        for paragraph in table_math_paragraphs
+    )
+    horizontal_scripts = [
+        script
+        for script_tag in ("m:sub", "m:sup")
+        for script in document.element.body.findall(".//" + qn(script_tag))
+        if "".join(script.itertext())
+        in {"ij", "ea", "i=1", "j=1", "i(e),j(a)", "wait", "resp"}
+    ]
+    assert horizontal_scripts
+    assert all(len(script.findall(qn("m:r"))) == 1 for script in horizontal_scripts)
 
     for paragraph in document.paragraphs:
         if paragraph.alignment != WD_ALIGN_PARAGRAPH.CENTER:
@@ -209,6 +332,14 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
         document.tables, module.COMPLETE_TABLE_WIDTH_WEIGHTS, strict=True
     ):
         assert table._tbl.tblPr.find(qn("w:tblStyle")) is None
+        table_borders = table._tbl.tblPr.find(qn("w:tblBorders"))
+        assert table_borders is not None
+        assert table_borders.find(qn("w:top")).get(qn("w:sz")) == "10"
+        assert table_borders.find(qn("w:bottom")).get(qn("w:sz")) == "10"
+        header_bottom = table.rows[0].cells[0]._tc.tcPr.find(
+            qn("w:tcBorders")
+        ).find(qn("w:bottom"))
+        assert header_bottom.get(qn("w:sz")) == "4"
         tbl_w = table._tbl.tblPr.find(qn("w:tblW"))
         assert tbl_w is not None
         table_width = int(tbl_w.get(qn("w:w")))
@@ -216,20 +347,55 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
         assert len(grid) == len(weights)
         assert sum(grid) == table_width
         for row in table.rows:
+            assert row._tr.find(qn("w:tblPrEx")) is None
             widths = [int(cell._tc.tcPr.tcW.get(qn("w:w"))) for cell in row.cells]
             assert widths == grid
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
                     assert paragraph._p.pPr.find(qn("w:pStyle")) is None
+                    for run in paragraph.runs:
+                        assert run.font.size == Pt(10)
 
+    evaluation_table = document.tables[6]
+    assert all(
+        cell._tc.tcPr.find(qn("w:noWrap")) is not None
+        for row in evaluation_table.rows
+        for cell in row.cells
+    )
+    assert all(
+        paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
+        for row in evaluation_table.rows
+        for cell in row.cells
+        for paragraph in cell.paragraphs
+    )
+
+    for algorithm_table in (document.tables[3], document.tables[5], document.tables[9]):
+        assert all(
+            paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
+            for cell in algorithm_table.rows[0].cells
+            for paragraph in cell.paragraphs
+        )
+        assert all(
+            paragraph.alignment == WD_ALIGN_PARAGRAPH.LEFT
+            for row in algorithm_table.rows[1:]
+            for cell in row.cells
+            for paragraph in cell.paragraphs
+        )
+
+    symbol_table = document.tables[0]
+    assert all(
+        paragraph.alignment == WD_ALIGN_PARAGRAPH.LEFT
+        for row in symbol_table.rows[1:]
+        for paragraph in row.cells[1].paragraphs
+    )
 
 def test_postprocessor_selects_complete_paper_table_geometry():
     module = _load_postprocessor()
 
-    weights = module.table_width_weights_for_count(11)
+    weights = module.table_width_weights_for_count(12)
 
-    assert len(weights) == 11
-    assert tuple(len(item) for item in weights) == (3, 2, 6, 3, 2, 4, 4, 5, 2, 5, 5)
+    assert len(weights) == 12
+    assert tuple(len(item) for item in weights) == (3, 3, 7, 2, 6, 2, 4, 4, 5, 2, 5, 5)
 
 
 def test_postprocessor_rejects_unknown_table_count():
@@ -238,19 +404,24 @@ def test_postprocessor_rejects_unknown_table_count():
     try:
         module.table_width_weights_for_count(10)
     except ValueError as error:
-        assert "11 tables" in str(error)
+        assert "12 tables" in str(error)
     else:
         raise AssertionError("Unknown paper table count was accepted")
 
 
 def test_rebind_conversion_manifest_tracks_postprocessed_output(tmp_path):
     module = _load_postprocessor()
+    source = tmp_path / "paper.md"
+    source.write_text("updated source", encoding="utf-8")
     output = tmp_path / "complete.docx"
     output.write_bytes(b"postprocessed-docx")
     manifest_path = tmp_path / "intermediate.conversion.json"
     manifest_path.write_text(
         json.dumps(
             {
+                "source": str(source),
+                "source_sha256": "stale-source",
+                "project_sha256": "stale-project",
                 "output": str(tmp_path / "intermediate.docx"),
                 "output_sha256": "stale",
             }
@@ -264,6 +435,8 @@ def test_rebind_conversion_manifest_tracks_postprocessed_output(tmp_path):
     data = json.loads(final_manifest.read_text(encoding="utf-8"))
     assert data["output"] == str(output.resolve())
     assert data["output_sha256"] == module.sha256_file(output)
+    assert data["source_sha256"] == module.sha256_file(source)
+    assert data["project_sha256"] == module.sha256_file(source)
     assert data["postprocess"]["tool"] == "src/postprocess_paper_docx.py"
 
 

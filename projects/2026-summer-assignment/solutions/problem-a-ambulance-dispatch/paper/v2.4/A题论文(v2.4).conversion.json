@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
-  "created_at": "2026-08-12T15:18:53.454033+00:00",
+  "created_at": "2026-08-12T19:32:05.646626+00:00",
   "source_format": "markdown",
   "source": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.4\\A题论文(v2.4).md",
   "source_files": [
     "A题论文(v2.4).md"
   ],
-  "source_sha256": "11fb2f0b781a5df1e2479f7ea11ef8d8cc7e88b5a2ec724921cd76f79d47c503",
+  "source_sha256": "684b6da5aaa87ab08daff8ae4bbd52d969472a1cd5deeabcdacce3a54adec743",
   "project_files": [
     "A题论文(v2.4).md"
   ],
-  "project_sha256": "11fb2f0b781a5df1e2479f7ea11ef8d8cc7e88b5a2ec724921cd76f79d47c503",
+  "project_sha256": "684b6da5aaa87ab08daff8ae4bbd52d969472a1cd5deeabcdacce3a54adec743",
   "output": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.4\\A题论文(v2.4).docx",
-  "output_sha256": "c90b710a1c5d4207b621a0fb2f2dee960483395018d7f9c13ff9edb567751ecc",
+  "output_sha256": "825fab782e98381df9e878a4e229b40667f03c260dd38a615b7233e3d4101e5a",
   "template": "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx",
   "template_sha256": "52b92f3e1702a1b3f733340adafd1cae4d16468b423c70dae0506f5e4f2ff142",
   "pandoc": {
@@ -29,13 +29,13 @@
     "--citeproc",
     "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.4\\A题论文(v2.4).md",
     "--output",
-    "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.4\\tmpcvnut6am.docx",
+    "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.4\\tmpy1l4nw14.docx",
     "--resource-path=D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.4",
     "--reference-doc",
     "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx"
   ],
   "returncode": 0,
-  "duration_seconds": 0.761,
+  "duration_seconds": 0.694,
   "warnings": [],
   "allowed_warnings": [],
   "warning_override": {
@@ -46,6 +46,6 @@
   "postprocess": {
     "tool": "src/postprocess_paper_docx.py",
     "source_manifest": "A题论文(v2.4)-未后处理.conversion.json",
-    "reason": "Removed template numbering, applied exact table geometry, installed centered PAGE fields, kept the abstract on its own page, and added caption-derived alt text to body figures without changing paper content."
+    "reason": "Removed template numbering, applied exact table geometry, installed centered PAGE fields, kept the abstract on its own page, and added caption-derived alt text to body figures. The current Markdown was synchronized with the reviewed Word baseline without changing results."
   }
 }

@@ -11,12 +11,17 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 
 ## Release Notes
 
-### v2.4 (2026-08-12 23:21 UTC+8)
+### v2.4 (Updated 2026-08-13 04:39 UTC+8; first published 2026-08-12 23:21 UTC+8)
 
 - Shortened the paper title to fit on one line and standardized top-level body headings to Chinese numerals from “一、” through “八、”.
 - Revised the problem analysis, model boundaries, and evaluation into formal academic prose without changing models, data, metrics, or numerical conclusions.
 - Converted all four in-text reference markers to superscript while retaining normal numbering in the reference list.
 - Added implementation-aligned three-line algorithm-design tables for Tasks 1, 2, and 3.
+- Reformatted all 12 three-line tables against the reference papers, standardized centered equations, compound subscripts, and table alignment, and kept every Table 7 field on one line at 10 pt.
+- Standardized the service indicator as “arrival within 4 minutes” and synchronized the latest Word and Markdown content.
+- Expanded the Task 2 paired-comparison figure to six metrics: mean response, P95, mean waiting time, arrival within 4 minutes, regional mean gap, and delay cost per call.
+- Retained Tables 11 and 12 and consolidated the emergency-policy effects into one large figure covering citywide, incident-zone, and non-incident-zone outcomes.
+- Tightened the Task 3 causal boundary: under the fixed-fleet and incident-intensity settings used here, capacity constraints have a larger effect than the marginal demand-forecast correction.
 
 ### v2.3 (2026-08-12 19:27 UTC+8)
 

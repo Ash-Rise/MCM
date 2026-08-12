@@ -38,7 +38,7 @@
 
 动态调整采用与任务二同一评分结构，仅在事故已被识别后修改未来45 min的强度预测。这样既不让算法预知具体未来呼叫，也能隔离“预测层事故感知”的边际作用。为避免随机波动造成假改善，$B_N$与$B_E$共享同一呼叫流，并在每个种子内先完成成对差；事故区与非事故区效果分别按实际呼叫数汇总，禁止把无呼叫情景静默从分母中删除。题面未给事故持续时间分布，因此不跨$H$等权合成总体效果。
 
-![](../figures/raw_q1_spatial.png){width=82%}
+![](../../figures/raw_q1_spatial.png){width=82%}
 
 图1 需求区域与候选急救站点的空间分布
 
@@ -172,7 +172,7 @@ $$
 
 $\varepsilon$只用于求解器浮点容差。第二层不得以增加出车距离为代价换取覆盖，最终服务分配见图2。
 
-![](../figures/process_q1_assignment_heatmap.png){width=88%}
+![](../../figures/process_q1_assignment_heatmap.png){width=88%}
 
 图2 距离最优解中的站点-区域服务分配
 
@@ -191,7 +191,7 @@ $\varepsilon$只用于求解器浮点容差。第二层不得以增加出车距�
 | S5 | 1 | 1 | 12 | 12 | 0 |
 | S6 | 2 | 2 | 24 | 24 | 0 |
 
-![](../figures/result_q1_site_capacity.png){width=82%}
+![](../../figures/result_q1_site_capacity.png){width=82%}
 
 图3 各站停车上限、配车和分配负荷
 
@@ -237,7 +237,7 @@ $$
 
 若只检查某区域3 km内是否存在站点，而忽略容量和实际分配，可覆盖136次/日，故潜在覆盖为97.143%。严格0.75 km中心代理覆盖只包含与六站坐标重合的区域1至6，共85次/日，即60.714%。图4集中比较三种口径。
 
-![](../figures/result_q1_coverage.png){width=78%}
+![](../../figures/result_q1_coverage.png){width=78%}
 
 图4 三种覆盖口径的差异
 
@@ -275,7 +275,7 @@ $$
 
 采用$b=1$，$(a_1,\mu_1,\sigma_1)=(0.8,9,2)$，$(a_2,\mu_2,\sigma_2)=(1.0,18,2.5)$，形成上午与傍晚双峰。图5给出24 h密度与小时概率。这是因缺少逐时数据而构造的透明情景，不是历史拟合结果。
 
-![](../figures/raw_q2_nhpp_intensity.png){width=86%}
+![](../../figures/raw_q2_nhpp_intensity.png){width=86%}
 
 图5 周期双高斯条件NHPP日内强度
 
@@ -344,7 +344,7 @@ $$
 
 三个分量均换算为min。策略B在合法候选中选择$J_{ea}$最小的车辆。粗网格搜索$\beta\in\{0,0.5,1,2,4\}$和$\delta\in\{0.5,1,1.5,2\}$，再在优胜区域细化，最终选取$(\beta,\delta)=(4,2)$。图6显示筛选过程。
 
-![](../figures/process_q2_b_grid.png){width=82%}
+![](../../figures/process_q2_b_grid.png){width=82%}
 
 图6 策略B参数筛选结果
 
@@ -372,7 +372,7 @@ $$
 
 即S3的两辆车中固定一辆承担备用角色。由于全部235个候选只在3个筛选复制上比较，本文只称其为推荐配置，不宣称对全部随机环境全局最优。
 
-![](../figures/process_q2_c_screen.png){width=84%}
+![](../../figures/process_q2_c_screen.png){width=84%}
 
 图7 策略C的235个备用配置候选筛选
 
@@ -418,11 +418,11 @@ $$
 
 B相对A平均响应减少0.2711 min，成对95%置信区间为$[-0.3116,-0.2305]$ min；C相对A减少0.0271 min，区间为$[-0.0487,-0.0055]$ min。图8显示B相对A在平均响应、P95、等待和延迟成本上的方向一致改善；图9给出B、C相对A的成对响应差与95%区间。
 
-![](../figures/result_q2_multi_metric.png){width=82%}
+![](../../figures/result_q2_multi_metric.png){width=82%}
 
 图8 策略B相对A的多指标变化
 
-![](../figures/result_q2_paired_difference.png){width=78%}
+![](../../figures/result_q2_paired_difference.png){width=78%}
 
 图9 共同随机数下B、C相对A的成对响应差
 
@@ -481,7 +481,7 @@ $$
 
 如图10所示，连续函数与实际仿真节点被同时展示。R1因日均需求最大，在相同持续时间下产生最高新增呼叫压力；采样点只表示随机仿真设计，不把$H$离散化。
 
-![](../figures/raw_q3_incident_load.png){width=84%}
+![](../../figures/raw_q3_incident_load.png){width=84%}
 
 图10 连续事故持续时间下的预期新增呼叫与自适应节点
 
@@ -513,7 +513,7 @@ $$
 
 对同一呼叫流的成对差使用$B_E-B_N$；响应时间差为负表示事故感知模式改善。图11展示全部10个事故区域的平均响应曲面及置信带宽诊断，表明区域与持续时间共同决定压力，且长时事故处的不确定性明显增大。
 
-![](../figures/process_q3_duration_zone.png){width=88%}
+![](../../figures/process_q3_duration_zone.png){width=88%}
 
 图11 各事故区域的连续响应面与不确定性
 
@@ -549,7 +549,7 @@ $$
 
 先逐复制插值再跨复制汇总，可以保留随机重复结构；PCHIP只提供有限节点间的保形数值近似，不能解释为精确连续解。图12给出R6、R2、R1三个低、中、高压力代表区域的曲线。
 
-![](../figures/result_q3_response_curve.png){width=84%}
+![](../../figures/result_q3_response_curve.png){width=84%}
 
 图12 低、中、高压力事故区域的平均响应曲线
 
@@ -593,7 +593,7 @@ $B_N$全市平均响应由0.5 h时的6.1706 min总体升至12 h时的31.6386 min
 
 事故区在$H=8,10,11$ h分别改善0.1519、0.0941、0.1965 min，对应区间均低于0；其余时长证据不足。非事故区仅$H=1$ h出现0.0362 min的小幅恶化且区间高于0，其他节点区间均跨0。图13用成对差和置信区间集中展示这一结果。
 
-![](../figures/result_q3_paired_effect.png){width=84%}
+![](../../figures/result_q3_paired_effect.png){width=84%}
 
 图13 事故感知模式对事故区与非事故区的成对效应
 

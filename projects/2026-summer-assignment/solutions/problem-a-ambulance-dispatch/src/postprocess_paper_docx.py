@@ -267,13 +267,12 @@ def _disable_paragraph_grid(paragraph) -> None:
     snap_to_grid.set(qn("w:val"), "0")
 
 
-def _set_compact_body_spacing(paragraph, line_height=Pt(16)) -> None:
-    paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
-    paragraph.paragraph_format.line_spacing = line_height
+def _set_reference_body_spacing(paragraph, multiple: float = 1.5) -> None:
+    paragraph.paragraph_format.line_spacing = multiple
 
 
-def _set_document_line_grid(document, line_pitch: int = 320) -> None:
-    """Keep Word's page grid aligned with the 16 pt body line height."""
+def _set_document_line_grid(document, line_pitch: int = 360) -> None:
+    """Match the reference document's 1.5-line page grid."""
     for section in document.sections:
         section_properties = section._sectPr
         document_grid = _ensure_child(section_properties, "w:docGrid")
@@ -326,7 +325,7 @@ def _format_document_typography(document) -> None:
             _disable_paragraph_grid(paragraph)
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
             paragraph.paragraph_format.first_line_indent = Pt(0)
-            _set_compact_body_spacing(paragraph)
+            _set_reference_body_spacing(paragraph)
             paragraph.paragraph_format.space_before = Pt(0)
             paragraph.paragraph_format.space_after = Pt(0)
             for run in paragraph.runs:
@@ -338,8 +337,7 @@ def _format_document_typography(document) -> None:
             paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
             paragraph.paragraph_format.left_indent = Pt(21)
             paragraph.paragraph_format.first_line_indent = Pt(-21)
-            paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.AT_LEAST
-            paragraph.paragraph_format.line_spacing = Pt(13)
+            _set_reference_body_spacing(paragraph, 1.25)
             paragraph.paragraph_format.space_before = Pt(0)
             paragraph.paragraph_format.space_after = Pt(0)
             for run in paragraph.runs:
@@ -350,8 +348,7 @@ def _format_document_typography(document) -> None:
             _disable_paragraph_grid(paragraph)
             paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
             paragraph.paragraph_format.first_line_indent = Pt(21)
-            paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.AT_LEAST
-            paragraph.paragraph_format.line_spacing = Pt(13)
+            _set_reference_body_spacing(paragraph, 1.25)
             paragraph.paragraph_format.space_before = Pt(0)
             paragraph.paragraph_format.space_after = Pt(0)
             for run in paragraph.runs:
@@ -369,15 +366,14 @@ def _format_document_typography(document) -> None:
         if not text:
             if paragraph._p.findall(".//" + qn("m:oMath")):
                 _disable_paragraph_grid(paragraph)
-                paragraph.paragraph_format.line_spacing_rule = WD_LINE_SPACING.AT_LEAST
-                paragraph.paragraph_format.line_spacing = Pt(16)
+                _set_reference_body_spacing(paragraph)
                 paragraph.paragraph_format.space_before = Pt(0)
                 paragraph.paragraph_format.space_after = Pt(0)
             continue
 
         _disable_paragraph_grid(paragraph)
         paragraph.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-        _set_compact_body_spacing(paragraph)
+        _set_reference_body_spacing(paragraph)
         paragraph.paragraph_format.space_before = Pt(0)
         paragraph.paragraph_format.space_after = Pt(0)
         p_pr = paragraph._p.pPr
@@ -393,7 +389,7 @@ def _format_document_typography(document) -> None:
             for cell in row.cells:
                 for paragraph in cell.paragraphs:
                     _disable_paragraph_grid(paragraph)
-                    _set_compact_body_spacing(paragraph)
+                    _set_reference_body_spacing(paragraph, 1.15)
                     paragraph.paragraph_format.space_before = Pt(0)
                     paragraph.paragraph_format.space_after = Pt(0)
                     for run in paragraph.runs:
@@ -505,7 +501,7 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
                         paragraph._p.pPr.remove(p_style)
                     paragraph.paragraph_format.space_before = Pt(0)
                     paragraph.paragraph_format.space_after = Pt(0)
-                    paragraph.paragraph_format.line_spacing = 1.0
+                    paragraph.paragraph_format.line_spacing = 1.15
                     paragraph.alignment = (
                         WD_ALIGN_PARAGRAPH.CENTER
                         if row_index == 0 or column_index != 1

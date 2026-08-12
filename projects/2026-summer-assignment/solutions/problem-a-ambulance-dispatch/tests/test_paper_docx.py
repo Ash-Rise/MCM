@@ -12,8 +12,8 @@ from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DOCX_PATH = PROJECT_ROOT / "paper" / "A题论文(v2.1).docx"
-MARKDOWN_PATH = PROJECT_ROOT / "paper" / "A题论文(v2.2).md"
+DOCX_PATH = PROJECT_ROOT / "paper" / "v2.1" / "A题论文(v2.1).docx"
+MARKDOWN_PATH = PROJECT_ROOT / "paper" / "v2.3" / "A题论文(v2.3).md"
 POSTPROCESS_PATH = PROJECT_ROOT / "src" / "postprocess_paper_docx.py"
 
 
@@ -60,14 +60,16 @@ def test_paper_typography_matches_reference_document():
     assert body.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY
     assert body.style.name == "Body Text"
     assert body.paragraph_format.first_line_indent == Pt(24)
-    assert body.paragraph_format.line_spacing == Pt(16)
-    assert body.paragraph_format.line_spacing_rule == WD_LINE_SPACING.EXACTLY
+    assert body.paragraph_format.line_spacing == 1.5
+    assert body.paragraph_format.line_spacing_rule == WD_LINE_SPACING.ONE_POINT_FIVE
     assert body._p.pPr.find(qn("w:snapToGrid")).get(qn("w:val")) == "0"
     assert body.runs[0].font.size == Pt(12)
     assert _east_asia_font(body.runs[0]) == "宋体"
     assert caption.alignment == WD_ALIGN_PARAGRAPH.CENTER
     assert caption.runs[0].font.size == Pt(10.5)
-    assert table.cell(0, 0).paragraphs[0].runs[0].font.size == Pt(10.5)
+    table_paragraph = table.cell(0, 0).paragraphs[0]
+    assert table_paragraph.runs[0].font.size == Pt(10.5)
+    assert table_paragraph.paragraph_format.line_spacing == 1.15
 
 
 def test_typography_normalizes_dangling_pandoc_body_styles():
@@ -86,8 +88,8 @@ def test_typography_normalizes_dangling_pandoc_body_styles():
     assert listed.style.name == "Body Text"
     assert listed._p.pPr.numPr.numId.val == 1
     for paragraph in (first, listed):
-        assert paragraph.paragraph_format.line_spacing == Pt(16)
-        assert paragraph.paragraph_format.line_spacing_rule == WD_LINE_SPACING.EXACTLY
+        assert paragraph.paragraph_format.line_spacing == 1.5
+        assert paragraph.paragraph_format.line_spacing_rule == WD_LINE_SPACING.ONE_POINT_FIVE
 
 
 def test_caption_detection_does_not_center_narrative_sentences():
@@ -102,7 +104,7 @@ def test_caption_detection_does_not_center_narrative_sentences():
     assert narrative.alignment == WD_ALIGN_PARAGRAPH.JUSTIFY
 
 
-def test_document_grid_matches_exact_body_line_height():
+def test_document_grid_matches_reference_body_line_pitch():
     module = _load_postprocessor()
     document = Document()
 
@@ -111,7 +113,7 @@ def test_document_grid_matches_exact_body_line_height():
     document_grid = document.sections[0]._sectPr.find(qn("w:docGrid"))
     assert document_grid is not None
     assert document_grid.get(qn("w:type")) == "lines"
-    assert document_grid.get(qn("w:linePitch")) == "320"
+    assert document_grid.get(qn("w:linePitch")) == "360"
     assert document_grid.get(qn("w:charSpace")) == "0"
 
 
@@ -151,7 +153,7 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
     assert document.sections[0].first_page_footer.paragraphs[0].alignment == 1
     document_grid = document.sections[0]._sectPr.find(qn("w:docGrid"))
     assert document_grid is not None
-    assert document_grid.get(qn("w:linePitch")) == "320"
+    assert document_grid.get(qn("w:linePitch")) == "360"
 
     for paragraph in document.paragraphs:
         if paragraph.alignment != WD_ALIGN_PARAGRAPH.CENTER:

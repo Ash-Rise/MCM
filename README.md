@@ -7,11 +7,12 @@
 ## 项目
 
 - [`2026 暑期作业`](projects/2026-summer-assignment/README.md)
-- 当前交付物：[`A题论文(v2.4).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4).docx)
+- 在线预览：[`A题论文(v2.4)`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4)-GitHub预览.md)
+- Word交付物：[`A题论文(v2.4).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4).docx)
 
 ## 版本发行说明
 
-### v2.4（2026-08-13 04:39 UTC+8）
+### v2.4（2026-08-13 12:47 UTC+8）
 
 - 将论文标题压缩为单行，并把正文一级标题统一为“一、”至“八、”的中文序号格式。
 - 学术化修订问题分析、模型边界和评价表述，避免口语化表达，不改变模型、数据、指标或数值结论。
@@ -22,12 +23,13 @@
 - 将任务二成对比较图扩展为平均响应、P95、平均等待、4分钟内到达率、区域均值极差和单次延迟成本六项指标。
 - 保留任务三表11、表12，并将应急策略成对效应集中为一幅同时展示全市、事故区与非事故区的大图。
 - 收紧任务三结论的因果边界：在固定车队与本文事故强度设定下，容量约束的影响大于需求预测修正的边际作用。
+- 增加由Pandoc源文件自动生成的GitHub预览版，使178处数学公式和11幅图的宽度控制兼容GitHub渲染，同时保持Word生成源不变。
 
 ### v2.3 (2026-08-12 19:27 UTC+8)
 
 - 参照样例论文调整段落疏密：正文采用1.5倍行距，参考文献和附录短说明采用1.25倍行距，表格单元格采用1.15倍行距。
 - 修正段落对齐方式：正文保持两端对齐，仅论文标题、主要标题、图片和图表标题居中。
-- 按 `paper/vX.Y/` 整理各版论文，每个版本统一保存 Markdown 源文档、Word 论文和转换清单。
+- 按 `paper/vX.Y/` 整理各版论文，每个版本统一保存Pandoc Markdown源文档、GitHub预览、Word论文和转换清单。
 
 ### v2.2 (2026-08-12 18:45 UTC+8)
 
@@ -52,7 +54,7 @@ MCM/
 |           `-- problem-a-ambulance-dispatch/
 |               |-- analysis/         # 建模报告与术语表
 |               |-- figures/          # 论文插图（PNG 与 SVG）
-|               |-- paper/vX.Y/       # 各版 Markdown、DOCX 与转换清单
+|               |-- paper/vX.Y/       # 各版Pandoc源、GitHub预览、DOCX与转换清单
 |               |-- results/          # 可复现结果表与清单
 |               |-- src/              # 优化、仿真与绘图代码
 |               |-- templates/        # 个性化工作流、排版配置与复用指令

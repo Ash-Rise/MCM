@@ -7,11 +7,12 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 ## Projects
 
 - [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)
-- Current deliverable: [`A题论文(v2.4).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4).docx)
+- Online preview: [`A题论文(v2.4)`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4)-GitHub预览.md)
+- Word deliverable: [`A题论文(v2.4).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4).docx)
 
 ## Release Notes
 
-### v2.4 (2026-08-13 04:39 UTC+8)
+### v2.4 (2026-08-13 12:47 UTC+8)
 
 - Shortened the paper title to fit on one line and standardized top-level body headings to Chinese numerals from “一、” through “八、”.
 - Revised the problem analysis, model boundaries, and evaluation into formal academic prose without changing models, data, metrics, or numerical conclusions.
@@ -22,12 +23,13 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 - Expanded the Task 2 paired-comparison figure to six metrics: mean response, P95, mean waiting time, arrival within 4 minutes, regional mean gap, and delay cost per call.
 - Retained Tables 11 and 12 and consolidated the emergency-policy effects into one large figure covering citywide, incident-zone, and non-incident-zone outcomes.
 - Tightened the Task 3 causal boundary: under the fixed-fleet and incident-intensity settings used here, capacity constraints have a larger effect than the marginal demand-forecast correction.
+- Added a generated GitHub preview target so all 178 mathematical expressions and all 11 image widths render on GitHub without changing the Pandoc source used for Word generation.
 
 ### v2.3 (2026-08-12 19:27 UTC+8)
 
 - Matched the reference paper's paragraph density: 1.5-line body text, 1.25-line references and appendix notes, and 1.15-line table cells.
 - Corrected paragraph alignment so body text remains justified while only titles, major headings, figures, and captions are centered.
-- Organized every paper release under `paper/vX.Y/`, with the Markdown source, Word paper, and conversion manifest kept together.
+- Organized every paper release under `paper/vX.Y/`, with the Pandoc Markdown source, generated GitHub preview, Word paper, and conversion manifest kept together.
 
 ### v2.2 (2026-08-12 18:45 UTC+8)
 
@@ -52,7 +54,7 @@ MCM/
 |           `-- problem-a-ambulance-dispatch/
 |               |-- analysis/         # Modeling report and terminology
 |               |-- figures/          # Publication figures (PNG and SVG)
-|               |-- paper/vX.Y/       # One Markdown, DOCX, and manifest set per release
+|               |-- paper/vX.Y/       # Pandoc source, GitHub preview, DOCX, and manifest
 |               |-- results/          # Reproducible result tables and manifest
 |               |-- src/              # Optimization, simulation, and plotting code
 |               |-- templates/        # Personalized workflow, paper profile, and reusable prompts

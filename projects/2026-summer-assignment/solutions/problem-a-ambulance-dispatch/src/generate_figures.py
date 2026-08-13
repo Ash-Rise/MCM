@@ -433,6 +433,7 @@ def result_q2_summary(full: Path, figures: Path) -> None:
         ]
         means = frame.pivot(index="candidate", columns="metric", values="mean")
         baseline = means.loc["A", order].to_numpy(dtype=float)
+        baseline_replicates = replicates[replicates["candidate"] == "A"].set_index("seed")
         comparisons = [
             ("B_beta4_delta2", "策略B", BLUE, "", -0.18),
             ("C_r001000_tau7", "策略C", ORANGE, "///", 0.18),
@@ -443,6 +444,19 @@ def result_q2_summary(full: Path, figures: Path) -> None:
             selected = means.loc[candidate, order].to_numpy(dtype=float)
             values = 100 * (baseline - selected) / baseline
             values[3] = 100 * (selected[3] - baseline[3]) / baseline[3]
+            selected_replicates = replicates[replicates["candidate"] == candidate].set_index("seed")
+            half_widths: list[float] = []
+            for metric_index, metric in enumerate(order):
+                common = baseline_replicates.index.intersection(selected_replicates.index)
+                paired_improvement = (
+                    selected_replicates.loc[common, metric]
+                    - baseline_replicates.loc[common, metric]
+                    if metric == "strict_4min_rate"
+                    else baseline_replicates.loc[common, metric]
+                    - selected_replicates.loc[common, metric]
+                )
+                relative_improvement = 100 * paired_improvement / baseline[metric_index]
+                half_widths.append(float(relative_improvement.sem() * 2.045229642))
             bars = ax.barh(
                 y + offset,
                 values,
@@ -455,9 +469,29 @@ def result_q2_summary(full: Path, figures: Path) -> None:
                 linewidth=0.4,
                 zorder=2,
             )
-            for bar, value in zip(bars, values, strict=True):
+            ax.errorbar(
+                values,
+                y + offset,
+                xerr=np.asarray(half_widths),
+                fmt="o",
+                ecolor="#1F2937",
+                color="#1F2937",
+                markerfacecolor="white",
+                markeredgecolor="#1F2937",
+                markersize=3.2,
+                elinewidth=0.95,
+                capsize=3.0,
+                capthick=0.95,
+                zorder=4,
+            )
+            for bar, value, half_width in zip(bars, values, half_widths, strict=True):
+                label_x = (
+                    value + half_width + 0.45
+                    if value >= 0
+                    else value - half_width - 0.45
+                )
                 ax.text(
-                    value + (0.45 if value >= 0 else -0.45),
+                    label_x,
                     bar.get_y() + bar.get_height() / 2,
                     f"{value:.2f}%",
                     color=color,
@@ -471,44 +505,17 @@ def result_q2_summary(full: Path, figures: Path) -> None:
         ax.set_xlabel("相对策略A的平均优化幅度（%）")
         ax.grid(axis="x", color="#D1D5DB", linewidth=0.55, alpha=0.75)
         ax.legend(loc="lower right", frameon=False, ncol=2, fontsize=7)
+        ax.text(
+            0.01,
+            1.01,
+            "深灰误差线：30组相同随机呼叫下策略差异的95%置信区间；正值表示优于策略A",
+            transform=ax.transAxes,
+            fontsize=6.5,
+            color=GRAY,
+            va="bottom",
+        )
         ax.invert_yaxis()
         save(fig, figures, "result_q2_multi_metric", (6.3, 3.8))
-
-        metric_specs = [
-            ("mean_response_min", "平均响应时间", "min", False),
-            ("p95_response_min", "P95响应时间", "min", False),
-            ("mean_wait_min", "平均等待时间", "min", False),
-            ("strict_4min_rate", "4分钟内到达率", "百分点", True),
-            ("regional_mean_gap_min", "区域平均响应时间极差", "min", False),
-            ("mean_delay_penalty_yuan_per_call", "平均单次延迟成本", "元/次", False),
-        ]
-        comparisons = [
-            ("B_beta4_delta2", "B-A", BLUE, "o"),
-            ("C_r001000_tau7", "C-A", PURPLE, "s"),
-        ]
-        fig, axes = plt.subplots(2, 3, figsize=(6.3, 4.5))
-        for ax, (metric, title, unit, percentage_points) in zip(
-            axes.flat, metric_specs, strict=True
-        ):
-            baseline = replicates[replicates["candidate"] == "A"].set_index("seed")[metric]
-            for candidate, label, color, marker in comparisons:
-                selected = replicates[replicates["candidate"] == candidate].set_index("seed")[metric]
-                common = baseline.index.intersection(selected.index)
-                differences = selected.loc[common] - baseline.loc[common]
-                if percentage_points:
-                    differences = 100 * differences
-                mean = float(differences.mean())
-                half_width = float(differences.sem() * 2.045229642)
-                ax.errorbar(
-                    [mean], [label], xerr=[half_width], fmt=marker,
-                    color=color, capsize=2.5, markersize=4,
-                )
-            ax.axvline(0, color=GRAY, linestyle="--", linewidth=0.7)
-            ax.set_title(title, fontsize=8)
-            ax.set_xlabel(f"成对差（{unit}）", fontsize=7)
-            ax.tick_params(axis="both", labelsize=6.5)
-        fig.suptitle("策略B、C相对策略A的多指标成对差（点为均值，线为95%置信区间）", fontsize=8.5)
-        save(fig, figures, "result_q2_paired_difference", (6.3, 4.5))
 
 
 def raw_q3_incident_load(full: Path, figures: Path) -> None:

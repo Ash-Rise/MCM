@@ -5,8 +5,8 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-SOURCE_PATH = PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).md"
-PREVIEW_PATH = PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4)-GitHub预览.md"
+SOURCE_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).md"
+PREVIEW_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5)-GitHub预览.md"
 GENERATOR_PATH = PROJECT_ROOT / "src" / "generate_github_preview.py"
 
 
@@ -50,7 +50,12 @@ def test_github_preview_uses_gfm_math_and_html_image_widths():
     )
     assert "$" not in prose_without_math
     assert "{width=" not in preview
-    assert len(re.findall(r'<img src="[^"]+" width="\d+(?:\.\d+)?%"', preview)) == 11
+    source_image_count = len(module.IMAGE_WIDTH_RE.findall(source))
+    preview_image_count = len(
+        re.findall(r'<img src="[^"]+" width="\d+(?:\.\d+)?%"', preview)
+    )
+    assert source_image_count > 0
+    assert preview_image_count == source_image_count
     assert preview.count("$$") == source.count("$$")
 
 

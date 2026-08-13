@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-08-13T11:04:31.091821+00:00",
+  "source_format": "markdown",
+  "source": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).md",
+  "source_files": [
+    "A题论文(v2.5).md"
+  ],
+  "source_sha256": "53be86252d27f3353363ed227982d7916bd51859a18950d4da4381d2e155491c",
+  "project_files": [
+    "A题论文(v2.5).md"
+  ],
+  "project_sha256": "53be86252d27f3353363ed227982d7916bd51859a18950d4da4381d2e155491c",
+  "output": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).docx",
+  "output_sha256": "e01e098acca83bbfa491a389e5b4297f2dd386b36cd8806e4dde808edf0c6796",
+  "template": "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx",
+  "template_sha256": "52b92f3e1702a1b3f733340adafd1cae4d16468b423c70dae0506f5e4f2ff142",
+  "pandoc": {
+    "path": "C:\\Users\\AA\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\pandoc.CMD",
+    "version": "pandoc 3.9"
+  },
+  "command": [
+    "C:\\Users\\AA\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\pandoc.CMD",
+    "--from",
+    "markdown",
+    "--to",
+    "docx",
+    "--standalone",
+    "--citeproc",
+    "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).md",
+    "--output",
+    "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\tmpw45pht3a.docx",
+    "--resource-path=D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5",
+    "--reference-doc",
+    "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx"
+  ],
+  "returncode": 0,
+  "duration_seconds": 0.68,
+  "warnings": [],
+  "allowed_warnings": [],
+  "warning_override": {
+    "patterns": [],
+    "reason": null
+  },
+  "reproduce": "C:\\Users\\AA\\.codex\\runtimes\\pytest\\Scripts\\python.exe C:\\Users\\AA\\.codex\\skills\\math-modeling\\tools\\docx\\scripts\\equations.py generate D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).md --output D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5)-未后处理.docx --template D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx --timeout 120 --overwrite",
+  "postprocess": {
+    "tool": "src/postprocess_paper_docx.py",
+    "source_manifest": "A题论文(v2.5)-未后处理.conversion.json",
+    "table_baseline": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.4\\A题论文(v2.4).docx",
+    "table_baseline_sha256": "dcf80b35f35f693de9e852339b4c2ccbb0d60f58765be8c3af26039df8b3c3af",
+    "table_baseline_mode": "layout_only",
+    "reason": "Removed template numbering, preserved the user-corrected v2.4 table layout while retaining the reviewed v2.5 table content, installed centered PAGE fields, kept the abstract on its own page, and added caption-derived alt text to body figures. The current Markdown was synchronized with the reviewed Word baseline without changing results."
+  }
+}

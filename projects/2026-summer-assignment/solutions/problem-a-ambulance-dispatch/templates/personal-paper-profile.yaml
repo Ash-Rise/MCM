@@ -145,27 +145,7 @@ markdown:
     display_math_delimiter: '$$...$$'
     citation_superscript_pattern: '^\\[n\\]^'
     image_width_pattern: '![](path){width=N%}'
-  github_preview_target:
-    dialect: github_flavored_markdown
-    role: generated_online_preview
-    editable: false
-    generated_notice_required: true
-    filename_suffix: -GitHub预览
-    inline_math_delimiter: '$`...`$'
-    display_math_delimiter: '$$...$$'
-    citation_superscript_pattern: '<sup>[n]</sup>'
-    image_width_pattern: '<img src="path" width="N%" alt="...">'
-  generator:
-    path: src/generate_github_preview.py
-    check_flag: --check
-    preserve_fenced_code_blocks: true
-    source_must_not_change: true
-  validation:
-    preview_must_equal_generator_output: true
-    no_literal_pandoc_width_attributes: true
-    all_math_must_render_on_github: true
-    all_citation_superscripts_must_render_on_github: true
-    all_image_widths_must_survive_github_sanitization: true
+  publish_derived_github_preview: false
 
 workflow:
   default_delivery: docx
@@ -173,7 +153,6 @@ workflow:
   markdown_review_required_before_docx: true
   markdown_review_artifacts:
     - pandoc_markdown_source
-    - generated_github_preview
     - content_change_report
   docx_generation_requires_explicit_user_approval: true
   docx_stage_content_changes_forbidden: true
@@ -204,6 +183,8 @@ workflow:
       - id: markdown_dual_target
         added_on: '2026-08-13'
         source: v2.4_github_renderer_compatibility_audit
+        status: retired_by_user_decision
+        retired_on: '2026-08-13'
         evidence:
           - github_markdown_api
           - reproducible_preview_tests
@@ -220,7 +201,6 @@ release:
   paper_directory_pattern: paper/vX.Y
   required_artifacts:
     - pandoc_markdown_source
-    - generated_github_preview
     - docx
     - conversion_manifest
   bilingual_readme: true

@@ -7,44 +7,61 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 ## Projects
 
 - [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)
-- Online preview: [`A题论文(v2.4)`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4)-GitHub预览.md)
-- Word deliverable: [`A题论文(v2.4).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.4/A题论文(v2.4).docx)
+- Pandoc source: [`A题论文(v2.5).md`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).md)
+- Word deliverable: [`A题论文(v2.5).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).docx)
 
 ## Release Notes
 
+### v2.5 (2026-08-13 19:22 UTC+8)
+
+This release improves the readability of the Task 2 dispatch policies, the completeness of statistical comparison, and the stability of Word regeneration while retaining all three tasks' model definitions and frozen simulation results.
+
+- `[~]` Rewrote Strategy B in the order of intuition, variable meaning, mathematical expression, and interpretation; completed Strategy C with its reserve-vector candidates, threshold release rule, lexicographic screening, and out-of-sample one-sided bound.
+- `[~]` Consolidated the six mean improvement rates and paired 95% confidence intervals for Strategies B and C versus A into one bar chart, removed the redundant standalone paired-difference figure, and clarified time, rate, and cost units.
+- `[~]` Replaced defensive negative phrasing in Tasks 1 and 3 and the model evaluation with direct statements tied to conditions, evidence, and scope.
+- `[~]` Rebuilt the 25-page Word deliverable from the reviewed Markdown, inherited the hand-corrected WPS table baseline, and widened Table 7's metric column so every label remains on one line at 10 pt; the paper contains 10 figures, 12 three-line tables, and native Word equations.
+- `[~]` Reduced each release to the Pandoc Markdown source, DOCX, and conversion manifest; removed the derived GitHub previews and their generation chain for v2.4—v2.5. Versions v2.1—v2.3 never contained such files.
+- `[✓]` Passed full evidence reproduction, the regression suite after preview-chain removal, Office structure validation, conversion-manifest verification, and visual inspection of all 25 rendered pages.
+
 ### v2.4 (2026-08-13 04:39 UTC+8)
 
-- Shortened the paper title to fit on one line and standardized top-level body headings to Chinese numerals from “一、” through “八、”.
-- Revised the problem analysis, model boundaries, and evaluation into formal academic prose without changing models, data, metrics, or numerical conclusions.
-- Converted all four in-text reference markers to superscript while retaining normal numbering in the reference list.
-- Added implementation-aligned three-line algorithm-design tables for Tasks 1, 2, and 3.
-- Reformatted all 12 three-line tables against the reference papers, standardized centered equations, compound subscripts, and table alignment, and kept every Table 7 field on one line at 10 pt.
-- Standardized the service indicator as “arrival within 4 minutes” and synchronized the latest Word and Markdown content.
-- Expanded the Task 2 paired-comparison figure to six metrics: mean response, P95, mean waiting time, arrival within 4 minutes, regional mean gap, and delay cost per call.
-- Retained Tables 11 and 12 and consolidated the emergency-policy effects into one large figure covering citywide, incident-zone, and non-incident-zone outcomes.
-- Tightened the Task 3 causal boundary: under the fixed-fleet and incident-intensity settings used here, capacity constraints have a larger effect than the marginal demand-forecast correction.
+This release strengthens the paper's algorithm exposition, evidence organization, and conclusion boundaries without changing the model, data, or frozen results.
+
+- `[+]` Added implementation-aligned algorithm-design layers for all three tasks, connecting capacity analysis to lexicographic transportation planning, continuous multi-day dispatch simulation, and worst-window/PCHIP response-surface analysis.
+- `[~]` Reorganized the evidence for Tasks 2 and 3: one six-metric figure now compares response, waiting, fairness, and cost, while one paired-effect figure covers citywide, incident-zone, and non-incident-zone outcomes.
+- `[~]` Tightened statistical and causal language by standardizing the arrival-within-4-min metric and limiting the Task 3 conclusion to the fixed fleet and the paper's incident-intensity setting, where capacity pressure exceeds the marginal effect of forecast correction.
+- `[~]` Unified paper-level presentation, including academic wording, heading hierarchy, superscript citations, equations, and three-line tables; these edits do not alter model definitions or numerical conclusions.
 
 ### v2.3 (2026-08-12 19:27 UTC+8)
 
-- Matched the reference paper's paragraph density: 1.5-line body text, 1.25-line references and appendix notes, and 1.15-line table cells.
-- Corrected paragraph alignment so body text remains justified while only titles, major headings, figures, and captions are centered.
-- Organized every paper release under `paper/vX.Y/`, with the Markdown source, Word paper, and conversion manifest kept together.
+This release establishes a traceable paper-delivery structure and systematically tunes reading density; the model and results remain unchanged.
+
+- `[+]` Introduced `paper/vX.Y/` release directories containing the Pandoc Markdown source, Word deliverable, and conversion manifest for each independently inspectable version.
+- `[~]` Differentiated spacing for body text, references/appendix notes, and tables, while standardizing justified body text and centered titles and captions.
 
 ### v2.2 (2026-08-12 18:45 UTC+8)
 
-- Condensed repetitive passages without changing the three tasks' models, frozen numerical results, or conclusions.
-- Repaired Markdown math notation that triggered conversion warnings and tightened the reproducibility note in the appendix.
-- Standardized Chinese typography, heading alignment, captions, table geometry, page numbers, and figure alternative text against the reference layout.
+This release performs the first content-tightening and Markdown-to-Word conversion-quality pass. The three task models, frozen values, and conclusions remain unchanged.
+
+- `[~]` Removed repetitive discussion and shortened reproduction notes so the paper focuses more directly on models, results, and interpretation.
+- `[~]` Fixed math-conversion warnings and standardized fonts, headings, figures, tables, page numbers, and image alt text for a consistent Word deliverable.
 
 ### v2.1 (2026-08-12 16:41 UTC+8)
 
-- Published the first complete three-task paper, including the transport LP for vehicle allocation, conditional-NHPP dispatch simulation, and continuous-duration emergency-response analysis.
-- Included all 13 data-driven figures, eight result tables, native Word equations, references, and the reproducibility appendix.
-- Established the version naming rule: minor revisions advance `v2.x`, while a substantial model or paper rewrite advances to `v3`.
+The first complete paper covering all three tasks, serving as the baseline for later content, layout, and reproducibility improvements.
+
+- `[+]` Integrated transportation linear programming for fleet allocation, conditional nonhomogeneous Poisson dispatch simulation, and continuous-duration incident-response analysis into one end-to-end solution.
+- `[+]` Shipped the supporting data-driven figures and tables, native Word equations, references, and reproducibility appendix required for a complete, verifiable deliverable.
+- `[+]` Established the versioning rule: minor revisions increment `v2.x`, while a substantial model or paper rewrite advances to `v3`.
 
 ## Workflow and Template Changelog
 
-This section records generation-pipeline, online-preview, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
+This section records generation-pipeline, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
+
+### 2026-08-13 15:03 UTC+8 — Manual Word Table Baseline
+
+- Codified that user-finalized Word/WPS tables take precedence over generic table rules in both the personalized workflow and the machine-readable profile.
+- When table content is unchanged, regeneration inherits the complete manual OOXML; content drift fails closed, and layout-XML plus render checks guard against one-character lines, mixed alignment, and unexpected wrapping.
 
 ### 2026-08-13 13:26 UTC+8 — Repository Agent Guidance
 
@@ -60,7 +77,12 @@ This section records generation-pipeline, online-preview, test, and reusable-tem
 - Added verified rule promotion: only rules backed by a real artifact or official renderer, reusable across projects, and compatible with official requirements and user decisions may be promoted, with source and date recorded.
 - Added template contract tests covering the dual-target syntax, four required release artifacts, and promotion gates.
 
-### 2026-08-13 12:55 UTC+8 — GitHub Online Preview
+### 2026-08-13 19:10 UTC+8 — Retired Derived GitHub Previews
+
+- Each release directory now retains only the Pandoc Markdown source, DOCX, and conversion manifest; removed the v2.4—v2.5 derived preview files, generator, and dedicated tests.
+- Pandoc Markdown remains the sole editable content source and is linked directly from the README; the 12:55 preview approach is retained below as a superseded record.
+
+### 2026-08-13 12:55 UTC+8 — GitHub Online Preview (retired at 19:10)
 
 - Added a generated GitHub preview that renders all 178 mathematical expressions, four citation superscripts, and all 11 image widths correctly.
 - Kept the Pandoc source and formal DOCX unchanged; the preview is generator-owned and must not be edited manually.
@@ -86,7 +108,7 @@ MCM/
 |           `-- problem-a-ambulance-dispatch/
 |               |-- analysis/         # Modeling report and terminology
 |               |-- figures/          # Publication figures (PNG and SVG)
-|               |-- paper/vX.Y/       # Pandoc source, GitHub preview, DOCX, and manifest
+|               |-- paper/vX.Y/       # Pandoc source, DOCX, and manifest
 |               |-- results/          # Reproducible result tables and manifest
 |               |-- src/              # Optimization, simulation, and plotting code
 |               |-- templates/        # Personalized workflow, paper profile, and reusable prompts

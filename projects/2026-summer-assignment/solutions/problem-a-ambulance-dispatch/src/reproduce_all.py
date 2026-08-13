@@ -323,6 +323,7 @@ def verify_figures(project_root: Path, questions: tuple[str, ...] = ("q1", "q2",
             "raw_q2_nhpp_intensity",
             "process_q2_b_grid",
             "result_q2_mean_response",
+            "result_q2_multi_metric",
         },
         "q3": {
             "raw_q3_incident_load",

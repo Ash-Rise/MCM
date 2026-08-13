@@ -412,28 +412,61 @@ def result_q2_summary(full: Path, figures: Path) -> None:
     ax.invert_yaxis()
     save(fig, figures, "result_q2_mean_response", (6.3, 2.7))
 
-    metrics = ["strict_4min_rate", "p95_response_min", "mean_wait_min", "regional_mean_gap_min"]
-    labels = ["4分钟内到达率", "P95响应时间", "平均等待时间", "区域均值极差"]
-    means = frame[frame["metric"].isin(metrics)].pivot(index="candidate", columns="metric", values="mean")
-    if "A" in means.index and "B_beta4_delta2" in means.index:
-        baseline = means.loc["A", metrics].to_numpy(dtype=float)
-        optimized = means.loc["B_beta4_delta2", metrics].to_numpy(dtype=float)
-        improvement = 100 * (baseline - optimized) / baseline
-        improvement[0] = 100 * (optimized[0] - baseline[0]) / baseline[0]
-        fig, ax = plt.subplots(figsize=(6.3, 3.2))
-        y = np.arange(len(labels))
-        bars = ax.barh(y, improvement, color=[GREEN, BLUE, BLUE, BLUE], alpha=0.86)
-        ax.axvline(0, color=GRAY, linewidth=0.8)
-        for bar, value in zip(bars, improvement, strict=True):
-            ax.text(value + 0.08, bar.get_y() + bar.get_height() / 2, f"{value:.2f}%", va="center", fontsize=7)
-        ax.set_yticks(y, labels)
-        ax.set_xlabel("策略B相对策略A的改善率（%）")
-        ax.invert_yaxis()
-        save(fig, figures, "result_q2_multi_metric", (6.3, 3.2))
-
     replicate_path = full / "final_replicates_W030.csv"
     if replicate_path.exists():
         replicates = pd.read_csv(replicate_path)
+        order = [
+            "mean_response_min",
+            "p95_response_min",
+            "mean_wait_min",
+            "strict_4min_rate",
+            "regional_mean_gap_min",
+            "mean_delay_penalty_yuan_per_call",
+        ]
+        labels = ["平均响应", "P95响应", "平均等待", "4分钟内到达率", "区域均值极差", "单次延迟成本"]
+        means = frame.pivot(index="candidate", columns="metric", values="mean")
+        baseline = means.loc["A", order].to_numpy(dtype=float)
+        comparisons = [
+            ("B_beta4_delta2", "策略B", BLUE, "", -0.18),
+            ("C_r001000_tau7", "策略C", ORANGE, "///", 0.18),
+        ]
+        fig, ax = plt.subplots(figsize=(6.3, 3.8))
+        y = np.arange(len(order), dtype=float)
+        for candidate, label, color, hatch, offset in comparisons:
+            selected = means.loc[candidate, order].to_numpy(dtype=float)
+            values = 100 * (baseline - selected) / baseline
+            values[3] = 100 * (selected[3] - baseline[3]) / baseline[3]
+            bars = ax.barh(
+                y + offset,
+                values,
+                height=0.32,
+                color=color,
+                label=label,
+                alpha=0.88,
+                hatch=hatch,
+                edgecolor="white",
+                linewidth=0.4,
+                zorder=2,
+            )
+            for bar, value in zip(bars, values, strict=True):
+                ax.text(
+                    value + (0.45 if value >= 0 else -0.45),
+                    bar.get_y() + bar.get_height() / 2,
+                    f"{value:.2f}%",
+                    color=color,
+                    fontsize=6.7,
+                    va="center",
+                    ha="left" if value >= 0 else "right",
+                    zorder=3,
+                )
+        ax.axvline(0, color=GRAY, linewidth=0.8)
+        ax.set_yticks(y, labels)
+        ax.set_xlabel("相对策略A的平均优化幅度（%）")
+        ax.grid(axis="x", color="#D1D5DB", linewidth=0.55, alpha=0.75)
+        ax.legend(loc="lower right", frameon=False, ncol=2, fontsize=7)
+        ax.invert_yaxis()
+        save(fig, figures, "result_q2_multi_metric", (6.3, 3.8))
+
         metric_specs = [
             ("mean_response_min", "平均响应", "min", False),
             ("p95_response_min", "P95响应", "min", False),

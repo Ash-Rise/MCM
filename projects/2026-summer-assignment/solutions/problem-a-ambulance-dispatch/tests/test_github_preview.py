@@ -54,10 +54,25 @@ def test_github_preview_uses_gfm_math_and_html_image_widths():
     assert preview.count("$$") == source.count("$$")
 
 
-def test_converter_does_not_change_fenced_code_blocks():
+def test_github_preview_converts_pandoc_citation_superscripts():
     module = _load_generator()
-    source = "正文$x_i$。\n\n```text\n原样$x_i$ {width=82%}\n```\n"
+    source = SOURCE_PATH.read_text(encoding="utf-8")
     preview = module.convert_for_github(source)
 
-    assert "正文$`x_i`$。" in preview
-    assert "原样$x_i$ {width=82%}" in preview
+    assert len(module.PANDOC_SUPERSCRIPT_CITATION_RE.findall(source)) == 4
+    assert not module.PANDOC_SUPERSCRIPT_CITATION_RE.search(preview)
+    assert [int(number) for number in re.findall(r"<sup>\[(\d+)\]</sup>", preview)] == [
+        2,
+        1,
+        3,
+        4,
+    ]
+
+
+def test_converter_does_not_change_fenced_code_blocks():
+    module = _load_generator()
+    source = "正文$x_i$且引用^\\[1\\]^。\n\n```text\n原样$x_i$ ^\\[1\\]^ {width=82%}\n```\n"
+    preview = module.convert_for_github(source)
+
+    assert "正文$`x_i`$且引用<sup>[1]</sup>。" in preview
+    assert "原样$x_i$ ^\\[1\\]^ {width=82%}" in preview

@@ -21,6 +21,9 @@ IMAGE_WIDTH_RE = re.compile(
     r"!\[(?P<alt>[^\]]*)\]\((?P<src>[^)]+)\)"
     r"\{width=(?P<width>\d+(?:\.\d+)?)%\}"
 )
+PANDOC_SUPERSCRIPT_CITATION_RE = re.compile(
+    r"\^\\\[(?P<number>\d+)\\\]\^"
+)
 FENCED_BLOCK_RE = re.compile(
     r"(^[ \t]*(?P<fence>`{3,}|~{3,})[^\n]*\n.*?"
     r"^[ \t]*(?P=fence)[ \t]*(?:\n|$))",
@@ -40,6 +43,9 @@ def _convert_prose(segment: str) -> str:
         )
 
     segment = IMAGE_WIDTH_RE.sub(replace_image, segment)
+    segment = PANDOC_SUPERSCRIPT_CITATION_RE.sub(
+        lambda match: f"<sup>[{match.group('number')}]</sup>", segment
+    )
     return INLINE_MATH_RE.sub(lambda match: f"$`{match.group('math')}`$", segment)
 
 

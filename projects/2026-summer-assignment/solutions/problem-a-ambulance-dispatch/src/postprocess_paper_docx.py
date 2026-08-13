@@ -17,26 +17,29 @@ from docx.shared import Pt, Twips
 
 
 COMPLETE_TABLE_WIDTH_WEIGHTS = (
-    (1.2, 4.4, 1.2),
-    # The following three geometries reproduce the manually corrected v2.4
-    # Word tables.  Keep the exact dxa proportions: generic fractional
-    # weights make the regenerated document drift back to the old wrapping.
+    # Exact dxa proportions distilled from the user-corrected v2.5 Word
+    # baseline.  These values are only a fallback for newly created tables;
+    # release builds use the complete table OOXML lock below.
+    (1565, 5739, 1566),
     (1267, 2946, 4657),
-    (2.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
-    (2.3, 4.7),
-    (0.9, 0.9, 1.2, 1.5, 1.5, 1.5),
-    (2.3, 4.7),
-    (2.0, 1.9, 1.9, 1.9),
+    (2609, 1044, 1044, 1044, 1044, 1044, 1041),
+    (2657, 6213),
+    (1064, 1064, 1419, 1774, 1774, 1775),
+    (2826, 6044),
+    (2886, 2061, 2061, 2062),
     (1365, 1367, 2613, 3525),
-    (0.8, 1.0, 1.4, 1.8, 1.0),
+    (1183, 1478, 2070, 2661, 1478),
     (2534, 6336),
-    (0.8, 1.0, 1.0, 1.0, 2.0),
-    (0.7, 1.0, 1.6, 1.0, 1.6),
+    (1223, 1529, 1529, 2319, 2270),
+    (1694, 1095, 2301, 1255, 2525),
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TABLE_BASELINE = (
-    PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).docx"
+    PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).docx"
+)
+DEFAULT_TABLE_BASELINE_SHA256 = (
+    "e9f4cb5377c6c7befa3ec63cf5c5965e56dd4e56e466d865cc09a113a6d3756b"
 )
 
 
@@ -52,6 +55,18 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _validate_frozen_table_baseline(path: Path) -> None:
+    if path.resolve() != DEFAULT_TABLE_BASELINE.resolve():
+        return
+    actual = sha256_file(path)
+    if actual != DEFAULT_TABLE_BASELINE_SHA256:
+        raise ValueError(
+            "The frozen v2.5 table baseline changed: "
+            f"expected {DEFAULT_TABLE_BASELINE_SHA256}, found {actual}. "
+            "Review the Word tables and deliberately adopt a new baseline."
+        )
 
 
 def rebind_conversion_manifest(
@@ -79,8 +94,8 @@ def rebind_conversion_manifest(
             "layout_only" if allow_table_content_drift else "complete_table_xml"
         ),
         "reason": (
-            "Removed template numbering, preserved the user-corrected v2.4 table "
-            "layout while retaining the reviewed v2.5 table content, installed centered "
+            "Removed template numbering, preserved the user-corrected v2.5 complete "
+            "table OOXML, installed centered "
             "PAGE fields, kept the abstract on its own page, and added caption-derived "
             "alt text to body figures. The current Markdown was synchronized with the "
             "reviewed Word baseline without changing results."
@@ -798,6 +813,7 @@ def postprocess_docx(
         _set_page_field(section.first_page_footer)
 
     if table_baseline is not None:
+        _validate_frozen_table_baseline(table_baseline)
         baseline_document = Document(table_baseline)
         if allow_table_content_drift:
             _copy_table_layout_from_baseline(document, baseline_document)
@@ -891,7 +907,8 @@ def main() -> None:
         default=DEFAULT_TABLE_BASELINE,
         help=(
             "DOCX whose complete table XML is preserved. Defaults to the "
-            "user-corrected v2.4 paper and fails if any table content differs."
+            "user-corrected v2.5 paper and fails if its frozen hash or any table "
+            "content differs."
         ),
     )
     parser.add_argument(

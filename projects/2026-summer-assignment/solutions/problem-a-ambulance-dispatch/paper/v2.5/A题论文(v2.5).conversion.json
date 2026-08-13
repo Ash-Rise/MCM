@@ -12,7 +12,7 @@
   ],
   "project_sha256": "53be86252d27f3353363ed227982d7916bd51859a18950d4da4381d2e155491c",
   "output": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).docx",
-  "output_sha256": "e01e098acca83bbfa491a389e5b4297f2dd386b36cd8806e4dde808edf0c6796",
+  "output_sha256": "e9f4cb5377c6c7befa3ec63cf5c5965e56dd4e56e466d865cc09a113a6d3756b",
   "template": "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx",
   "template_sha256": "52b92f3e1702a1b3f733340adafd1cae4d16468b423c70dae0506f5e4f2ff142",
   "pandoc": {
@@ -46,9 +46,10 @@
   "postprocess": {
     "tool": "src/postprocess_paper_docx.py",
     "source_manifest": "A题论文(v2.5)-未后处理.conversion.json",
-    "table_baseline": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.4\\A题论文(v2.4).docx",
-    "table_baseline_sha256": "dcf80b35f35f693de9e852339b4c2ccbb0d60f58765be8c3af26039df8b3c3af",
-    "table_baseline_mode": "layout_only",
-    "reason": "Removed template numbering, preserved the user-corrected v2.4 table layout while retaining the reviewed v2.5 table content, installed centered PAGE fields, kept the abstract on its own page, and added caption-derived alt text to body figures. The current Markdown was synchronized with the reviewed Word baseline without changing results."
+    "table_baseline": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).docx",
+    "table_baseline_sha256": "e9f4cb5377c6c7befa3ec63cf5c5965e56dd4e56e466d865cc09a113a6d3756b",
+    "table_baseline_mode": "complete_table_xml",
+    "manual_layout_adopted_at": "2026-08-13T15:44:00+00:00",
+    "reason": "Adopted the user-corrected v2.5 Word tables as the exact complete-OOXML baseline after structural regression and rendered-page review. The Pandoc Markdown content and numerical results are unchanged."
   }
 }

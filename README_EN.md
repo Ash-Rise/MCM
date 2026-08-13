@@ -16,6 +16,8 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 
 ### v2.5 (2026-08-13 19:22 UTC+8)
 
+Layout-asset updated: 2026-08-13 23:52 UTC+8. This update only adopts and locks the table widths and alignments finalized by the user in WPS; the Markdown body, models, figures, and numerical results are unchanged.
+
 This release improves the readability of the Task 2 dispatch policies, the completeness of statistical comparison, and the stability of Word regeneration while retaining all three tasks' model definitions and frozen simulation results.
 
 - `[~]` Rewrote Strategy B in the order of intuition, variable meaning, mathematical expression, and interpretation; completed Strategy C with its reserve-vector candidates, threshold release rule, lexicographic screening, and out-of-sample one-sided bound.
@@ -24,6 +26,7 @@ This release improves the readability of the Task 2 dispatch policies, the compl
 - `[~]` Rebuilt the 25-page Word deliverable from the reviewed Markdown, inherited the hand-corrected WPS table baseline, and widened Table 7's metric column so every label remains on one line at 10 pt; the paper contains 10 figures, 12 three-line tables, and native Word equations.
 - `[~]` Reduced each release to the Pandoc Markdown source, DOCX, and conversion manifest; removed the derived GitHub previews and their generation chain for v2.4—v2.5. Versions v2.1—v2.3 never contained such files.
 - `[✓]` Passed full evidence reproduction, the regression suite after preview-chain removal, Office structure validation, conversion-manifest verification, and visual inspection of all 25 rendered pages.
+- `[~]` Promoted the manually revised complete table OOXML to the authoritative v2.5 table baseline and left-aligned Table 8's narrative execution notes; the frozen hash, save-reload regression, and rendered-page review all passed.
 
 ### v2.4 (2026-08-13 04:39 UTC+8)
 
@@ -59,6 +62,12 @@ The first complete paper covering all three tasks, serving as the baseline for l
 ## Workflow and Template Changelog
 
 This section records generation-pipeline, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
+
+### 2026-08-13 23:44 UTC+8 — Strict Manual Table Lock
+
+- Promoted the user-revised v2.5 Word tables to the new authoritative baseline; formal rebuilds must reproduce complete table OOXML when content matches, while partial layout inheritance remains draft-only.
+- A table is considered locked only after baseline review, frozen-hash identity, save-reload full-table XML regression, semantic column-alignment assertions, and rendered-page inspection; a file hash alone is not evidence of correct layout.
+- Codified left alignment for narrative columns and wrapped lines, the width–margin–label–font order for longer headings, and surgical OOXML-only corrections that leave unrelated DOCX parts unchanged.
 
 ### 2026-08-13 15:03 UTC+8 — Manual Word Table Baseline
 

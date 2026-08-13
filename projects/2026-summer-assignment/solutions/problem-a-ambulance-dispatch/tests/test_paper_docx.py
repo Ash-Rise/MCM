@@ -18,7 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DOCX_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).docx"
 MARKDOWN_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).md"
 POSTPROCESS_PATH = PROJECT_ROOT / "src" / "postprocess_paper_docx.py"
-TABLE_BASELINE_PATH = PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).docx"
+TABLE_BASELINE_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).docx"
 
 
 def _load_postprocessor():
@@ -319,7 +319,6 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
         DOCX_PATH,
         output,
         table_baseline=TABLE_BASELINE_PATH,
-        allow_table_content_drift=True,
     )
 
     document = Document(output)
@@ -407,6 +406,7 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
         strict=True,
     )):
         assert module._table_text(table) == module._table_text(source_table)
+        assert table._tbl.xml == baseline_table._tbl.xml
         if table_index == 6:
                 widths = [int(column.get(qn("w:w"))) for column in table._tbl.tblGrid]
                 assert widths[0] > max(widths[1:])
@@ -470,6 +470,25 @@ def test_exact_table_lock_survives_docx_save_and_reload(tmp_path):
 
     assert target.tables[0]._tbl.xml == baseline.tables[0]._tbl.xml
     assert target.tables[0].cell(1, 1).paragraphs[0].alignment == WD_ALIGN_PARAGRAPH.LEFT
+
+
+def test_manual_table_baseline_keeps_table8_execution_notes_left_aligned():
+    baseline = Document(TABLE_BASELINE_PATH)
+    execution_cells = [row.cells[3] for row in baseline.tables[7].rows[1:]]
+
+    assert execution_cells
+    assert all(
+        paragraph.alignment == WD_ALIGN_PARAGRAPH.LEFT
+        for cell in execution_cells
+        for paragraph in cell.paragraphs
+    )
+
+
+def test_default_table_baseline_hash_is_frozen():
+    module = _load_postprocessor()
+
+    assert TABLE_BASELINE_PATH == module.DEFAULT_TABLE_BASELINE
+    assert module.sha256_file(TABLE_BASELINE_PATH) == module.DEFAULT_TABLE_BASELINE_SHA256
 
 def test_postprocessor_selects_complete_paper_table_geometry():
     module = _load_postprocessor()

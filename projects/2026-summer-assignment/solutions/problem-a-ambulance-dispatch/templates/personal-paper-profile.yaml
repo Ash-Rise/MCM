@@ -1,4 +1,4 @@
-profile_version: 1.1
+profile_version: 1.2
 name: ash-rise-chinese-modeling-paper
 priority:
   - current_official_rules
@@ -87,7 +87,11 @@ tables:
   style: three_line
   manual_word_baseline:
     precedence: higher_than_generic_table_rules
+    baseline_requires_structural_and_render_approval: true
     inherit_when_content_unchanged: complete_table_ooxml
+    final_release_lock_mode: complete_table_ooxml_only
+    layout_only_mode: transitional_draft_only
+    exact_table_replacement_must_be_last_table_operation: true
     preserved_properties:
       - column_widths
       - paragraph_alignment
@@ -99,11 +103,18 @@ tables:
       - table_style
     fail_on_content_drift: true
     record_absolute_path_and_sha256: true
-    require_layout_xml_regression: true
+    hash_is_identity_check_not_layout_proof: true
+    require_save_close_reload_before_comparison: true
+    require_complete_table_xml_regression: true
+    require_semantic_alignment_assertions: true
     require_render_checks:
       - one_character_lines
       - mixed_alignment
       - unexpected_wrapping
+    reject_baseline_with_known_visual_defects: true
+    patch_scope_for_manual_corrections: affected_ooxml_parts_only
+    wrapped_text_inherits_paragraph_alignment: true
+    narrative_columns_default_alignment: left
   top_border_ooxml_size: 10
   header_bottom_border_ooxml_size: 4
   bottom_border_ooxml_size: 10
@@ -196,6 +207,14 @@ workflow:
           - formal_docx_unchanged
           - git_commit_timeline
         scope: release_notes_and_workflow_template_changelog
+      - id: exact_manual_word_table_lock
+        added_on: '2026-08-13'
+        source: v2.5_wps_table_lock_regression
+        evidence:
+          - user_corrected_v2.5_docx
+          - complete_table_ooxml_save_reload_test
+          - affected_page_render_review
+        scope: manual_word_table_baselines_and_docx_regeneration
 
 release:
   paper_directory_pattern: paper/vX.Y

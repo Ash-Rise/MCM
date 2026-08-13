@@ -328,8 +328,25 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
 
     assert len(document.tables) == len(module.COMPLETE_TABLE_WIDTH_WEIGHTS)
     assert document.tables[0].cell(8, 2).text == "1/h，次/h"
-    for table, weights in zip(
-        document.tables, module.COMPLETE_TABLE_WIDTH_WEIGHTS, strict=True
+    expected_manual_grids = (
+        (1565, 5739, 1566),
+        (1267, 2946, 4657),
+        (2609, 1044, 1044, 1044, 1044, 1044, 1041),
+        (2914, 5956),
+        (1064, 1064, 1419, 1774, 1774, 1775),
+        (2914, 5956),
+        (2356, 2238, 2238, 2238),
+        (1365, 1367, 2613, 3525),
+        (1183, 1478, 2070, 2661, 1478),
+        (2534, 6336),
+        (1223, 1529, 1529, 1529, 3060),
+        (1052, 1503, 2405, 1503, 2407),
+    )
+    for table, weights, expected_grid in zip(
+        document.tables,
+        module.COMPLETE_TABLE_WIDTH_WEIGHTS,
+        expected_manual_grids,
+        strict=True,
     ):
         assert table._tbl.tblPr.find(qn("w:tblStyle")) is None
         table_borders = table._tbl.tblPr.find(qn("w:tblBorders"))
@@ -346,6 +363,7 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
         grid = [int(column.get(qn("w:w"))) for column in table._tbl.tblGrid.gridCol_lst]
         assert len(grid) == len(weights)
         assert sum(grid) == table_width
+        assert tuple(grid) == expected_grid
         for row in table.rows:
             assert row._tr.find(qn("w:tblPrEx")) is None
             widths = [int(cell._tc.tcPr.tcW.get(qn("w:w"))) for cell in row.cells]
@@ -388,6 +406,22 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
         for row in symbol_table.rows[1:]
         for paragraph in row.cells[1].paragraphs
     )
+    assert all(
+        paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
+        for column_index in (0, 2)
+        for row in symbol_table.rows[1:]
+        for paragraph in row.cells[column_index].paragraphs
+    )
+
+    for table_index, table in enumerate(document.tables):
+        if table_index in {0, 3, 5, 9}:
+            continue
+        assert all(
+            paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
+            for row in table.rows[1:]
+            for cell in row.cells
+            for paragraph in cell.paragraphs
+        )
 
 def test_postprocessor_selects_complete_paper_table_geometry():
     module = _load_postprocessor()

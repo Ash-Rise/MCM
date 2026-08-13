@@ -17,15 +17,18 @@ from docx.shared import Pt, Twips
 
 COMPLETE_TABLE_WIDTH_WEIGHTS = (
     (1.2, 4.4, 1.2),
-    (1.0, 2.5, 3.5),
+    # The following three geometries reproduce the manually corrected v2.4
+    # Word tables.  Keep the exact dxa proportions: generic fractional
+    # weights make the regenerated document drift back to the old wrapping.
+    (1267, 2946, 4657),
     (2.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
     (2.3, 4.7),
     (0.9, 0.9, 1.2, 1.5, 1.5, 1.5),
     (2.3, 4.7),
     (2.0, 1.9, 1.9, 1.9),
-    (1.2, 1.7, 1.8, 3.1),
+    (1365, 1367, 2613, 3525),
     (0.8, 1.0, 1.4, 1.8, 1.0),
-    (1.8, 5.2),
+    (2534, 6336),
     (0.8, 1.0, 1.0, 1.0, 2.0),
     (0.7, 1.0, 1.6, 1.0, 1.6),
 )
@@ -637,9 +640,6 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
                     paragraph.paragraph_format.line_spacing = 1.15
                     if row_index == 0:
                         paragraph.paragraph_format.keep_with_next = True
-                    contains_math = bool(
-                        paragraph._p.findall(".//" + qn("m:oMath"))
-                    )
                     is_algorithm_table = table_index in {3, 5, 9}
                     if (
                         row_index != 0
@@ -650,16 +650,12 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
                     ):
                         paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
                     else:
-                        paragraph.alignment = (
-                            WD_ALIGN_PARAGRAPH.CENTER
-                            if (
-                                table_index == 6
-                                or row_index == 0
-                                or column_index != 1
-                                or contains_math
-                            )
-                            else WD_ALIGN_PARAGRAPH.LEFT
-                        )
+                        # The user's hand-corrected v2.4 is the table-layout
+                        # authority.  Apart from the symbol-description column
+                        # and algorithm bodies above, every table cell is
+                        # centered; do not apply the former "column 2 left"
+                        # blanket rule during regeneration.
+                        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     for run in paragraph.runs:
                         _set_run_font(run, east_asia="宋体", size=Pt(10))
                         if row_index == 0:

@@ -46,6 +46,10 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 
 This section records generation-pipeline, online-preview, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
 
+### 2026-08-13 13:26 UTC+8 — Repository Agent Guidance
+
+- Added a concise repository-level `AGENTS.md` covering only instruction entry points, dirty-worktree protection, preservation of manual DOCX edits, and release-validation boundaries without duplicating the personalized modeling workflow.
+
 ### 2026-08-13 13:20 UTC+8 — Template Naming Adjustment
 
 - Simplified the workflow title from “Our Personalized Mathematical Modeling Workflow and Paper Template” to “Personalized Mathematical Modeling Workflow and Paper Template” by removing the unnecessary possessive qualifier.
@@ -74,6 +78,7 @@ This section records generation-pipeline, online-preview, test, and reusable-tem
 
 ```text
 MCM/
+|-- AGENTS.md                      # Repository-level agent operating rules
 |-- projects/
 |   `-- 2026-summer-assignment/
 |       |-- problem-statements/       # Original assignment statements

@@ -423,7 +423,14 @@ def result_q2_summary(full: Path, figures: Path) -> None:
             "regional_mean_gap_min",
             "mean_delay_penalty_yuan_per_call",
         ]
-        labels = ["平均响应", "P95响应", "平均等待", "4分钟内到达率", "区域均值极差", "单次延迟成本"]
+        labels = [
+            "平均响应时间",
+            "P95响应时间",
+            "平均等待时间",
+            "4分钟内到达率",
+            "区域平均响应时间极差",
+            "平均单次延迟成本",
+        ]
         means = frame.pivot(index="candidate", columns="metric", values="mean")
         baseline = means.loc["A", order].to_numpy(dtype=float)
         comparisons = [
@@ -468,12 +475,12 @@ def result_q2_summary(full: Path, figures: Path) -> None:
         save(fig, figures, "result_q2_multi_metric", (6.3, 3.8))
 
         metric_specs = [
-            ("mean_response_min", "平均响应", "min", False),
-            ("p95_response_min", "P95响应", "min", False),
-            ("mean_wait_min", "平均等待", "min", False),
+            ("mean_response_min", "平均响应时间", "min", False),
+            ("p95_response_min", "P95响应时间", "min", False),
+            ("mean_wait_min", "平均等待时间", "min", False),
             ("strict_4min_rate", "4分钟内到达率", "百分点", True),
-            ("regional_mean_gap_min", "区域均值极差", "min", False),
-            ("mean_delay_penalty_yuan_per_call", "单次延迟成本", "元/次", False),
+            ("regional_mean_gap_min", "区域平均响应时间极差", "min", False),
+            ("mean_delay_penalty_yuan_per_call", "平均单次延迟成本", "元/次", False),
         ]
         comparisons = [
             ("B_beta4_delta2", "B-A", BLUE, "o"),
@@ -587,7 +594,7 @@ def process_q3_duration_zone(full: Path, figures: Path) -> None:
     axes[0].set_ylabel("事故区域")
     colorbar = fig.colorbar(image, ax=axes[0], shrink=0.90)
     keep_colorbar_vector(colorbar)
-    colorbar.set_label(r"常态预测 $B_N$ 平均响应（min）")
+    colorbar.set_label(r"常态预测 $B_N$ 平均响应时间（min）")
     max_width = width_pivot.max(axis=0).to_numpy(dtype=float)
     median_width = width_pivot.median(axis=0).to_numpy(dtype=float)
     axes[1].plot(x, max_width, color=ORANGE, linewidth=1.2, label="10区最大带宽")
@@ -643,7 +650,7 @@ def result_q3_response_curve(full: Path, figures: Path) -> None:
         ax.set_title(f"{title}：R{zone}", fontsize=8)
         ax.set_xlabel("H（h）")
         ax.set_ylim(bottom=0.0)
-    axes[0].set_ylabel("事故期平均响应（min）")
+    axes[0].set_ylabel("事故期平均响应时间（min）")
     axes[0].text(
         0.02,
         0.97,
@@ -696,7 +703,7 @@ def result_q3_paired_effect(full: Path, figures: Path) -> None:
         )
     ax.axhline(0.0, color=GRAY, linestyle=":", linewidth=0.9)
     ax.set_xlabel("事故持续时间 H（h）")
-    ax.set_ylabel(r"成对平均响应差 $B_E-B_N$（min）")
+    ax.set_ylabel(r"成对平均响应时间差 $B_E-B_N$（min）")
     ax.legend(frameon=False, loc="lower left", ncol=3, fontsize=7)
     ax.text(
         0.02,

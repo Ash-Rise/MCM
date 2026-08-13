@@ -435,12 +435,12 @@ def result_q2_summary(full: Path, figures: Path) -> None:
         baseline = means.loc["A", order].to_numpy(dtype=float)
         baseline_replicates = replicates[replicates["candidate"] == "A"].set_index("seed")
         comparisons = [
-            ("B_beta4_delta2", "策略B", BLUE, "", -0.18),
-            ("C_r001000_tau7", "策略C", ORANGE, "///", 0.18),
+            ("B_beta4_delta2", "策略B", BLUE, "#004B76", "", -0.18),
+            ("C_r001000_tau7", "策略C", ORANGE, "#8F3F00", "///", 0.18),
         ]
         fig, ax = plt.subplots(figsize=(6.3, 3.8))
         y = np.arange(len(order), dtype=float)
-        for candidate, label, color, hatch, offset in comparisons:
+        for candidate, label, color, interval_color, hatch, offset in comparisons:
             selected = means.loc[candidate, order].to_numpy(dtype=float)
             values = 100 * (baseline - selected) / baseline
             values[3] = 100 * (selected[3] - baseline[3]) / baseline[3]
@@ -474,7 +474,7 @@ def result_q2_summary(full: Path, figures: Path) -> None:
                 y + offset,
                 xerr=np.asarray(half_widths),
                 fmt="none",
-                ecolor="#6B7280",
+                ecolor=interval_color,
                 elinewidth=0.6,
                 capsize=2.0,
                 capthick=0.6,
@@ -504,7 +504,7 @@ def result_q2_summary(full: Path, figures: Path) -> None:
         ax.text(
             0.01,
             1.01,
-            "灰色误差线：30组相同随机呼叫下策略差异的95%置信区间；正值表示优于策略A",
+            "深色误差线：30组相同随机呼叫下策略差异的95%置信区间；正值表示优于策略A",
             transform=ax.transAxes,
             fontsize=6.5,
             color=GRAY,

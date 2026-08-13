@@ -1,4 +1,4 @@
-profile_version: 1.0
+profile_version: 1.1
 name: ash-rise-chinese-modeling-paper
 priority:
   - current_official_rules
@@ -117,6 +117,37 @@ figures:
   avoid_redundant_table_and_figure: true
   no_jpeg_for_quantitative_charts: true
 
+markdown:
+  source_target:
+    dialect: pandoc_markdown
+    role: authoritative_content_and_docx_source
+    editable: true
+    inline_math_delimiter: '$...$'
+    display_math_delimiter: '$$...$$'
+    citation_superscript_pattern: '^\\[n\\]^'
+    image_width_pattern: '![](path){width=N%}'
+  github_preview_target:
+    dialect: github_flavored_markdown
+    role: generated_online_preview
+    editable: false
+    generated_notice_required: true
+    filename_suffix: -GitHub预览
+    inline_math_delimiter: '$`...`$'
+    display_math_delimiter: '$$...$$'
+    citation_superscript_pattern: '<sup>[n]</sup>'
+    image_width_pattern: '<img src="path" width="N%" alt="...">'
+  generator:
+    path: src/generate_github_preview.py
+    check_flag: --check
+    preserve_fenced_code_blocks: true
+    source_must_not_change: true
+  validation:
+    preview_must_equal_generator_output: true
+    no_literal_pandoc_width_attributes: true
+    all_math_must_render_on_github: true
+    all_citation_superscripts_must_render_on_github: true
+    all_image_widths_must_survive_github_sanitization: true
+
 workflow:
   default_delivery: docx
   latex_only_when_explicitly_requested: true
@@ -131,11 +162,31 @@ workflow:
   parameter_study_timebox_minutes: 20
   hash_policy: final_freeze_only
   pdf_role: temporary_visual_qa_only
+  reusable_rule_promotion:
+    enabled: true
+    user_authorized: true
+    requirements:
+      - verified_in_real_artifact_or_official_renderer
+      - reusable_across_projects
+      - no_conflict_with_current_official_rules
+      - no_conflict_with_current_user_decision
+    record_source_and_date: true
+    update_both_human_and_machine_profiles_when_applicable: true
+    never_promote_one_off_workarounds: true
+    registry:
+      - id: markdown_dual_target
+        added_on: '2026-08-13'
+        source: v2.4_github_renderer_compatibility_audit
+        evidence:
+          - github_markdown_api
+          - reproducible_preview_tests
+        scope: pandoc_docx_source_and_github_online_preview
 
 release:
   paper_directory_pattern: paper/vX.Y
   required_artifacts:
-    - markdown
+    - pandoc_markdown_source
+    - generated_github_preview
     - docx
     - conversion_manifest
   bilingual_readme: true

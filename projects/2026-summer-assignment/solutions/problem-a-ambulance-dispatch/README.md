@@ -20,7 +20,7 @@ Tasks 1--3 have frozen result tables and publication figures. Task 2 uses exactl
 
 The current paper release is `paper/v2.4/A题论文(v2.4)`. `A题论文(v2.4).md` is the only editable Pandoc/DOCX source; `A题论文(v2.4)-GitHub预览.md` is generated and must not be edited by hand. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`. The root `README.md` records the release notes.
 
-The complete v2.4 project retrospective is `analysis/project-retrospective-v2.4.md`. Future projects should start from `templates/personal-modeling-playbook.md`; its exact Word/table/figure defaults are mirrored in `templates/personal-paper-profile.yaml`.
+The complete v2.4 project retrospective is `analysis/project-retrospective-v2.4.md`. Future projects should start from `templates/personal-modeling-playbook.md`; its exact Word, Markdown dual-target, table, figure, and verified-rule-promotion defaults are mirrored in `templates/personal-paper-profile.yaml`.
 
 ## Reproduction
 

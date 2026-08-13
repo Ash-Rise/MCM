@@ -46,6 +46,10 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 
 This section records generation-pipeline, online-preview, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
 
+### 2026-08-13 13:20 UTC+8 — Template Naming Adjustment
+
+- Simplified the workflow title from “Our Personalized Mathematical Modeling Workflow and Paper Template” to “Personalized Mathematical Modeling Workflow and Paper Template” by removing the unnecessary possessive qualifier.
+
 ### 2026-08-13 13:03 UTC+8 — Personalized Template v1.1
 
 - Codified the dual-target Markdown workflow for the Pandoc/DOCX source and the generated GitHub preview in both the human workflow and machine-readable profile.

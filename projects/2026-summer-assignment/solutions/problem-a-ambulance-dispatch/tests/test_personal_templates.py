@@ -70,6 +70,8 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
     assert release["tooling_and_template_changelog_separate"] is True
 
     assert "Markdown双目标排版" in playbook
+    assert playbook.startswith("# 个性化数模工作流与论文模板 v1.1")
+    assert "我们的个性化数模工作流与论文模板" not in playbook
     assert "优质规则自动沉淀机制" in playbook
     assert "真实论文、官方渲染器或可复现测试" in playbook
     assert "能跨题目复用" in playbook

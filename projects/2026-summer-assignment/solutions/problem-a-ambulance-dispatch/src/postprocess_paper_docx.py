@@ -801,14 +801,16 @@ def postprocess_docx(
         baseline_document = Document(table_baseline)
         if allow_table_content_drift:
             _copy_table_layout_from_baseline(document, baseline_document)
+            # Content drift necessarily changes line wrapping.  Keep the
+            # reviewed 10 pt font and widen only Table 7's metric column for
+            # this transitional mode; final releases must adopt a new exact
+            # baseline instead of relying on this branch.
+            _set_table_column_widths(document.tables[6], (2.45, 1.75, 1.75, 1.75))
+            _normalize_omml_matrix_properties(document)
         else:
+            # Exact mode is the real formatting lock: complete table elements
+            # are copied last and must not be touched by later generic rules.
             _replace_tables_from_baseline(document, baseline_document)
-        # Table 7 gained longer, unit-explicit metric labels in v2.5.  Allocate
-        # enough room to keep those labels on one line while preserving 10 pt.
-        _set_table_column_widths(document.tables[6], (2.45, 1.75, 1.75, 1.75))
-        # The WPS baseline may carry non-canonical math child order inside cells.
-        # Normalize only OMML after replacement; the table XML remains untouched.
-        _normalize_omml_matrix_properties(document)
     else:
         _format_generated_tables(document)
 

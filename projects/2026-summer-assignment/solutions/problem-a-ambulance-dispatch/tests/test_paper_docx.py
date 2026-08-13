@@ -445,6 +445,25 @@ def test_table_layout_only_mode_retains_content_and_reports_drift():
         == WD_ALIGN_PARAGRAPH.CENTER
     )
 
+
+def test_exact_table_lock_copies_complete_table_xml_last():
+    module = _load_postprocessor()
+    target = Document()
+    target_table = target.add_table(rows=2, cols=2)
+    baseline = Document()
+    baseline_table = baseline.add_table(rows=2, cols=2)
+    for row_index in range(2):
+        for column_index in range(2):
+            text = f"r{row_index}c{column_index}"
+            target_table.cell(row_index, column_index).text = text
+            baseline_table.cell(row_index, column_index).text = text
+    baseline_table.cell(1, 1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
+
+    module._replace_tables_from_baseline(target, baseline)
+
+    assert target.tables[0]._tbl.xml == baseline.tables[0]._tbl.xml
+    assert target.tables[0].cell(1, 1).paragraphs[0].alignment == WD_ALIGN_PARAGRAPH.LEFT
+
 def test_postprocessor_selects_complete_paper_table_geometry():
     module = _load_postprocessor()
 

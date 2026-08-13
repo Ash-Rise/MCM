@@ -4,6 +4,7 @@ import yaml
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = PROJECT_ROOT.parents[3]
 PROFILE_PATH = PROJECT_ROOT / "templates" / "personal-paper-profile.yaml"
 PLAYBOOK_PATH = PROJECT_ROOT / "templates" / "personal-modeling-playbook.md"
 
@@ -54,8 +55,19 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
                 "reproducible_preview_tests",
             ],
             "scope": "pandoc_docx_source_and_github_online_preview",
-        }
+        },
+        {
+            "id": "separate_paper_and_tooling_changelogs",
+            "added_on": "2026-08-13",
+            "source": "v2.4_release_timestamp_boundary_audit",
+            "evidence": ["formal_docx_unchanged", "git_commit_timeline"],
+            "scope": "release_notes_and_workflow_template_changelog",
+        },
     ]
+
+    release = profile["release"]
+    assert release["paper_timestamp_changes_only_with_formal_paper_deliverable"] is True
+    assert release["tooling_and_template_changelog_separate"] is True
 
     assert "Markdown双目标排版" in playbook
     assert "优质规则自动沉淀机制" in playbook
@@ -63,3 +75,18 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
     assert "能跨题目复用" in playbook
     assert "记录来源和日期" in playbook
     assert "不得自动提升为长期规则" in playbook
+    assert "工作流与模板更新记录" in playbook
+
+
+def test_paper_release_time_is_separate_from_tooling_changelog():
+    readme_zh = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+    readme_en = (REPOSITORY_ROOT / "README_EN.md").read_text(encoding="utf-8")
+
+    assert "### v2.4（2026-08-13 04:39 UTC+8）" in readme_zh
+    assert "### v2.4 (2026-08-13 04:39 UTC+8)" in readme_en
+    assert "## 工作流与模板更新记录" in readme_zh
+    assert "## Workflow and Template Changelog" in readme_en
+    assert "### 2026-08-13 13:03 UTC+8 — 个性化模板 v1.1" in readme_zh
+    assert "### 2026-08-13 13:03 UTC+8 — Personalized Template v1.1" in readme_en
+    assert "这些变更不修改论文版本的发行时间" in readme_zh
+    assert "These changes do not modify the paper release timestamp" in readme_en

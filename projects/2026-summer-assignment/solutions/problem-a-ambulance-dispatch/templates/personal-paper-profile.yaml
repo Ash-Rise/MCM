@@ -181,6 +181,13 @@ workflow:
           - github_markdown_api
           - reproducible_preview_tests
         scope: pandoc_docx_source_and_github_online_preview
+      - id: separate_paper_and_tooling_changelogs
+        added_on: '2026-08-13'
+        source: v2.4_release_timestamp_boundary_audit
+        evidence:
+          - formal_docx_unchanged
+          - git_commit_timeline
+        scope: release_notes_and_workflow_template_changelog
 
 release:
   paper_directory_pattern: paper/vX.Y
@@ -191,6 +198,8 @@ release:
     - conversion_manifest
   bilingual_readme: true
   timestamp_format: YYYY-MM-DD HH:mm UTC+8
+  paper_timestamp_changes_only_with_formal_paper_deliverable: true
+  tooling_and_template_changelog_separate: true
   attach_latest_docx_to_release: true
   explicit_staging_only: true
   author_identity: user_github_identity

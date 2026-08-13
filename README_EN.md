@@ -12,7 +12,7 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 
 ## Release Notes
 
-### v2.4 (2026-08-13 12:47 UTC+8)
+### v2.4 (2026-08-13 04:39 UTC+8)
 
 - Shortened the paper title to fit on one line and standardized top-level body headings to Chinese numerals from “一、” through “八、”.
 - Revised the problem analysis, model boundaries, and evaluation into formal academic prose without changing models, data, metrics, or numerical conclusions.
@@ -23,13 +23,12 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 - Expanded the Task 2 paired-comparison figure to six metrics: mean response, P95, mean waiting time, arrival within 4 minutes, regional mean gap, and delay cost per call.
 - Retained Tables 11 and 12 and consolidated the emergency-policy effects into one large figure covering citywide, incident-zone, and non-incident-zone outcomes.
 - Tightened the Task 3 causal boundary: under the fixed-fleet and incident-intensity settings used here, capacity constraints have a larger effect than the marginal demand-forecast correction.
-- Added a generated GitHub preview target so all 178 mathematical expressions and all 11 image widths render on GitHub without changing the Pandoc source used for Word generation.
 
 ### v2.3 (2026-08-12 19:27 UTC+8)
 
 - Matched the reference paper's paragraph density: 1.5-line body text, 1.25-line references and appendix notes, and 1.15-line table cells.
 - Corrected paragraph alignment so body text remains justified while only titles, major headings, figures, and captions are centered.
-- Organized every paper release under `paper/vX.Y/`, with the Pandoc Markdown source, generated GitHub preview, Word paper, and conversion manifest kept together.
+- Organized every paper release under `paper/vX.Y/`, with the Markdown source, Word paper, and conversion manifest kept together.
 
 ### v2.2 (2026-08-12 18:45 UTC+8)
 
@@ -42,6 +41,30 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 - Published the first complete three-task paper, including the transport LP for vehicle allocation, conditional-NHPP dispatch simulation, and continuous-duration emergency-response analysis.
 - Included all 13 data-driven figures, eight result tables, native Word equations, references, and the reproducibility appendix.
 - Established the version naming rule: minor revisions advance `v2.x`, while a substantial model or paper rewrite advances to `v3`.
+
+## Workflow and Template Changelog
+
+This section records generation-pipeline, online-preview, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
+
+### 2026-08-13 13:03 UTC+8 — Personalized Template v1.1
+
+- Codified the dual-target Markdown workflow for the Pandoc/DOCX source and the generated GitHub preview in both the human workflow and machine-readable profile.
+- Added verified rule promotion: only rules backed by a real artifact or official renderer, reusable across projects, and compatible with official requirements and user decisions may be promoted, with source and date recorded.
+- Added template contract tests covering the dual-target syntax, four required release artifacts, and promotion gates.
+
+### 2026-08-13 12:55 UTC+8 — GitHub Online Preview
+
+- Added a generated GitHub preview that renders all 178 mathematical expressions, four citation superscripts, and all 11 image widths correctly.
+- Kept the Pandoc source and formal DOCX unchanged; the preview is generator-owned and must not be edited manually.
+
+### 2026-08-13 12:32 UTC+8 — Word Table Generation Pipeline
+
+- Synchronized the user-corrected Table 2, Table 8, and Table 10 widths and table-cell alignments back into the DOCX postprocessor and regression tests.
+- Did not rebuild or overwrite the published v2.4 DOCX.
+
+### 2026-08-13 05:06 UTC+8 — Personalized Template v1.0
+
+- Added the full project retrospective, personalized modeling workflow, and machine-readable paper profile for future project kickoff and context recovery.
 
 ## Repository Layout
 
@@ -71,6 +94,7 @@ MCM/
 - Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
 - Retrospectives and personalized workflows live under each solution's `analysis/` and `templates/` directories for future project kickoff and context recovery.
 - Every new paper release must add its version directory and update the release notes in both the Chinese `README.md` and English `README_EN.md` in the same commit; release timestamps use `YYYY-MM-DD HH:MM UTC+8`.
+- Update the paper release timestamp only when the formal paper deliverable changes; record preview, generator, test, and template changes in the separate workflow and template changelog.
 - Reusable templates and reference material live under `shared/`.
 - Generated caches and local scratch files remain outside version history.
 

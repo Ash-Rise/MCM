@@ -7,7 +7,7 @@
 ## 项目
 
 - [`2026 暑期作业`](projects/2026-summer-assignment/README.md)
-- md源文档：[`A题论文(v2.5).md`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).md)
+- Markdown源文档：[`A题论文(v2.5).md`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).md)
 - Word源文档：[`A题论文(v2.5).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).docx)
 
 ## 版本发行说明

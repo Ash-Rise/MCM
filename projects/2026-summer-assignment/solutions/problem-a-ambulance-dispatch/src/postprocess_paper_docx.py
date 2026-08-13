@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import hashlib
 import json
 import re
@@ -33,6 +34,11 @@ COMPLETE_TABLE_WIDTH_WEIGHTS = (
     (0.7, 1.0, 1.6, 1.0, 1.6),
 )
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_TABLE_BASELINE = (
+    PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).docx"
+)
+
 
 def table_width_weights_for_count(table_count: int) -> tuple[tuple[float, ...], ...]:
     if table_count == len(COMPLETE_TABLE_WIDTH_WEIGHTS):
@@ -48,7 +54,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def rebind_conversion_manifest(manifest_path: Path, output_path: Path) -> Path:
+def rebind_conversion_manifest(
+    manifest_path: Path,
+    output_path: Path,
+    table_baseline: Path | None = None,
+    allow_table_content_drift: bool = False,
+) -> Path:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     source_path = Path(manifest["source"]) if manifest.get("source") else None
     if source_path is not None and source_path.exists():
@@ -60,11 +71,19 @@ def rebind_conversion_manifest(manifest_path: Path, output_path: Path) -> Path:
     manifest["postprocess"] = {
         "tool": "src/postprocess_paper_docx.py",
         "source_manifest": manifest_path.name,
+        "table_baseline": str(table_baseline.resolve()) if table_baseline else None,
+        "table_baseline_sha256": (
+            sha256_file(table_baseline) if table_baseline else None
+        ),
+        "table_baseline_mode": (
+            "layout_only" if allow_table_content_drift else "complete_table_xml"
+        ),
         "reason": (
-            "Removed template numbering, applied exact table geometry, installed "
-            "centered PAGE fields, kept the abstract on its own page, and added "
-            "caption-derived alt text to body figures. The current Markdown was "
-            "synchronized with the reviewed Word baseline without changing results."
+            "Removed template numbering, preserved the user-corrected v2.4 table "
+            "layout while retaining the reviewed v2.5 table content, installed centered "
+            "PAGE fields, kept the abstract on its own page, and added caption-derived "
+            "alt text to body figures. The current Markdown was synchronized with the "
+            "reviewed Word baseline without changing results."
         ),
     }
     output_manifest = output_path.with_suffix(".conversion.json")
@@ -72,6 +91,125 @@ def rebind_conversion_manifest(manifest_path: Path, output_path: Path) -> Path:
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return output_manifest
+
+
+def _table_text(table) -> list[list[str]]:
+    return [[cell.text for cell in row.cells] for row in table.rows]
+
+
+def _copy_referenced_table_styles(target, baseline) -> None:
+    style_ids = {
+        style.get(qn("w:val"))
+        for table in baseline.tables
+        if (style := table._tbl.tblPr.find(qn("w:tblStyle"))) is not None
+    }
+    target_styles = target.styles.element
+    baseline_styles = baseline.styles.element
+    for style_id in style_ids:
+        if style_id is None:
+            continue
+        xpath = f"{qn('w:style')}[@{qn('w:styleId')}='{style_id}']"
+        existing = target_styles.find(xpath)
+        if existing is not None:
+            target_styles.remove(existing)
+        source = baseline_styles.find(xpath)
+        if source is None:
+            raise ValueError(f"Missing table style {style_id!r} in baseline")
+        target_styles.append(deepcopy(source))
+
+
+def _replace_tables_from_baseline(target, baseline) -> None:
+    """Preserve user-corrected Word table formatting when text is unchanged."""
+    if len(target.tables) != len(baseline.tables):
+        raise ValueError(
+            f"Table count mismatch: target={len(target.tables)}, "
+            f"baseline={len(baseline.tables)}"
+        )
+    for index, (target_table, baseline_table) in enumerate(
+        zip(target.tables, baseline.tables, strict=True), start=1
+    ):
+        if _table_text(target_table) != _table_text(baseline_table):
+            raise ValueError(f"Table {index} content differs from the formatting baseline")
+    _copy_referenced_table_styles(target, baseline)
+    for target_table, baseline_table in zip(
+        target.tables, baseline.tables, strict=True
+    ):
+        target_table._tbl.getparent().replace(
+            target_table._tbl, deepcopy(baseline_table._tbl)
+        )
+
+
+def _replace_direct_child(parent, tag: str, source) -> None:
+    current = parent.find(qn(tag))
+    if current is not None:
+        index = parent.index(current)
+        parent.remove(current)
+    else:
+        index = 0
+    if source is not None:
+        parent.insert(index, deepcopy(source))
+
+
+def _copy_paragraph_run_format(target_paragraph, baseline_paragraph) -> None:
+    baseline_runs = baseline_paragraph.runs
+    target_runs = target_paragraph.runs
+    if not baseline_runs or not target_runs:
+        return
+    for index, target_run in enumerate(target_runs):
+        baseline_run = baseline_runs[min(index, len(baseline_runs) - 1)]
+        _replace_direct_child(target_run._r, "w:rPr", baseline_run._r.rPr)
+
+
+def _copy_table_layout_from_baseline(target, baseline) -> list[int]:
+    """Copy manual table layout while retaining the target table content."""
+    if len(target.tables) != len(baseline.tables):
+        raise ValueError(
+            f"Table count mismatch: target={len(target.tables)}, "
+            f"baseline={len(baseline.tables)}"
+        )
+    changed_tables: list[int] = []
+    _copy_referenced_table_styles(target, baseline)
+    for index, (target_table, baseline_table) in enumerate(
+        zip(target.tables, baseline.tables, strict=True), start=1
+    ):
+        if len(target_table.rows) != len(baseline_table.rows):
+            raise ValueError(f"Table {index} row count differs from the formatting baseline")
+        if any(
+            len(target_row.cells) != len(baseline_row.cells)
+            for target_row, baseline_row in zip(
+                target_table.rows, baseline_table.rows, strict=True
+            )
+        ):
+            raise ValueError(f"Table {index} column count differs from the formatting baseline")
+        if _table_text(target_table) != _table_text(baseline_table):
+            changed_tables.append(index)
+
+        _replace_direct_child(target_table._tbl, "w:tblPr", baseline_table._tbl.tblPr)
+        _replace_direct_child(target_table._tbl, "w:tblGrid", baseline_table._tbl.tblGrid)
+        for target_row, baseline_row in zip(
+            target_table.rows, baseline_table.rows, strict=True
+        ):
+            _replace_direct_child(target_row._tr, "w:trPr", baseline_row._tr.trPr)
+            for target_cell, baseline_cell in zip(
+                target_row.cells, baseline_row.cells, strict=True
+            ):
+                _replace_direct_child(target_cell._tc, "w:tcPr", baseline_cell._tc.tcPr)
+                if len(target_cell.paragraphs) != len(baseline_cell.paragraphs):
+                    raise ValueError(
+                        f"Table {index} paragraph structure differs from the formatting baseline"
+                    )
+                for target_paragraph, baseline_paragraph in zip(
+                    target_cell.paragraphs,
+                    baseline_cell.paragraphs,
+                    strict=True,
+                ):
+                    _replace_direct_child(
+                        target_paragraph._p,
+                        "w:pPr",
+                        baseline_paragraph._p.pPr,
+                    )
+                    _copy_paragraph_run_format(target_paragraph, baseline_paragraph)
+    return changed_tables
 
 
 def _ensure_child(parent, tag: str):
@@ -173,6 +311,21 @@ def _set_table_geometry(table, weights: tuple[float, ...], total_width: int) -> 
             cell.width = Twips(widths[column_index])
             _set_width(cell._tc.get_or_add_tcPr(), "w:tcW", widths[column_index])
             cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+
+
+def _set_table_column_widths(table, weights: tuple[float, ...]) -> None:
+    """Adjust column proportions without disturbing a hand-corrected table style."""
+    grid = table._tbl.tblGrid
+    total_width = sum(int(column.get(qn("w:w"))) for column in grid)
+    widths = _column_widths(weights, total_width)
+    for column, width in zip(grid, widths, strict=True):
+        column.set(qn("w:w"), str(width))
+    for column_index, width in enumerate(widths):
+        table.columns[column_index].width = Twips(width)
+    for row in table.rows:
+        for column_index, cell in enumerate(row.cells):
+            cell.width = Twips(widths[column_index])
+            _set_width(cell._tc.get_or_add_tcPr(), "w:tcW", widths[column_index])
 
 
 def _set_table_borders(table) -> None:
@@ -278,6 +431,44 @@ def _merge_compound_math_scripts(document) -> int:
                 script.remove(run)
             merged += 1
     return merged
+
+
+def _normalize_omml_matrix_properties(document) -> tuple[int, int]:
+    """Normalize Pandoc OMML sequences that violate the ECMA child order."""
+    fixed_run_properties = 0
+    fixed_matrix_columns = 0
+    for run_properties in document.element.body.findall(".//" + qn("m:rPr")):
+        normal_text = run_properties.find(qn("m:nor"))
+        script = run_properties.find(qn("m:scr"))
+        style = run_properties.find(qn("m:sty"))
+        if normal_text is not None and (script is not None or style is not None):
+            # CT_RPR permits either `nor` or the script-style sequence, not both.
+            if script is not None:
+                run_properties.remove(script)
+            if style is not None:
+                run_properties.remove(style)
+            fixed_run_properties += 1
+        elif script is not None and style is not None:
+            # WPS may save the script-style pair as sty,scr; ECMA requires scr,sty.
+            children = list(run_properties)
+            if children.index(style) < children.index(script):
+                run_properties.remove(script)
+                run_properties.insert(children.index(style), script)
+                fixed_run_properties += 1
+    for column_properties in document.element.body.findall(".//" + qn("m:mcPr")):
+        count = column_properties.find(qn("m:count"))
+        alignment = column_properties.find(qn("m:mcJc"))
+        if (
+            count is not None
+            and alignment is not None
+            and list(column_properties).index(count)
+            > list(column_properties).index(alignment)
+        ):
+            # CT_MCPr requires count before mcJc.
+            column_properties.remove(count)
+            column_properties.insert(list(column_properties).index(alignment), count)
+            fixed_matrix_columns += 1
+    return fixed_run_properties, fixed_matrix_columns
 
 
 ARRIVAL_RATE_TERM_REPLACEMENTS = (
@@ -585,10 +776,16 @@ def _set_page_field(footer) -> None:
     element.append(paragraph)
 
 
-def postprocess_docx(input_path: Path, output_path: Path) -> None:
+def postprocess_docx(
+    input_path: Path,
+    output_path: Path,
+    table_baseline: Path | None = DEFAULT_TABLE_BASELINE,
+    allow_table_content_drift: bool = False,
+) -> None:
     document = Document(input_path)
     _format_title(document)
     _merge_compound_math_scripts(document)
+    _normalize_omml_matrix_properties(document)
     _set_document_line_grid(document)
     _format_document_typography(document)
     _set_body_image_alt_text(document)
@@ -600,6 +797,26 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
         _set_page_field(section.footer)
         _set_page_field(section.first_page_footer)
 
+    if table_baseline is not None:
+        baseline_document = Document(table_baseline)
+        if allow_table_content_drift:
+            _copy_table_layout_from_baseline(document, baseline_document)
+        else:
+            _replace_tables_from_baseline(document, baseline_document)
+        # Table 7 gained longer, unit-explicit metric labels in v2.5.  Allocate
+        # enough room to keep those labels on one line while preserving 10 pt.
+        _set_table_column_widths(document.tables[6], (2.45, 1.75, 1.75, 1.75))
+        # The WPS baseline may carry non-canonical math child order inside cells.
+        # Normalize only OMML after replacement; the table XML remains untouched.
+        _normalize_omml_matrix_properties(document)
+    else:
+        _format_generated_tables(document)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    document.save(output_path)
+
+
+def _format_generated_tables(document) -> None:
     table_width_weights = table_width_weights_for_count(len(document.tables))
     section = document.sections[0]
     content_width = int(
@@ -661,19 +878,42 @@ def postprocess_docx(input_path: Path, output_path: Path) -> None:
                         if row_index == 0:
                             run.bold = True
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    document.save(output_path)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Postprocess the complete paper DOCX")
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--manifest", type=Path)
+    parser.add_argument(
+        "--table-baseline",
+        type=Path,
+        default=DEFAULT_TABLE_BASELINE,
+        help=(
+            "DOCX whose complete table XML is preserved. Defaults to the "
+            "user-corrected v2.4 paper and fails if any table content differs."
+        ),
+    )
+    parser.add_argument(
+        "--allow-table-content-drift",
+        action="store_true",
+        help=(
+            "Retain current table content and copy only the baseline layout. "
+            "Row, column, and paragraph structures must still match."
+        ),
+    )
     args = parser.parse_args()
-    postprocess_docx(args.input, args.output)
+    postprocess_docx(
+        args.input,
+        args.output,
+        table_baseline=args.table_baseline,
+        allow_table_content_drift=args.allow_table_content_drift,
+    )
     if args.manifest is not None:
-        rebind_conversion_manifest(args.manifest, args.output)
+        rebind_conversion_manifest(
+            args.manifest,
+            args.output,
+            table_baseline=args.table_baseline,
+            allow_table_content_drift=args.allow_table_content_drift,
+        )
 
 
 if __name__ == "__main__":

@@ -85,6 +85,25 @@ equations:
 
 tables:
   style: three_line
+  manual_word_baseline:
+    precedence: higher_than_generic_table_rules
+    inherit_when_content_unchanged: complete_table_ooxml
+    preserved_properties:
+      - column_widths
+      - paragraph_alignment
+      - font_size
+      - wrapping
+      - borders
+      - cell_margins
+      - row_properties
+      - table_style
+    fail_on_content_drift: true
+    record_absolute_path_and_sha256: true
+    require_layout_xml_regression: true
+    require_render_checks:
+      - one_character_lines
+      - mixed_alignment
+      - unexpected_wrapping
   top_border_ooxml_size: 10
   header_bottom_border_ooxml_size: 4
   bottom_border_ooxml_size: 10
@@ -151,6 +170,14 @@ markdown:
 workflow:
   default_delivery: docx
   latex_only_when_explicitly_requested: true
+  markdown_review_required_before_docx: true
+  markdown_review_artifacts:
+    - pandoc_markdown_source
+    - generated_github_preview
+    - content_change_report
+  docx_generation_requires_explicit_user_approval: true
+  docx_stage_content_changes_forbidden: true
+  docx_content_issue_return_path: markdown_review
   decision_log_required: true
   model_gate: M1
   minimum_run_gate: P1

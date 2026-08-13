@@ -2,19 +2,23 @@ import importlib.util
 import json
 import re
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
+from lxml import etree
 from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DOCX_PATH = PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).docx"
-MARKDOWN_PATH = PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).md"
+DOCX_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).docx"
+MARKDOWN_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).md"
 POSTPROCESS_PATH = PROJECT_ROOT / "src" / "postprocess_paper_docx.py"
+TABLE_BASELINE_PATH = PROJECT_ROOT / "paper" / "v2.4" / "A题论文(v2.4).docx"
 
 
 def _load_postprocessor():
@@ -40,6 +44,29 @@ def _page_field_count(footer):
 
 def _east_asia_font(run):
     return run._r.get_or_add_rPr().get_or_add_rFonts().get(qn("w:eastAsia"))
+
+
+def _table_layout_xml(table) -> bytes:
+    """Return canonical table layout XML while ignoring mathematical payloads."""
+    element = deepcopy(table._tbl)
+    for math in element.xpath(".//m:oMath | .//m:oMathPara"):
+        math.getparent().remove(math)
+    for text in element.xpath(".//w:t"):
+        text.text = ""
+    volatile_attributes = {
+        "paraId",
+        "textId",
+        "rsidR",
+        "rsidRDefault",
+        "rsidRPr",
+        "rsidDel",
+        "rsidP",
+    }
+    for node in element.iter():
+        for attribute in list(node.attrib):
+            if etree.QName(attribute).localname in volatile_attributes:
+                del node.attrib[attribute]
+    return etree.tostring(element, method="c14n")
 
 
 def test_paper_typography_matches_reference_document():
@@ -230,8 +257,8 @@ def test_figure_numbers_are_continuous_and_appendix_matches():
         for number in re.findall(r"^图(\d+)\s", markdown, flags=re.MULTILINE)
     ]
 
-    assert captions == list(range(1, 12))
-    assert "图1至图11均由" in markdown
+    assert captions == list(range(1, 11))
+    assert "图1至图10均由" in markdown
 
 
 def test_task_one_uses_only_planning_coverage_and_compact_capacity_proof():
@@ -246,12 +273,57 @@ def test_task_one_uses_only_planning_coverage_and_compact_capacity_proof():
     assert "3 km规划服务覆盖率为86.429%" in task_one
 
 
+def test_strategy_c_defines_dispatch_selection_and_out_of_sample_check():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+    strategy_c = markdown.split("### 6.5 策略C", 1)[1].split("### 6.6", 1)[0]
+
+    assert "47种非零备用向量" in strategy_c
+    assert "235个候选方案" in strategy_c
+    assert r"\widehat T_e^{\mathrm{reg}}>\tau" in strategy_c
+    assert r"T_e^R<\widehat T_e^{\mathrm{reg}}" in strategy_c
+    assert "严格词典序" in strategy_c
+    assert r"\boldsymbol r^{\ast}=(0,0,1,0,0,0)" in strategy_c
+    assert r"\tau^{\ast}=7" in strategy_c
+
+    task_two_results = markdown.split("### 6.8 最终结果与方案选择", 1)[1].split(
+        "### 6.9", 1
+    )[0]
+    assert r"U_{0.95}" in task_two_results
+    assert "$U_{0.95}=-0.0091$ min" in task_two_results
+
+
+def test_omml_normalizer_fixes_pandoc_matrix_child_order():
+    module = _load_postprocessor()
+    document = Document()
+    paragraph = document.add_paragraph()
+    run_properties = OxmlElement("m:rPr")
+    run_properties.append(OxmlElement("m:nor"))
+    run_properties.append(OxmlElement("m:scr"))
+    run_properties.append(OxmlElement("m:sty"))
+    paragraph._p.append(run_properties)
+    column_properties = OxmlElement("m:mcPr")
+    column_properties.append(OxmlElement("m:mcJc"))
+    column_properties.append(OxmlElement("m:count"))
+    paragraph._p.append(column_properties)
+
+    assert module._normalize_omml_matrix_properties(document) == (1, 1)
+    assert [node.tag for node in run_properties] == [qn("m:nor")]
+    assert [node.tag for node in column_properties] == [qn("m:count"), qn("m:mcJc")]
+
+
 def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp_path):
     module = _load_postprocessor()
     output = tmp_path / "complete-paper.docx"
-    module.postprocess_docx(DOCX_PATH, output)
+    source_document = Document(DOCX_PATH)
+    module.postprocess_docx(
+        DOCX_PATH,
+        output,
+        table_baseline=TABLE_BASELINE_PATH,
+        allow_table_content_drift=True,
+    )
 
     document = Document(output)
+    table_baseline = Document(TABLE_BASELINE_PATH)
     assert document.paragraphs[0].style.name == "Title"
     assert document.paragraphs[0].runs[0].font.size == Pt(15)
     assert _style_num_id(document.styles["Heading 2"]) == 0
@@ -326,102 +398,52 @@ def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(
         )
         assert is_expected_center, f"Unexpected centered paragraph: {text[:80]}"
 
-    assert len(document.tables) == len(module.COMPLETE_TABLE_WIDTH_WEIGHTS)
+    assert len(document.tables) == len(table_baseline.tables) == 12
     assert document.tables[0].cell(8, 2).text == "1/h，次/h"
-    expected_manual_grids = (
-        (1565, 5739, 1566),
-        (1267, 2946, 4657),
-        (2609, 1044, 1044, 1044, 1044, 1044, 1041),
-        (2914, 5956),
-        (1064, 1064, 1419, 1774, 1774, 1775),
-        (2914, 5956),
-        (2356, 2238, 2238, 2238),
-        (1365, 1367, 2613, 3525),
-        (1183, 1478, 2070, 2661, 1478),
-        (2534, 6336),
-        (1223, 1529, 1529, 1529, 3060),
-        (1052, 1503, 2405, 1503, 2407),
-    )
-    for table, weights, expected_grid in zip(
+    for table_index, (table, source_table, baseline_table) in enumerate(zip(
         document.tables,
-        module.COMPLETE_TABLE_WIDTH_WEIGHTS,
-        expected_manual_grids,
+        source_document.tables,
+        table_baseline.tables,
         strict=True,
-    ):
-        assert table._tbl.tblPr.find(qn("w:tblStyle")) is None
-        table_borders = table._tbl.tblPr.find(qn("w:tblBorders"))
-        assert table_borders is not None
-        assert table_borders.find(qn("w:top")).get(qn("w:sz")) == "10"
-        assert table_borders.find(qn("w:bottom")).get(qn("w:sz")) == "10"
-        header_bottom = table.rows[0].cells[0]._tc.tcPr.find(
-            qn("w:tcBorders")
-        ).find(qn("w:bottom"))
-        assert header_bottom.get(qn("w:sz")) == "4"
-        tbl_w = table._tbl.tblPr.find(qn("w:tblW"))
-        assert tbl_w is not None
-        table_width = int(tbl_w.get(qn("w:w")))
-        grid = [int(column.get(qn("w:w"))) for column in table._tbl.tblGrid.gridCol_lst]
-        assert len(grid) == len(weights)
-        assert sum(grid) == table_width
-        assert tuple(grid) == expected_grid
-        for row in table.rows:
-            assert row._tr.find(qn("w:tblPrEx")) is None
-            widths = [int(cell._tc.tcPr.tcW.get(qn("w:w"))) for cell in row.cells]
-            assert widths == grid
-            for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    assert paragraph._p.pPr.find(qn("w:pStyle")) is None
-                    for run in paragraph.runs:
-                        assert run.font.size == Pt(10)
+    )):
+        assert module._table_text(table) == module._table_text(source_table)
+        if table_index == 6:
+                widths = [int(column.get(qn("w:w"))) for column in table._tbl.tblGrid]
+                assert widths[0] > max(widths[1:])
+                assert max(widths[1:]) - min(widths[1:]) <= 1
 
-    evaluation_table = document.tables[6]
-    assert all(
-        cell._tc.tcPr.find(qn("w:noWrap")) is not None
-        for row in evaluation_table.rows
-        for cell in row.cells
-    )
-    assert all(
-        paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
-        for row in evaluation_table.rows
-        for cell in row.cells
-        for paragraph in cell.paragraphs
-    )
 
-    for algorithm_table in (document.tables[3], document.tables[5], document.tables[9]):
-        assert all(
-            paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
-            for cell in algorithm_table.rows[0].cells
-            for paragraph in cell.paragraphs
-        )
-        assert all(
-            paragraph.alignment == WD_ALIGN_PARAGRAPH.LEFT
-            for row in algorithm_table.rows[1:]
-            for cell in row.cells
-            for paragraph in cell.paragraphs
-        )
+def test_table_baseline_rejects_content_drift():
+    module = _load_postprocessor()
+    target = Document()
+    target.add_table(rows=1, cols=1).cell(0, 0).text = "new content"
+    baseline = Document()
+    baseline.add_table(rows=1, cols=1).cell(0, 0).text = "old content"
 
-    symbol_table = document.tables[0]
-    assert all(
-        paragraph.alignment == WD_ALIGN_PARAGRAPH.LEFT
-        for row in symbol_table.rows[1:]
-        for paragraph in row.cells[1].paragraphs
-    )
-    assert all(
-        paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
-        for column_index in (0, 2)
-        for row in symbol_table.rows[1:]
-        for paragraph in row.cells[column_index].paragraphs
-    )
+    try:
+        module._replace_tables_from_baseline(target, baseline)
+    except ValueError as error:
+        assert "Table 1 content differs" in str(error)
+    else:
+        raise AssertionError("A changed table was silently replaced by the baseline")
 
-    for table_index, table in enumerate(document.tables):
-        if table_index in {0, 3, 5, 9}:
-            continue
-        assert all(
-            paragraph.alignment == WD_ALIGN_PARAGRAPH.CENTER
-            for row in table.rows[1:]
-            for cell in row.cells
-            for paragraph in cell.paragraphs
-        )
+
+def test_table_layout_only_mode_retains_content_and_reports_drift():
+    module = _load_postprocessor()
+    target = Document()
+    target_table = target.add_table(rows=1, cols=1)
+    target_table.cell(0, 0).text = "new content"
+    baseline = Document()
+    baseline_table = baseline.add_table(rows=1, cols=1)
+    baseline_table.cell(0, 0).text = "old content"
+    baseline_table.cell(0, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    assert module._copy_table_layout_from_baseline(target, baseline) == [1]
+    assert target.tables[0].cell(0, 0).text == "new content"
+    assert (
+        target.tables[0].cell(0, 0).paragraphs[0].alignment
+        == WD_ALIGN_PARAGRAPH.CENTER
+    )
 
 def test_postprocessor_selects_complete_paper_table_geometry():
     module = _load_postprocessor()
@@ -463,7 +485,11 @@ def test_rebind_conversion_manifest_tracks_postprocessed_output(tmp_path):
         encoding="utf-8",
     )
 
-    final_manifest = module.rebind_conversion_manifest(manifest_path, output)
+    table_baseline = tmp_path / "table-baseline.docx"
+    table_baseline.write_bytes(b"manual-table-layout")
+    final_manifest = module.rebind_conversion_manifest(
+        manifest_path, output, table_baseline=table_baseline
+    )
 
     assert final_manifest == output.with_suffix(".conversion.json")
     data = json.loads(final_manifest.read_text(encoding="utf-8"))
@@ -472,6 +498,11 @@ def test_rebind_conversion_manifest_tracks_postprocessed_output(tmp_path):
     assert data["source_sha256"] == module.sha256_file(source)
     assert data["project_sha256"] == module.sha256_file(source)
     assert data["postprocess"]["tool"] == "src/postprocess_paper_docx.py"
+    assert data["postprocess"]["table_baseline"] == str(table_baseline.resolve())
+    assert data["postprocess"]["table_baseline_sha256"] == module.sha256_file(
+        table_baseline
+    )
+    assert data["postprocess"]["table_baseline_mode"] == "complete_table_xml"
 
 
 def test_body_image_alt_text_uses_following_figure_caption(tmp_path):

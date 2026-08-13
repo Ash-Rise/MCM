@@ -4,6 +4,8 @@
 
 用于长期管理数学建模课程作业、练习与竞赛项目的仓库。
 
+> 新协作者或其本地 AI：从 [`GET_STARTED_AI.md`](GET_STARTED_AI.md) 开始。该入口可检查并安装 VS Code、Git 和 GitHub CLI，然后接入仓库协作流程。
+
 ## 项目
 
 - [`2026 暑期作业`](projects/2026-summer-assignment/README.md)

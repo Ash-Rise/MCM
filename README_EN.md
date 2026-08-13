@@ -4,6 +4,8 @@
 
 Long-lived workspace for mathematical-modeling coursework, practice, and competitions.
 
+> New collaborators or their local AI agents: start with [`GET_STARTED_AI.md`](GET_STARTED_AI.md). It checks and installs VS Code, Git, and GitHub CLI before onboarding the repository workflow.
+
 ## Projects
 
 - [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)

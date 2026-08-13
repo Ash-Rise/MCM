@@ -446,7 +446,7 @@ def test_table_layout_only_mode_retains_content_and_reports_drift():
     )
 
 
-def test_exact_table_lock_copies_complete_table_xml_last():
+def test_exact_table_lock_survives_docx_save_and_reload(tmp_path):
     module = _load_postprocessor()
     target = Document()
     target_table = target.add_table(rows=2, cols=2)
@@ -460,6 +460,13 @@ def test_exact_table_lock_copies_complete_table_xml_last():
     baseline_table.cell(1, 1).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
 
     module._replace_tables_from_baseline(target, baseline)
+
+    target_path = tmp_path / "target.docx"
+    baseline_path = tmp_path / "baseline.docx"
+    target.save(target_path)
+    baseline.save(baseline_path)
+    target = Document(target_path)
+    baseline = Document(baseline_path)
 
     assert target.tables[0]._tbl.xml == baseline.tables[0]._tbl.xml
     assert target.tables[0].cell(1, 1).paragraphs[0].alignment == WD_ALIGN_PARAGRAPH.LEFT

@@ -654,9 +654,14 @@ def _summarize_external_groups(frame: pd.DataFrame, group_keys: list[str]) -> pd
     for group_key, group in frame.groupby(group_keys, sort=True):
         key_values = group_key if isinstance(group_key, tuple) else (group_key,)
         row: dict[str, object] = dict(zip(group_keys, key_values, strict=True))
-        row["replications"] = int(group["seed"].nunique())
+        row["replications"] = int(
+            group.loc[group["mean_response_min"].notna(), "seed"].nunique()
+        )
         for metric in metrics:
             values = group[metric].dropna().to_numpy(dtype=float)
+            row[f"{metric}_n"] = int(
+                group.loc[group[metric].notna(), "seed"].nunique()
+            )
             if len(values) == 0:
                 mean = low = high = np.nan
             else:
@@ -703,7 +708,15 @@ def build_external_support_summaries(
         if zones != expected_zones:
             raise AssertionError("Citywide external-support summaries require all ten incident zones")
     metrics = [metric for metric in EXTERNAL_SUMMARY_METRICS if metric in paired_replicates.columns]
-    citywide_seed = paired_replicates.groupby(scenario_key, as_index=False)[metrics].mean()
+    complete_blocks = (
+        paired_replicates.loc[paired_replicates["mean_response_min"].notna()]
+        .groupby(scenario_key)["incident_zone"]
+        .nunique()
+        .eq(len(expected_zones))
+    )
+    complete_keys = complete_blocks[complete_blocks].index.to_frame(index=False)
+    complete_replicates = paired_replicates.merge(complete_keys, on=scenario_key, how="inner")
+    citywide_seed = complete_replicates.groupby(scenario_key, as_index=False)[metrics].mean()
     citywide = _summarize_external_groups(
         citywide_seed,
         ["duration_hours", "external_count"],

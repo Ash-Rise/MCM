@@ -292,6 +292,31 @@ class EmergencyExperimentTest(unittest.TestCase):
         self.assertAlmostEqual(indexed.loc[4, "marginal_response_gain_min_mean"], 0.1)
         self.assertTrue(np.isnan(indexed.loc[0, "marginal_break_even_cost_yuan_mean"]))
 
+    def test_external_support_summaries_exclude_incomplete_citywide_seed_blocks(self) -> None:
+        external = self._synthetic_external_support()
+        zero_call = (external["incident_zone"] == 1) & (external["seed"] == 1)
+        external.loc[zero_call, "calls"] = 0
+        external.loc[zero_call, "mean_response_min"] = np.nan
+        external.loc[zero_call, "mean_delay_penalty_yuan_per_call"] = np.nan
+        paired = emergency.build_external_support_table(external)
+
+        by_zone, citywide, _ = emergency.build_external_support_summaries(paired)
+
+        zone_one = by_zone[by_zone["incident_zone"] == 1]
+        other_zones = by_zone[by_zone["incident_zone"] != 1]
+        self.assertTrue((zone_one["replications"] == 3).all())
+        self.assertTrue((zone_one["mean_response_min_n"] == 3).all())
+        self.assertTrue((other_zones["replications"] == 4).all())
+        self.assertTrue((citywide["replications"] == 3).all())
+        self.assertTrue((citywide["mean_response_min_n"] == 3).all())
+        self.assertTrue((citywide["incident_zone_scenarios"] == 10).all())
+
+        count_zero = citywide.set_index("external_count").loc[0]
+        expected = external[
+            (external["external_count"] == 0) & (external["seed"].isin([2, 3, 4]))
+        ]["mean_response_min"].mean()
+        self.assertAlmostEqual(count_zero["mean_response_min_mean"], expected)
+
     def test_external_support_validation_requires_count_zero_to_match_frozen_b_e(self) -> None:
         external = self._synthetic_external_support()
         frozen = external[external["external_count"] == 0].drop(

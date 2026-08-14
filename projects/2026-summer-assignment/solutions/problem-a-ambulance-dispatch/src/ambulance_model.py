@@ -74,6 +74,8 @@ class Ambulance:
     busy_until: float = 0.0
     day_count: int = 0
     reserve: bool = False
+    activation_min: float = 0.0
+    external: bool = False
 
 
 @dataclass(frozen=True)
@@ -342,10 +344,17 @@ def generate_calls(data: ProblemData, days: int, seed: int) -> list[Call]:
     return [Call(i, arrival, zone) for i, (arrival, zone) in enumerate(arrivals)]
 
 
-def build_fleet(data: ProblemData, reserve_vector: Iterable[int] | None = None) -> list[Ambulance]:
+def build_fleet(
+    data: ProblemData,
+    reserve_vector: Iterable[int] | None = None,
+    external_sites: Iterable[int] | None = None,
+    external_activation_min: float = 0.0,
+) -> list[Ambulance]:
     reserve = list(reserve_vector or [0] * len(data.site_ids))
     if len(reserve) != len(data.site_ids):
         raise ValueError("Reserve vector length does not match site count")
+    if not math.isfinite(external_activation_min) or external_activation_min < 0.0:
+        raise ValueError("External activation time must be finite and nonnegative")
     fleet: list[Ambulance] = []
     ambulance_id = 0
     for site, count in enumerate(data.site_caps):
@@ -361,11 +370,33 @@ def build_fleet(data: ProblemData, reserve_vector: Iterable[int] | None = None) 
                 )
             )
             ambulance_id += 1
+    external_local_ids = [int(count) for count in data.site_caps]
+    for raw_site in external_sites or ():
+        site = int(raw_site)
+        if site != raw_site or not 0 <= site < len(data.site_ids):
+            raise ValueError(f"Invalid external ambulance site: {raw_site}")
+        fleet.append(
+            Ambulance(
+                ambulance_id=ambulance_id,
+                site=site,
+                local_id=external_local_ids[site],
+                activation_min=float(external_activation_min),
+                external=True,
+            )
+        )
+        external_local_ids[site] += 1
+        ambulance_id += 1
     return fleet
 
 
 def _current_candidates(fleet: list[Ambulance], time_min: float) -> list[Ambulance]:
-    return [a for a in fleet if a.busy_until <= time_min + EPS and a.day_count < DAILY_CAP]
+    return [
+        ambulance
+        for ambulance in fleet
+        if ambulance.activation_min <= time_min + EPS
+        and ambulance.busy_until <= time_min + EPS
+        and ambulance.day_count < DAILY_CAP
+    ]
 
 
 def _next_midnight(time_min: float) -> float:
@@ -379,14 +410,16 @@ def _known_wait(
     busy_override: float | None = None,
     count_override: int | None = None,
 ) -> float:
+    if ambulance.activation_min > state_time_min + EPS:
+        return math.inf
     busy_until = ambulance.busy_until if busy_override is None else busy_override
     day_count = ambulance.day_count if count_override is None else count_override
     state_day = int(math.floor((state_time_min + EPS) / MINUTES_PER_DAY))
     future_day = int(math.floor((future_min + EPS) / MINUTES_PER_DAY))
     if future_day == state_day and day_count >= DAILY_CAP:
-        eligible = max(_next_midnight(state_time_min), busy_until)
+        eligible = max(_next_midnight(state_time_min), busy_until, ambulance.activation_min)
     else:
-        eligible = max(future_min, busy_until)
+        eligible = max(future_min, busy_until, ambulance.activation_min)
     return max(0.0, eligible - future_min)
 
 
@@ -437,6 +470,8 @@ def cumulative_response_loss(
     for ambulance in fleet:
         if start + EPS < ambulance.busy_until < end - EPS:
             breakpoints.add(ambulance.busy_until)
+        if start + EPS < ambulance.activation_min < end - EPS:
+            breakpoints.add(ambulance.activation_min)
     ordered = sorted(breakpoints)
     for left, right in zip(ordered, ordered[1:]):
         nodes = 0.5 * (right - left) * _GAUSS_NODES + 0.5 * (left + right)
@@ -474,17 +509,21 @@ def cumulative_response_losses(
     for ambulance in fleet:
         if start + EPS < ambulance.busy_until < end - EPS:
             breakpoints.add(ambulance.busy_until)
+        if start + EPS < ambulance.activation_min < end - EPS:
+            breakpoints.add(ambulance.activation_min)
 
     ordered = sorted(breakpoints)
     candidate_indices = np.array([fleet_index[a.ambulance_id] for a in candidate_list], dtype=int)
     busy_until = np.array([ambulance.busy_until for ambulance in fleet], dtype=float)
     day_count = np.array([ambulance.day_count for ambulance in fleet], dtype=int)
+    activation_min = np.array([ambulance.activation_min for ambulance in fleet], dtype=float)
     travel = PREP_MINUTES + 60.0 * data.distance[:, [ambulance.site for ambulance in fleet]].T / SPEED_KMH
     for left, right in zip(ordered, ordered[1:]):
         nodes = 0.5 * (right - left) * _GAUSS_NODES + 0.5 * (left + right)
         weights_in_hours = 0.5 * (right - left) * _GAUSS_WEIGHTS / 60.0
         for future_min, weight in zip(nodes, weights_in_hours, strict=True):
             waits = np.maximum(0.0, busy_until - future_min)
+            waits[activation_min > time_min + EPS] = np.inf
             same_day = int((future_min + EPS) // MINUTES_PER_DAY) == int(
                 (time_min + EPS) // MINUTES_PER_DAY
             )
@@ -625,8 +664,15 @@ def simulate(
     tau: float = 5.0,
     rate_multiplier: Callable[[float], np.ndarray] | None = None,
     rate_multiplier_active_from: float | None = None,
+    external_sites: Iterable[int] | None = None,
+    external_activation_min: float = 0.0,
 ) -> tuple[pd.DataFrame, dict[str, float | int]]:
-    fleet = build_fleet(data, reserve_vector if strategy == "C" else None)
+    fleet = build_fleet(
+        data,
+        reserve_vector if strategy == "C" else None,
+        external_sites=external_sites,
+        external_activation_min=external_activation_min,
+    )
     queue: deque[Call] = deque()
     records: list[DispatchRecord] = []
     intervals: dict[int, list[tuple[float, float]]] = {a.ambulance_id: [] for a in fleet}
@@ -646,7 +692,11 @@ def simulate(
             (a.busy_until for a in fleet if a.busy_until > time_min + EPS),
             default=math.inf,
         )
-        event_time = min(next_arrival, next_completion, next_midnight)
+        next_activation = min(
+            (a.activation_min for a in fleet if a.activation_min > time_min + EPS),
+            default=math.inf,
+        )
+        event_time = min(next_arrival, next_completion, next_activation, next_midnight)
         if not math.isfinite(event_time):
             raise RuntimeError("Simulation event calendar became empty before completion")
         time_min = event_time

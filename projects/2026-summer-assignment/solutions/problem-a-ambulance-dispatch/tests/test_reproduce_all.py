@@ -18,6 +18,7 @@ from reproduce_all import (  # noqa: E402
     q2_aggregates,
     rebuild_stage,
     remove_legacy_q3_outputs,
+    verify_q3,
     verify_stage,
 )
 from generate_figures import q3_evidence_sources  # noqa: E402
@@ -106,6 +107,12 @@ class ReproduceAllTest(unittest.TestCase):
         citywide_table.assert_called_once()
         surfaces.assert_called_once()
         scoped_surfaces.assert_called_once()
+
+    def test_task_three_verification_includes_external_support_evidence(self) -> None:
+        with patch("reproduce_all.verify_external_support") as verify_external:
+            verify_q3(SOLUTION_ROOT)
+
+        verify_external.assert_called_once_with(SOLUTION_ROOT)
 
     def test_task_three_figures_reject_cross_duration_aggregate_sources(self) -> None:
         sources = q3_evidence_sources()

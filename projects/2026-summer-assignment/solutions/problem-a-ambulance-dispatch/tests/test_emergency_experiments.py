@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -140,6 +141,124 @@ class EmergencyExperimentTest(unittest.TestCase):
             zero["max_daily_dispatches_per_ambulance"],
             baseline_full["max_daily_dispatches_per_ambulance"],
         )
+
+    @staticmethod
+    def _synthetic_external_support() -> pd.DataFrame:
+        rows = []
+        for zone in range(1, 11):
+            for seed in (1, 2, 3, 4):
+                for count in range(7):
+                    response = 10.0 + 0.01 * zone + 0.02 * seed - 0.5 * min(count, 3) - 0.1 * max(count - 3, 0)
+                    calls = 10 + zone
+                    rows.append(
+                        {
+                            "mode": "B_E",
+                            "external_count": count,
+                            "external_sites": "",
+                            "call_digest": f"zone-{zone}-seed-{seed}",
+                            "incident_zone": zone,
+                            "duration_hours": 2.0,
+                            "start_hour": 17.0,
+                            "seed": seed,
+                            "calls": calls,
+                            "mean_response_min": response,
+                            "mean_delay_penalty_yuan_per_call": 200.0 * max(response - 4.0, 0.0),
+                            "max_daily_dispatches_per_ambulance": 12,
+                        }
+                    )
+        return pd.DataFrame(rows)
+
+    def test_external_support_table_computes_paired_response_and_penalty_gains(self) -> None:
+        table = emergency.build_external_support_table(self._synthetic_external_support())
+        scenario = table[
+            (table["incident_zone"] == 1)
+            & (table["seed"] == 1)
+        ].set_index("external_count")
+        row_m0 = scenario.loc[0]
+        row_m2 = scenario.loc[2]
+        t0 = float(scenario.loc[0, "mean_response_min"])
+        t1 = float(scenario.loc[1, "mean_response_min"])
+        t2 = float(scenario.loc[2, "mean_response_min"])
+        p0 = float(scenario.loc[0, "total_delay_penalty_yuan"])
+        p1 = float(scenario.loc[1, "total_delay_penalty_yuan"])
+        p2 = float(scenario.loc[2, "total_delay_penalty_yuan"])
+
+        self.assertEqual(row_m0["cumulative_response_gain_min"], 0.0)
+        self.assertTrue(np.isnan(row_m0["marginal_response_gain_min"]))
+        self.assertTrue(np.isnan(row_m0["avoided_penalty_per_vehicle_yuan"]))
+        self.assertAlmostEqual(row_m2["cumulative_response_gain_min"], t0 - t2)
+        self.assertAlmostEqual(row_m2["marginal_response_gain_min"], t1 - t2)
+        self.assertAlmostEqual(row_m2["avoided_penalty_yuan"], p0 - p2)
+        self.assertAlmostEqual(row_m2["avoided_penalty_per_vehicle_yuan"], (p0 - p2) / 2)
+        self.assertAlmostEqual(row_m2["marginal_break_even_cost_yuan"], p1 - p2)
+
+    def test_external_support_table_rejects_incomplete_or_unpaired_scenarios(self) -> None:
+        frame = self._synthetic_external_support()
+        with self.assertRaisesRegex(AssertionError, "counts 0 through 6"):
+            emergency.build_external_support_table(frame.drop(frame.index[0]))
+
+        mismatched = frame.copy()
+        mismatched.loc[mismatched.index[1], "call_digest"] = "different"
+        with self.assertRaisesRegex(AssertionError, "identical calls"):
+            emergency.build_external_support_table(mismatched)
+
+        missing_zone = frame[frame["incident_zone"] != 10]
+        with self.assertRaisesRegex(AssertionError, "all ten incident zones"):
+            emergency.build_external_support_table(missing_zone)
+
+    def test_external_support_summaries_keep_duration_and_vehicle_count_separate(self) -> None:
+        paired = emergency.build_external_support_table(self._synthetic_external_support())
+        by_zone, citywide, worst = emergency.build_external_support_summaries(paired)
+
+        self.assertEqual(len(by_zone), 10 * 7)
+        self.assertEqual(len(citywide), 7)
+        self.assertEqual(len(worst), 7)
+        self.assertTrue((by_zone["replications"] == 4).all())
+        self.assertTrue((citywide["replications"] == 4).all())
+        self.assertTrue((citywide["incident_zone_scenarios"] == 10).all())
+        self.assertEqual(set(worst["incident_zone"]), {10})
+
+        indexed = citywide.set_index("external_count")
+        self.assertAlmostEqual(indexed.loc[2, "cumulative_response_gain_min_mean"], 1.0)
+        self.assertAlmostEqual(indexed.loc[4, "cumulative_response_gain_min_mean"], 1.6)
+        self.assertAlmostEqual(indexed.loc[4, "marginal_response_gain_min_mean"], 0.1)
+        self.assertTrue(np.isnan(indexed.loc[0, "marginal_break_even_cost_yuan_mean"]))
+
+    def test_external_support_validation_requires_count_zero_to_match_frozen_b_e(self) -> None:
+        external = self._synthetic_external_support()
+        frozen = external[external["external_count"] == 0].drop(
+            columns=["external_count", "external_sites"]
+        )
+
+        paired = emergency.validate_external_support_evidence(external, frozen)
+        self.assertEqual(len(paired), len(external))
+
+        damaged = external.copy()
+        mask = (damaged["incident_zone"] == 1) & (damaged["seed"] == 1) & (damaged["external_count"] == 0)
+        damaged.loc[mask, "mean_response_min"] += 0.01
+        with self.assertRaisesRegex(AssertionError, "count-0 rows do not match frozen B_E"):
+            emergency.validate_external_support_evidence(damaged, frozen)
+
+    def test_external_support_writer_creates_separate_reproducible_tables(self) -> None:
+        external = self._synthetic_external_support()
+        frozen = external[external["external_count"] == 0].drop(
+            columns=["external_count", "external_sites"]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            summary_path = emergency._write_external_outputs(output, external, frozen)
+
+            self.assertEqual(summary_path, output / "external_support_citywide.csv")
+            expected = {
+                "replicates.csv",
+                "paired_gains.csv",
+                "external_support_by_zone_duration.csv",
+                "external_support_citywide.csv",
+                "external_support_worst_zone.csv",
+            }
+            self.assertEqual({path.name for path in output.iterdir()}, expected)
+            self.assertEqual(len(pd.read_csv(output / "replicates.csv")), len(external))
+            self.assertEqual(len(pd.read_csv(summary_path)), 7)
 
     def test_any_duration_inside_continuous_domain_is_legal(self) -> None:
         self.assertTrue(hasattr(emergency, "validate_duration"))

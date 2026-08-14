@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import heapq
 import json
@@ -90,6 +91,20 @@ class DispatchRecord:
     wait_min: float
     dispatch_day: int
     c_loss_min: float | None
+
+
+@dataclass
+class SimulationState:
+    fleet: list[Ambulance]
+    queue: deque[Call]
+    records: list[DispatchRecord]
+    intervals: dict[int, list[tuple[float, float]]]
+    daily_dispatches: Counter[tuple[int, int]]
+    dispatch_sequence: list[int]
+    call_index: int = 0
+    time_min: float = 0.0
+    next_midnight: float = MINUTES_PER_DAY
+    max_queue: int = 0
 
 
 def _number(text: str) -> float:
@@ -470,8 +485,6 @@ def cumulative_response_loss(
     for ambulance in fleet:
         if start + EPS < ambulance.busy_until < end - EPS:
             breakpoints.add(ambulance.busy_until)
-        if start + EPS < ambulance.activation_min < end - EPS:
-            breakpoints.add(ambulance.activation_min)
     ordered = sorted(breakpoints)
     for left, right in zip(ordered, ordered[1:]):
         nodes = 0.5 * (right - left) * _GAUSS_NODES + 0.5 * (left + right)
@@ -509,8 +522,6 @@ def cumulative_response_losses(
     for ambulance in fleet:
         if start + EPS < ambulance.busy_until < end - EPS:
             breakpoints.add(ambulance.busy_until)
-        if start + EPS < ambulance.activation_min < end - EPS:
-            breakpoints.add(ambulance.activation_min)
 
     ordered = sorted(breakpoints)
     candidate_indices = np.array([fleet_index[a.ambulance_id] for a in candidate_list], dtype=int)
@@ -654,6 +665,195 @@ def _choose_c(
     return selected, None
 
 
+def _new_simulation_state(fleet: list[Ambulance]) -> SimulationState:
+    return SimulationState(
+        fleet=fleet,
+        queue=deque(),
+        records=[],
+        intervals={ambulance.ambulance_id: [] for ambulance in fleet},
+        daily_dispatches=Counter(),
+        dispatch_sequence=[],
+    )
+
+
+def _dispatch_waiting_calls(
+    data: ProblemData,
+    calls: list[Call],
+    strategy: str,
+    beta: float,
+    delta: float,
+    tau: float,
+    rate_multiplier: Callable[[float], np.ndarray] | None,
+    rate_multiplier_active_from: float | None,
+    state: SimulationState,
+) -> None:
+    while state.queue:
+        call = state.queue[0]
+        if strategy == "A":
+            ambulance, c_loss = _choose_a(data, state.fleet, call, state.time_min)
+        elif strategy == "B":
+            active_multiplier = rate_multiplier
+            if (
+                rate_multiplier_active_from is not None
+                and state.time_min < rate_multiplier_active_from - EPS
+            ):
+                active_multiplier = None
+            ambulance, c_loss = _choose_b(
+                data,
+                state.fleet,
+                call,
+                state.time_min,
+                beta,
+                delta,
+                rate_multiplier=active_multiplier,
+            )
+        elif strategy == "C":
+            ambulance, c_loss = _choose_c(data, state.fleet, call, state.time_min, tau)
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
+        if ambulance is None:
+            break
+
+        state.queue.popleft()
+        wait = state.time_min - call.arrival_min
+        response = wait + PREP_MINUTES + 60.0 * data.distance[call.zone, ambulance.site] / SPEED_KMH
+        dispatch_day = int(math.floor((state.time_min + EPS) / MINUTES_PER_DAY))
+        if ambulance.day_count >= DAILY_CAP:
+            raise AssertionError("Daily dispatch cap violated before assignment")
+        ambulance.day_count += 1
+        state.daily_dispatches[(ambulance.ambulance_id, dispatch_day)] += 1
+        state.intervals[ambulance.ambulance_id].append(
+            (state.time_min, state.time_min + BUSY_MINUTES)
+        )
+        ambulance.busy_until = state.time_min + BUSY_MINUTES
+        state.dispatch_sequence.append(call.call_id)
+        state.records.append(
+            DispatchRecord(
+                call_id=call.call_id,
+                zone=call.zone,
+                ambulance_id=ambulance.ambulance_id,
+                site=ambulance.site,
+                arrival_min=call.arrival_min,
+                dispatch_min=state.time_min,
+                response_min=response,
+                wait_min=wait,
+                dispatch_day=dispatch_day,
+                c_loss_min=c_loss,
+            )
+        )
+        state.max_queue = max(state.max_queue, len(state.queue))
+
+
+def _advance_simulation(
+    data: ProblemData,
+    calls: list[Call],
+    strategy: str,
+    beta: float,
+    delta: float,
+    tau: float,
+    rate_multiplier: Callable[[float], np.ndarray] | None,
+    rate_multiplier_active_from: float | None,
+    state: SimulationState,
+    stop_min: float | None = None,
+) -> SimulationState:
+    if stop_min is not None and stop_min < state.time_min - EPS:
+        raise ValueError("Simulation stop time cannot precede the current state")
+
+    _dispatch_waiting_calls(
+        data,
+        calls,
+        strategy,
+        beta,
+        delta,
+        tau,
+        rate_multiplier,
+        rate_multiplier_active_from,
+        state,
+    )
+
+    while True:
+        if stop_min is not None and state.time_min >= stop_min - EPS:
+            state.time_min = stop_min
+            return state
+        all_idle = all(a.busy_until <= state.time_min + EPS for a in state.fleet)
+        complete = state.call_index >= len(calls) and not state.queue and all_idle
+        if complete and stop_min is None:
+            return state
+        next_arrival = (
+            calls[state.call_index].arrival_min if state.call_index < len(calls) else math.inf
+        )
+        next_completion = min(
+            (a.busy_until for a in state.fleet if a.busy_until > state.time_min + EPS),
+            default=math.inf,
+        )
+        next_activation = min(
+            (a.activation_min for a in state.fleet if a.activation_min > state.time_min + EPS),
+            default=math.inf,
+        )
+        event_time = min(
+            next_arrival,
+            next_completion,
+            next_activation,
+            state.next_midnight,
+            math.inf if stop_min is None else stop_min,
+        )
+        if not math.isfinite(event_time):
+            raise RuntimeError("Simulation event calendar became empty before completion")
+        state.time_min = event_time
+
+        if abs(state.time_min - state.next_midnight) <= EPS:
+            for ambulance in state.fleet:
+                ambulance.day_count = 0
+            state.next_midnight += MINUTES_PER_DAY
+        if stop_min is not None and abs(state.time_min - stop_min) <= EPS:
+            return state
+        while (
+            state.call_index < len(calls)
+            and calls[state.call_index].arrival_min <= state.time_min + EPS
+        ):
+            state.queue.append(calls[state.call_index])
+            state.call_index += 1
+        state.max_queue = max(state.max_queue, len(state.queue))
+        _dispatch_waiting_calls(
+            data,
+            calls,
+            strategy,
+            beta,
+            delta,
+            tau,
+            rate_multiplier,
+            rate_multiplier_active_from,
+            state,
+        )
+
+
+def prepare_simulation_state(
+    data: ProblemData,
+    calls: list[Call],
+    strategy: str,
+    stop_min: float,
+    beta: float = 1.0,
+    delta: float = 1.0,
+    reserve_vector: Iterable[int] | None = None,
+    tau: float = 5.0,
+    rate_multiplier: Callable[[float], np.ndarray] | None = None,
+    rate_multiplier_active_from: float | None = None,
+) -> SimulationState:
+    fleet = build_fleet(data, reserve_vector if strategy == "C" else None)
+    return _advance_simulation(
+        data,
+        calls,
+        strategy,
+        beta,
+        delta,
+        tau,
+        rate_multiplier,
+        rate_multiplier_active_from,
+        _new_simulation_state(fleet),
+        stop_min=stop_min,
+    )
+
+
 def simulate(
     data: ProblemData,
     calls: list[Call],
@@ -666,113 +866,54 @@ def simulate(
     rate_multiplier_active_from: float | None = None,
     external_sites: Iterable[int] | None = None,
     external_activation_min: float = 0.0,
+    initial_state: SimulationState | None = None,
 ) -> tuple[pd.DataFrame, dict[str, float | int]]:
-    fleet = build_fleet(
+    if initial_state is None:
+        fleet = build_fleet(
+            data,
+            reserve_vector if strategy == "C" else None,
+            external_sites=external_sites,
+            external_activation_min=external_activation_min,
+        )
+        state = _new_simulation_state(fleet)
+    else:
+        state = copy.deepcopy(initial_state)
+        if any(ambulance.external for ambulance in state.fleet):
+            raise ValueError("Warm-start state must contain only the permanent fleet")
+        fresh_fleet = build_fleet(
+            data,
+            reserve_vector if strategy == "C" else None,
+            external_sites=external_sites,
+            external_activation_min=external_activation_min,
+        )
+        permanent_count = int(np.sum(data.site_caps))
+        for ambulance in fresh_fleet[permanent_count:]:
+            state.fleet.append(ambulance)
+            state.intervals[ambulance.ambulance_id] = []
+
+    state = _advance_simulation(
         data,
-        reserve_vector if strategy == "C" else None,
-        external_sites=external_sites,
-        external_activation_min=external_activation_min,
+        calls,
+        strategy,
+        beta,
+        delta,
+        tau,
+        rate_multiplier,
+        rate_multiplier_active_from,
+        state,
     )
-    queue: deque[Call] = deque()
-    records: list[DispatchRecord] = []
-    intervals: dict[int, list[tuple[float, float]]] = {a.ambulance_id: [] for a in fleet}
-    daily_dispatches: Counter[tuple[int, int]] = Counter()
-    dispatch_sequence: list[int] = []
-    call_index = 0
-    time_min = 0.0
-    next_midnight = MINUTES_PER_DAY
-    max_queue = 0
-
-    while True:
-        all_idle = all(a.busy_until <= time_min + EPS for a in fleet)
-        if call_index >= len(calls) and not queue and all_idle:
-            break
-        next_arrival = calls[call_index].arrival_min if call_index < len(calls) else math.inf
-        next_completion = min(
-            (a.busy_until for a in fleet if a.busy_until > time_min + EPS),
-            default=math.inf,
-        )
-        next_activation = min(
-            (a.activation_min for a in fleet if a.activation_min > time_min + EPS),
-            default=math.inf,
-        )
-        event_time = min(next_arrival, next_completion, next_activation, next_midnight)
-        if not math.isfinite(event_time):
-            raise RuntimeError("Simulation event calendar became empty before completion")
-        time_min = event_time
-
-        if abs(time_min - next_midnight) <= EPS:
-            for ambulance in fleet:
-                ambulance.day_count = 0
-            next_midnight += MINUTES_PER_DAY
-        while call_index < len(calls) and calls[call_index].arrival_min <= time_min + EPS:
-            queue.append(calls[call_index])
-            call_index += 1
-        max_queue = max(max_queue, len(queue))
-
-        while queue:
-            call = queue[0]
-            if strategy == "A":
-                ambulance, c_loss = _choose_a(data, fleet, call, time_min)
-            elif strategy == "B":
-                active_multiplier = rate_multiplier
-                if rate_multiplier_active_from is not None and time_min < rate_multiplier_active_from - EPS:
-                    active_multiplier = None
-                ambulance, c_loss = _choose_b(
-                    data,
-                    fleet,
-                    call,
-                    time_min,
-                    beta,
-                    delta,
-                    rate_multiplier=active_multiplier,
-                )
-            elif strategy == "C":
-                ambulance, c_loss = _choose_c(data, fleet, call, time_min, tau)
-            else:
-                raise ValueError(f"Unknown strategy: {strategy}")
-            if ambulance is None:
-                break
-
-            queue.popleft()
-            wait = time_min - call.arrival_min
-            response = wait + PREP_MINUTES + 60.0 * data.distance[call.zone, ambulance.site] / SPEED_KMH
-            dispatch_day = int(math.floor((time_min + EPS) / MINUTES_PER_DAY))
-            if ambulance.day_count >= DAILY_CAP:
-                raise AssertionError("Daily dispatch cap violated before assignment")
-            ambulance.day_count += 1
-            daily_dispatches[(ambulance.ambulance_id, dispatch_day)] += 1
-            intervals[ambulance.ambulance_id].append((time_min, time_min + BUSY_MINUTES))
-            ambulance.busy_until = time_min + BUSY_MINUTES
-            dispatch_sequence.append(call.call_id)
-            records.append(
-                DispatchRecord(
-                    call_id=call.call_id,
-                    zone=call.zone,
-                    ambulance_id=ambulance.ambulance_id,
-                    site=ambulance.site,
-                    arrival_min=call.arrival_min,
-                    dispatch_min=time_min,
-                    response_min=response,
-                    wait_min=wait,
-                    dispatch_day=dispatch_day,
-                    c_loss_min=c_loss,
-                )
-            )
-            max_queue = max(max_queue, len(queue))
-
-    if len(records) != len(calls) or len({record.call_id for record in records}) != len(calls):
+    if len(state.records) != len(calls) or len({record.call_id for record in state.records}) != len(calls):
         raise AssertionError("Every call must be dispatched exactly once")
-    if dispatch_sequence != sorted(dispatch_sequence):
+    if state.dispatch_sequence != sorted(state.dispatch_sequence):
         raise AssertionError("FCFS dispatch order was violated")
-    if daily_dispatches and max(daily_dispatches.values()) > DAILY_CAP:
+    if state.daily_dispatches and max(state.daily_dispatches.values()) > DAILY_CAP:
         raise AssertionError("Daily dispatch cap was exceeded")
-    for ambulance_intervals in intervals.values():
+    for ambulance_intervals in state.intervals.values():
         for (_, end), (next_start, _) in zip(ambulance_intervals, ambulance_intervals[1:]):
             if next_start < end - EPS:
                 raise AssertionError("Ambulance busy intervals overlap")
 
-    frame = pd.DataFrame([record.__dict__ for record in records]).sort_values("call_id")
+    frame = pd.DataFrame([record.__dict__ for record in state.records]).sort_values("call_id")
     responses = frame["response_min"].to_numpy(dtype=float)
     waits = frame["wait_min"].to_numpy(dtype=float)
     delay_costs = np.asarray(delay_penalty_cost(responses), dtype=float)
@@ -784,11 +925,13 @@ def simulate(
         "p95_response_min": float(np.quantile(responses, 0.95)),
         "mean_wait_min": float(np.mean(waits)),
         "max_wait_min": float(np.max(waits)),
-        "max_queue": int(max_queue),
+        "max_queue": int(state.max_queue),
         "mean_delay_penalty_yuan_per_call": float(np.mean(delay_costs)),
         "total_delay_penalty_yuan": float(np.sum(delay_costs)),
-        "max_daily_dispatches_per_ambulance": int(max(daily_dispatches.values(), default=0)),
-        "simulation_end_min": float(time_min),
+        "max_daily_dispatches_per_ambulance": int(
+            max(state.daily_dispatches.values(), default=0)
+        ),
+        "simulation_end_min": float(state.time_min),
     }
     if strategy == "B":
         c_values = frame["c_loss_min"].dropna().to_numpy(dtype=float)

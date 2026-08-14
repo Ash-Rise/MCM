@@ -23,6 +23,7 @@ from ambulance_model import (
     ProblemData,
     generate_calls,
     intraday_density,
+    prepare_simulation_state,
     problem_statement_path,
     read_problem,
     sha256,
@@ -260,6 +261,16 @@ def _run_external_support(
     digest = _call_digest(calls)
     multiplier = incident_rate_multiplier(incident_zone, start_min, end_min, len(data.zone_ids))
     original_fleet_size = int(np.sum(data.site_caps))
+    initial_state = prepare_simulation_state(
+        data,
+        calls,
+        strategy="B",
+        beta=BETA,
+        delta=DELTA,
+        stop_min=start_min,
+        rate_multiplier=multiplier,
+        rate_multiplier_active_from=start_min,
+    )
     rows: list[dict[str, object]] = []
     for count in external_counts:
         sites = nearest_external_sites(data, incident_zone, count)
@@ -273,6 +284,7 @@ def _run_external_support(
             rate_multiplier_active_from=start_min,
             external_sites=sites,
             external_activation_min=start_min,
+            initial_state=initial_state,
         )
         rows.append(
             {

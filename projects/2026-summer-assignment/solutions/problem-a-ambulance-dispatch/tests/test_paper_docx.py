@@ -261,33 +261,43 @@ def test_figure_numbers_are_continuous_and_appendix_matches():
     assert "图1至图11均由" in markdown
 
 
-def test_task_three_defines_external_support_decision_boundaries():
+def test_task_three_separates_emergency_dispatch_from_external_support():
     markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
     task_three = markdown.split("## 七、任务三", 1)[1].split("## 八、模型评价", 1)[0]
+    section_73 = task_three.split("### 7.3 应急响应方案", 1)[1].split("### 7.4", 1)[0]
 
-    assert "7000行复制结果" in task_three
+    assert "10个事故区域、10个时长节点、10个随机种子和7种外援数量" in task_three
     assert "### 7.3 应急响应方案" in task_three
     assert "### 7.9" not in task_three
     assert "余量仅为4次/日，即2.86%" in task_three
     assert "只改变候选车辆的派出顺序" in task_three
     assert "这里的$B_N$仍包含事故呼叫" in task_three
-    assert "反事实基线" in task_three
-    assert "形成最小干预对照" in task_three
-    assert "共同随机数设计" in task_three
+    assert "$B_N$可作为$B_E$在同一事故情景下的对照" in task_three
+    assert "共同随机数控制了事故规模" in task_three
     assert r"D_{k,s}(H)=T_{k,s}^{B_E}(H)-T_{k,s}^{B_N}(H)" in task_three
-    assert "事故新增需求造成的负荷冲击" in task_three
-    assert "识别事故信息与派车顺序修正的边际作用" in task_three
-    assert "识别运力扩充的边际作用" in task_three
+    assert "事故新增需求和派车调整" in task_three
+    assert "识别事故信息修正的作用" in task_three
+    assert "评价扩充运力带来的改善" in task_three
     assert "持续排队" not in task_three
-    assert "$H=6,8,10,11,12$ h五个已验证节点" in task_three
-    assert "待事故期到达的排队呼叫清空且已接任务完成后撤回" in task_three
+    assert "在$H=6,8,10,11,12$ h五个长时节点" in task_three
+    assert "六个站点和12辆车保持任务一的配置" in section_73
+    assert "外援" not in section_73
+    assert "尚未完成的事故期呼叫继续处理" in section_73
     assert "3辆是90%响应改善达成率规则下的最小统一外援数" in task_three
     assert "5辆是满足该目标的最小统一数量" in task_three
-    assert "经济最优数量仍由具体调配成本决定" in task_three
-    assert r"c_m(H)" in task_three
+    assert "1辆方案的单位车辆收益最高" in task_three
+    assert "3辆方案在长时事故下综合性价比最高" in task_three
+    assert "经济最优数量仍由具体调配成本决定" not in task_three
+    assert r"c_m(H)" not in task_three
     assert "零呼叫情景的响应时间保留为未定义值" in task_three
     assert "表13" not in task_three
-    assert "第1～6辆外援的$B_m$依次为39.01、19.69、8.24、2.48、0.76和0.19万元" in task_three
+    assert "第1～6辆外援的$\\Delta P_m$依次为39.01、19.69、8.24、2.48、0.76和0.19万元" in task_three
+    assert r"\Delta P_m(H)=P_{m-1}(H)-P_m(H)" in task_three
+    for obsolete_symbol in ("G_m(H)", "g_m(H)", "S_m(H)", "A_m(H)", "B_m(H)"):
+        assert obsolete_symbol not in task_three
+    assert r"\bar M_k(H)" not in task_three
+    assert r"s_M(H)" not in task_three
+    assert "获取得分" not in task_three
 
 
 def test_figure_eleven_includes_response_gain_and_marginal_penalty_panels():
@@ -351,6 +361,66 @@ def test_omml_normalizer_fixes_pandoc_matrix_child_order():
     assert module._normalize_omml_matrix_properties(document) == (1, 1)
     assert [node.tag for node in run_properties] == [qn("m:nor")]
     assert [node.tag for node in column_properties] == [qn("m:count"), qn("m:mcJc")]
+
+
+def test_postprocessor_removes_duplicate_bookmark_ends_imported_with_locked_table(tmp_path):
+    module = _load_postprocessor()
+    source = Document()
+    source.add_paragraph("测试题名")
+    source.add_paragraph("一、问题重述")
+    body = source.add_paragraph("正文")
+    bookmark_start = OxmlElement("w:bookmarkStart")
+    bookmark_start.set(qn("w:id"), "25")
+    bookmark_start.set(qn("w:name"), "body")
+    bookmark_end = OxmlElement("w:bookmarkEnd")
+    bookmark_end.set(qn("w:id"), "25")
+    body._p.append(bookmark_start)
+    body._p.append(bookmark_end)
+    source.add_table(rows=1, cols=1).cell(0, 0).text = "相同内容"
+
+    baseline = Document()
+    baseline.add_table(rows=1, cols=1).cell(0, 0).text = "相同内容"
+    duplicate_end = OxmlElement("w:bookmarkEnd")
+    duplicate_end.set(qn("w:id"), "25")
+    baseline.tables[0]._tbl.append(duplicate_end)
+
+    source_path = tmp_path / "source.docx"
+    baseline_path = tmp_path / "baseline.docx"
+    output_path = tmp_path / "output.docx"
+    source.save(source_path)
+    baseline.save(baseline_path)
+    module.postprocess_docx(source_path, output_path, table_baseline=baseline_path)
+
+    output = Document(output_path)
+    bookmark_ends = output.element.body.findall(".//" + qn("w:bookmarkEnd"))
+    assert [node.get(qn("w:id")) for node in bookmark_ends].count("25") == 1
+
+
+def test_postprocessor_normalizes_omml_imported_with_locked_table(tmp_path):
+    module = _load_postprocessor()
+    source = Document()
+    source.add_paragraph("测试题名")
+    source.add_paragraph("一、问题重述")
+    source.add_table(rows=1, cols=1).cell(0, 0).text = "相同内容"
+
+    baseline = Document()
+    baseline.add_table(rows=1, cols=1).cell(0, 0).text = "相同内容"
+    run_properties = OxmlElement("m:rPr")
+    run_properties.append(OxmlElement("m:sty"))
+    run_properties.append(OxmlElement("m:scr"))
+    baseline.tables[0].cell(0, 0).paragraphs[0]._p.append(run_properties)
+
+    source_path = tmp_path / "source.docx"
+    baseline_path = tmp_path / "baseline.docx"
+    output_path = tmp_path / "output.docx"
+    source.save(source_path)
+    baseline.save(baseline_path)
+    module.postprocess_docx(source_path, output_path, table_baseline=baseline_path)
+
+    output = Document(output_path)
+    output_properties = output.element.body.find(".//" + qn("m:rPr"))
+    assert output_properties is not None
+    assert [node.tag for node in output_properties] == [qn("m:scr"), qn("m:sty")]
 
 
 def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp_path):
@@ -488,6 +558,21 @@ def test_table_layout_only_mode_retains_content_and_reports_drift():
     )
 
 
+def test_hybrid_table_lock_preserves_unchanged_tables_and_reports_changed_tables():
+    module = _load_postprocessor()
+    target = Document()
+    target.add_table(rows=1, cols=1).cell(0, 0).text = "unchanged"
+    target.add_table(rows=1, cols=1).cell(0, 0).text = "new content"
+    baseline = Document()
+    baseline.add_table(rows=1, cols=1).cell(0, 0).text = "unchanged"
+    baseline.tables[0].cell(0, 0).paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
+    baseline.add_table(rows=1, cols=2).cell(0, 0).text = "old content"
+
+    assert module._replace_unchanged_tables_from_baseline(target, baseline) == [2]
+    assert target.tables[0]._tbl.xml == baseline.tables[0]._tbl.xml
+    assert target.tables[1].cell(0, 0).text == "new content"
+
+
 def test_exact_table_lock_survives_docx_save_and_reload(tmp_path):
     module = _load_postprocessor()
     target = Document()
@@ -538,7 +623,7 @@ def test_postprocessor_selects_complete_paper_table_geometry():
     weights = module.table_width_weights_for_count(12)
 
     assert len(weights) == 12
-    assert tuple(len(item) for item in weights) == (3, 3, 7, 2, 6, 2, 4, 4, 5, 2, 5, 5)
+    assert tuple(len(item) for item in weights) == (3, 3, 7, 2, 6, 2, 4, 4, 4, 2, 5, 5)
 
 
 def test_postprocessor_rejects_unknown_table_count():

@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
-  "created_at": "2026-08-13T11:04:31.091821+00:00",
+  "created_at": "2026-08-14T19:40:50.297677+00:00",
   "source_format": "markdown",
   "source": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).md",
   "source_files": [
     "A题论文(v2.5).md"
   ],
-  "source_sha256": "53be86252d27f3353363ed227982d7916bd51859a18950d4da4381d2e155491c",
+  "source_sha256": "5d46032e584f20ee650339940d63042c487839f65d37162c4ef7dfe421f20019",
   "project_files": [
     "A题论文(v2.5).md"
   ],
-  "project_sha256": "53be86252d27f3353363ed227982d7916bd51859a18950d4da4381d2e155491c",
+  "project_sha256": "5d46032e584f20ee650339940d63042c487839f65d37162c4ef7dfe421f20019",
   "output": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).docx",
-  "output_sha256": "e9f4cb5377c6c7befa3ec63cf5c5965e56dd4e56e466d865cc09a113a6d3756b",
+  "output_sha256": "460f5b2953afefdbc4e506510175ddc641996158dec2006c4969ba31856fd434",
   "template": "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx",
   "template_sha256": "52b92f3e1702a1b3f733340adafd1cae4d16468b423c70dae0506f5e4f2ff142",
   "pandoc": {
@@ -29,27 +29,26 @@
     "--citeproc",
     "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).md",
     "--output",
-    "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\tmpw45pht3a.docx",
+    "C:\\Users\\AA\\AppData\\Local\\Temp\\codex-a-paper-v25-1786736444587\\tmp_w14fe8t.docx",
     "--resource-path=D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5",
     "--reference-doc",
     "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx"
   ],
   "returncode": 0,
-  "duration_seconds": 0.68,
+  "duration_seconds": 0.854,
   "warnings": [],
   "allowed_warnings": [],
   "warning_override": {
     "patterns": [],
     "reason": null
   },
-  "reproduce": "C:\\Users\\AA\\.codex\\runtimes\\pytest\\Scripts\\python.exe C:\\Users\\AA\\.codex\\skills\\math-modeling\\tools\\docx\\scripts\\equations.py generate D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).md --output D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5)-未后处理.docx --template D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx --timeout 120 --overwrite",
+  "reproduce": "C:\\Users\\AA\\.codex\\runtimes\\pytest\\Scripts\\python.exe C:\\Users\\AA\\.codex\\skills\\math-modeling\\tools\\docx\\scripts\\equations.py generate D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).md --output C:\\Users\\AA\\AppData\\Local\\Temp\\codex-a-paper-v25-1786736444587\\A题论文(v2.5)-未后处理.docx --template D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-paper-template.docx --timeout 120",
   "postprocess": {
     "tool": "src/postprocess_paper_docx.py",
     "source_manifest": "A题论文(v2.5)-未后处理.conversion.json",
     "table_baseline": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-a-ambulance-dispatch\\paper\\v2.5\\A题论文(v2.5).docx",
-    "table_baseline_sha256": "e9f4cb5377c6c7befa3ec63cf5c5965e56dd4e56e466d865cc09a113a6d3756b",
+    "table_baseline_sha256": "460f5b2953afefdbc4e506510175ddc641996158dec2006c4969ba31856fd434",
     "table_baseline_mode": "complete_table_xml",
-    "manual_layout_adopted_at": "2026-08-13T15:44:00+00:00",
-    "reason": "Adopted the user-corrected v2.5 Word tables as the exact complete-OOXML baseline after structural regression and rendered-page review. The Pandoc Markdown content and numerical results are unchanged."
+    "reason": "Removed template numbering, preserved the user-corrected v2.5 complete table OOXML, installed centered PAGE fields, kept the abstract on its own page, and added caption-derived alt text to body figures."
   }
 }

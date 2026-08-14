@@ -11,21 +11,24 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 - [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)
 - Pandoc source: [`A题论文(v2.5).md`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).md)
 - Word deliverable: [`A题论文(v2.5).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).docx)
+- Paper code and reproducibility materials: [`Problem A ambulance-dispatch reproduction entrypoint`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/README.md#reproduction)
 
 ## Release Notes
 
 ### v2.5 (2026-08-13 19:22 UTC+8)
 
-Layout-asset updated: 2026-08-13 23:52 UTC+8. This update only adopts and locks the table widths and alignments finalized by the user in WPS; the Markdown body, models, figures, and numerical results are unchanged.
+Paper content and layout updated: 2026-08-15 04:31 UTC+8. This update completes the Task 3 emergency-response and temporary-support analysis and adopts the user's final proofreading of both the Markdown and DOCX while retaining the v2.5 version number.
 
-This release improves the readability of the Task 2 dispatch policies, the completeness of statistical comparison, and the stability of Word regeneration while retaining all three tasks' model definitions and frozen simulation results.
+This release improves the readability of the Task 2 dispatch policies, the operational clarity of the Task 3 emergency plan, the completeness of statistical comparison, and the stability of Word regeneration.
 
 - `[~]` Rewrote Strategy B in the order of intuition, variable meaning, mathematical expression, and interpretation; completed Strategy C with its reserve-vector candidates, threshold release rule, lexicographic screening, and out-of-sample one-sided bound.
 - `[~]` Consolidated the six mean improvement rates and paired 95% confidence intervals for Strategies B and C versus A into one bar chart, removed the redundant standalone paired-difference figure, and clarified time, rate, and cost units.
 - `[~]` Replaced defensive negative phrasing in Tasks 1 and 3 and the model evaluation with direct statements tied to conditions, evidence, and scope.
-- `[~]` Rebuilt the 25-page Word deliverable from the reviewed Markdown, inherited the hand-corrected WPS table baseline, and widened Table 7's metric column so every label remains on one line at 10 pt; the paper contains 10 figures, 12 three-line tables, and native Word equations.
+- `[+]` Clarified the paired comparison between normal and incident-aware forecasts, defined the existing 12-vehicle emergency workflow from incident confirmation through rolling dispatch, queue handling, and mode exit, and identified the capacity bottleneck in long incidents.
+- `[+]` Added a 7,000-row experiment covering zero to six temporary support vehicles, derived the 1/3/5-vehicle tiers from per-vehicle benefit, the 90% response-improvement threshold, and the 5-minute service target, and summarized response gains and marginal avoided penalties in Figure 11.
+- `[~]` Updated the 29-page Word deliverable from the reviewed Markdown and re-froze the table layout proofread by the user in WPS; the paper contains 11 figures, 12 three-line tables, and 207 native Word equation objects.
 - `[~]` Reduced each release to the Pandoc Markdown source, DOCX, and conversion manifest; removed the derived GitHub previews and their generation chain for v2.4—v2.5. Versions v2.1—v2.3 never contained such files.
-- `[✓]` Passed full evidence reproduction, the regression suite after preview-chain removal, Office structure validation, conversion-manifest verification, and visual inspection of all 25 rendered pages.
+- `[~]` Passed full evidence reproduction, conversion-manifest verification, and the 29-page A4 render review; the user-finalized WPS file retains two OMML child-order warnings in table equations and is intentionally not rewritten.
 - `[~]` Promoted the manually revised complete table OOXML to the authoritative v2.5 table baseline and left-aligned Table 8's narrative execution notes; the frozen hash, save-reload regression, and rendered-page review all passed.
 
 ### v2.4 (2026-08-13 04:39 UTC+8)

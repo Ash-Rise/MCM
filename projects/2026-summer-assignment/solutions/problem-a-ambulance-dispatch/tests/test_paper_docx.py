@@ -266,11 +266,27 @@ def test_task_three_defines_external_support_decision_boundaries():
     task_three = markdown.split("## 七、任务三", 1)[1].split("## 八、模型评价", 1)[0]
 
     assert "7000行复制结果" in task_three
-    assert "3辆是90%累计改善规则下的最小统一外援数" in task_three
+    assert "### 7.3 应急响应方案" in task_three
+    assert "### 7.9" not in task_three
+    assert "余量仅为4次/日，即2.86%" in task_three
+    assert "只改变候选车辆的派出顺序" in task_three
+    assert "持续排队" not in task_three
+    assert "$H=6,8,10,11,12$ h五个已验证节点" in task_three
+    assert "待事故期到达的排队呼叫清空且已接任务完成后撤回" in task_three
+    assert "3辆是90%响应改善达成率规则下的最小统一外援数" in task_three
     assert "5辆是满足该目标的最小统一数量" in task_three
     assert "经济最优数量仍由具体调配成本决定" in task_three
     assert r"c_m(H)" in task_three
     assert "零呼叫情景的响应时间保留为未定义值" in task_three
+
+
+def test_figure_eleven_uses_clear_response_gain_rate_label():
+    source = (PROJECT_ROOT / "src" / "generate_figures.py").read_text(encoding="utf-8")
+
+    assert 'long_durations = [6.0, 8.0, 10.0, 11.0, 12.0]' in source
+    assert 'axes[1].set_ylabel("响应改善达成率（%）")' in source
+    assert 'axes[1].set_title("长时事故的响应改善达成率"' in source
+    assert '"6辆外援=100%"' in source
 
 
 def test_task_one_uses_only_planning_coverage_and_compact_capacity_proof():

@@ -774,10 +774,10 @@ def result_q3_external_support(full: Path, figures: Path) -> None:
     axes[0].set_title("不同事故时长下的响应变化", fontsize=8)
     axes[0].legend(frameon=False, fontsize=6.1, ncol=2, loc="upper right")
 
-    long_durations = [6.0, 8.0, 10.0, 12.0]
-    long_colors = [BLUE, GREEN, ORANGE, PURPLE]
-    long_styles = ["-", "--", "-.", ":"]
-    long_markers = ["o", "s", "^", "D"]
+    long_durations = [6.0, 8.0, 10.0, 11.0, 12.0]
+    long_colors = plt.get_cmap("viridis")(np.linspace(0.08, 0.92, len(long_durations)))
+    long_styles = ["-", "--", "-.", ":", (0, (3, 1, 1, 1))]
+    long_markers = ["o", "s", "^", "v", "D"]
     for duration, color, linestyle, marker in zip(
         long_durations,
         long_colors,
@@ -806,10 +806,20 @@ def result_q3_external_support(full: Path, figures: Path) -> None:
     axes[1].axhline(90, color=GRAY, linestyle="--", linewidth=0.8)
     axes[1].axvline(3, color=GRAY, linestyle="--", linewidth=0.8)
     axes[1].set_xlabel("临时外援车辆数（辆）")
-    axes[1].set_ylabel("累计响应改善占6辆方案比例（%）")
+    axes[1].set_ylabel("响应改善达成率（%）")
     axes[1].set_xticks(range(1, 7))
     axes[1].set_ylim(0, 104)
-    axes[1].set_title("长时事故的收益拐点", fontsize=8)
+    axes[1].set_title("长时事故的响应改善达成率", fontsize=8)
+    axes[1].text(
+        0.03,
+        0.96,
+        "6辆外援=100%",
+        transform=axes[1].transAxes,
+        ha="left",
+        va="top",
+        fontsize=6.2,
+        color=GRAY,
+    )
     axes[1].legend(frameon=False, fontsize=6.2, ncol=2, loc="lower right")
 
     for label, ax in zip(("(a)", "(b)"), axes, strict=True):

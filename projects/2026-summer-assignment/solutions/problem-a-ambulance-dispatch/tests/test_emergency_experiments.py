@@ -11,7 +11,7 @@ SOLUTION_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = SOLUTION_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
-from ambulance_model import Call, problem_statement_path, read_problem  # noqa: E402
+from ambulance_model import Call, problem_statement_path, read_problem, simulate  # noqa: E402
 import run_emergency_experiments as emergency  # noqa: E402
 from run_emergency_experiments import (  # noqa: E402
     WARMUP_DAYS,
@@ -87,6 +87,59 @@ class EmergencyExperimentTest(unittest.TestCase):
         self.assertEqual(summary["nonincident_zone_calls"], 1)
         self.assertAlmostEqual(summary["mean_response_min"], 57.0)
         self.assertEqual(summary["max_incident_queue"], 2)
+
+    def test_nearest_external_site_mapping(self) -> None:
+        self.assertEqual(emergency.nearest_external_sites(self.data, incident_zone=0, count=2), [0, 0])
+        self.assertEqual(emergency.nearest_external_sites(self.data, incident_zone=6, count=2), [2, 2])
+        self.assertEqual(
+            emergency.nearest_external_sites(self.data, incident_zone=7, count=5),
+            [3, 5, 3, 5, 3],
+        )
+        with self.assertRaises(ValueError):
+            emergency.nearest_external_sites(self.data, incident_zone=-1, count=1)
+        with self.assertRaises(ValueError):
+            emergency.nearest_external_sites(self.data, incident_zone=0, count=-1)
+        with self.assertRaises(ValueError):
+            emergency.nearest_external_sites(self.data, incident_zone=0, count=1.5)
+
+    def test_external_support_reuses_calls_and_count_zero_matches_emergency_policy(self) -> None:
+        start_min = 100.0
+        end_min = 160.0
+        zone = 7
+        calls = [Call(call_id, start_min, zone) for call_id in range(20)]
+        multiplier = incident_rate_multiplier(zone, start_min, end_min, len(self.data.zone_ids))
+
+        baseline_records, baseline_full = simulate(
+            self.data,
+            calls,
+            strategy="B",
+            beta=emergency.BETA,
+            delta=emergency.DELTA,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+        )
+        baseline = summarize_incident(baseline_records, zone, start_min, end_min)
+        rows = emergency._run_external_support(
+            self.data,
+            calls,
+            incident_zone=zone,
+            start_min=start_min,
+            end_min=end_min,
+            external_counts=(0, 1, 2),
+        )
+
+        self.assertEqual([row["external_count"] for row in rows], [0, 1, 2])
+        self.assertEqual(len({row["call_digest"] for row in rows}), 1)
+        zero = rows[0]
+        for metric, expected in baseline.items():
+            if isinstance(expected, float) and np.isnan(expected):
+                self.assertTrue(np.isnan(zero[metric]))
+            else:
+                self.assertAlmostEqual(float(zero[metric]), float(expected), places=12)
+        self.assertEqual(
+            zero["max_daily_dispatches_per_ambulance"],
+            baseline_full["max_daily_dispatches_per_ambulance"],
+        )
 
     def test_any_duration_inside_continuous_domain_is_legal(self) -> None:
         self.assertTrue(hasattr(emergency, "validate_duration"))

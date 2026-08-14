@@ -42,6 +42,7 @@ MIN_DURATION_SPACING_HOURS = 0.2
 SURFACE_GRID_POINTS = 117
 REPLICATIONS = 10
 BASE_SEED = 600_000
+EXTERNAL_COUNTS = tuple(range(7))
 RESPONSE_SURFACE_METRICS = (
     "mean_response_min",
     "p95_response_min",
@@ -230,6 +231,65 @@ def _call_digest(calls: list[Call]) -> str:
     return hashlib.sha256(payload.encode("ascii")).hexdigest()
 
 
+def nearest_external_sites(
+    data: ProblemData,
+    incident_zone: int,
+    count: int,
+) -> list[int]:
+    if isinstance(incident_zone, bool) or not isinstance(incident_zone, (int, np.integer)):
+        raise ValueError("Incident zone must be an integer index")
+    if not 0 <= int(incident_zone) < len(data.zone_ids):
+        raise ValueError("Incident zone is outside the demand-zone set")
+    if isinstance(count, bool) or not isinstance(count, (int, np.integer)) or count < 0:
+        raise ValueError("External ambulance count must be a nonnegative integer")
+
+    distances = data.distance[int(incident_zone)]
+    nearest_distance = float(np.min(distances))
+    tied_sites = np.flatnonzero(np.isclose(distances, nearest_distance, rtol=0.0, atol=1e-12))
+    return [int(tied_sites[index % len(tied_sites)]) for index in range(int(count))]
+
+
+def _run_external_support(
+    data: ProblemData,
+    calls: list[Call],
+    incident_zone: int,
+    start_min: float,
+    end_min: float,
+    external_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+) -> list[dict[str, object]]:
+    digest = _call_digest(calls)
+    multiplier = incident_rate_multiplier(incident_zone, start_min, end_min, len(data.zone_ids))
+    original_fleet_size = int(np.sum(data.site_caps))
+    rows: list[dict[str, object]] = []
+    for count in external_counts:
+        sites = nearest_external_sites(data, incident_zone, count)
+        records, full_metrics = simulate(
+            data,
+            calls,
+            strategy="B",
+            beta=BETA,
+            delta=DELTA,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+            external_sites=sites,
+            external_activation_min=start_min,
+        )
+        rows.append(
+            {
+                "mode": "B_E",
+                "external_count": int(count),
+                "external_sites": "|".join(data.site_ids[site] for site in sites),
+                "call_digest": digest,
+                **summarize_incident(records, incident_zone, start_min, end_min),
+                "external_dispatches": int((records["ambulance_id"] >= original_fleet_size).sum()),
+                "max_daily_dispatches_per_ambulance": full_metrics[
+                    "max_daily_dispatches_per_ambulance"
+                ],
+            }
+        )
+    return rows
+
+
 def _init_worker(input_path: str) -> None:
     global _WORKER_DATA
     _WORKER_DATA = read_problem(Path(input_path))
@@ -277,6 +337,37 @@ def _scenario_worker(task: dict[str, float | int]) -> list[dict[str, object]]:
             }
         )
     return rows
+
+
+def _external_scenario_worker(task: dict[str, object]) -> list[dict[str, object]]:
+    if _WORKER_DATA is None:
+        raise RuntimeError("Worker data is not initialized")
+    zone = int(task["incident_zone"])
+    duration = float(task["duration_hours"])
+    seed = int(task["seed"])
+    start_hour = float(task["start_hour"])
+    start_min = WARMUP_DAYS * MINUTES_PER_DAY + start_hour * 60.0
+    end_min = start_min + duration * 60.0
+    calls = build_scenario_calls(_WORKER_DATA, zone, start_hour, duration, seed)
+    counts = tuple(int(value) for value in task.get("external_counts", EXTERNAL_COUNTS))
+    rows = _run_external_support(
+        _WORKER_DATA,
+        calls,
+        incident_zone=zone,
+        start_min=start_min,
+        end_min=end_min,
+        external_counts=counts,
+    )
+    return [
+        {
+            **row,
+            "incident_zone": zone + 1,
+            "duration_hours": duration,
+            "start_hour": start_hour,
+            "seed": seed,
+        }
+        for row in rows
+    ]
 
 
 def _summaries(replicates: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:

@@ -270,6 +270,10 @@ def test_task_three_defines_external_support_decision_boundaries():
     assert "### 7.9" not in task_three
     assert "余量仅为4次/日，即2.86%" in task_three
     assert "只改变候选车辆的派出顺序" in task_three
+    assert "为$B_E$构造同一事故情景下的反事实基线" in task_three
+    assert "事故新增需求造成的负荷冲击" in task_three
+    assert "识别事故信息和派车顺序修正的边际作用" in task_three
+    assert "识别运力扩充的边际作用" in task_three
     assert "持续排队" not in task_three
     assert "$H=6,8,10,11,12$ h五个已验证节点" in task_three
     assert "待事故期到达的排队呼叫清空且已接任务完成后撤回" in task_three

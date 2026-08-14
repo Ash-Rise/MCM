@@ -142,6 +142,74 @@ class EmergencyExperimentTest(unittest.TestCase):
             baseline_full["max_daily_dispatches_per_ambulance"],
         )
 
+    def test_external_support_group_reuses_a_common_preincident_state(self) -> None:
+        start_min = 100.0
+        end_min = 160.0
+        common_prefix = [
+            Call(0, 0.0, 0),
+            Call(1, 30.0, 1),
+        ]
+        scenarios = [
+            {
+                "incident_zone": 0,
+                "start_min": start_min,
+                "end_min": end_min,
+                "calls": [*common_prefix, Call(2, 100.0, 0), Call(3, 110.0, 0)],
+            },
+            {
+                "incident_zone": 1,
+                "start_min": start_min,
+                "end_min": end_min,
+                "calls": [*common_prefix, Call(2, 100.0, 1), Call(3, 115.0, 1)],
+            },
+        ]
+        expected = []
+        for scenario in scenarios:
+            expected.extend(
+                emergency._run_external_support(
+                    self.data,
+                    scenario["calls"],
+                    incident_zone=scenario["incident_zone"],
+                    start_min=scenario["start_min"],
+                    end_min=scenario["end_min"],
+                    external_counts=(0, 1),
+                )
+            )
+
+        self.assertTrue(hasattr(emergency, "_run_external_support_group"))
+        actual = emergency._run_external_support_group(
+            self.data,
+            scenarios,
+            external_counts=(0, 1),
+        )
+
+        self.assertTrue(pd.DataFrame(actual).equals(pd.DataFrame(expected)))
+
+    def test_external_support_tasks_group_all_zones_by_duration_and_seed(self) -> None:
+        scenarios = pd.DataFrame(
+            [
+                {
+                    "incident_zone": zone,
+                    "duration_hours": duration,
+                    "start_hour": 17.0,
+                }
+                for duration in (0.5, 1.0)
+                for zone in range(1, 11)
+            ]
+        )
+
+        self.assertTrue(hasattr(emergency, "_build_external_tasks"))
+        tasks = emergency._build_external_tasks(
+            scenarios,
+            seeds=(600_000, 600_001),
+            external_counts=(0, 1, 2),
+        )
+
+        self.assertEqual(len(tasks), 4)
+        for task in tasks:
+            self.assertEqual(set(task["incident_zones"]), set(range(10)))
+            self.assertEqual(task["external_counts"], (0, 1, 2))
+
     @staticmethod
     def _synthetic_external_support() -> pd.DataFrame:
         rows = []

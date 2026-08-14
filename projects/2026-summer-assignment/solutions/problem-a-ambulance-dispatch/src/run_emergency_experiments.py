@@ -21,6 +21,7 @@ from ambulance_model import (
     MINUTES_PER_DAY,
     Call,
     ProblemData,
+    SimulationState,
     generate_calls,
     intraday_density,
     prepare_simulation_state,
@@ -257,20 +258,22 @@ def _run_external_support(
     start_min: float,
     end_min: float,
     external_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+    initial_state: SimulationState | None = None,
 ) -> list[dict[str, object]]:
     digest = _call_digest(calls)
     multiplier = incident_rate_multiplier(incident_zone, start_min, end_min, len(data.zone_ids))
     original_fleet_size = int(np.sum(data.site_caps))
-    initial_state = prepare_simulation_state(
-        data,
-        calls,
-        strategy="B",
-        beta=BETA,
-        delta=DELTA,
-        stop_min=start_min,
-        rate_multiplier=multiplier,
-        rate_multiplier_active_from=start_min,
-    )
+    if initial_state is None:
+        initial_state = prepare_simulation_state(
+            data,
+            calls,
+            strategy="B",
+            beta=BETA,
+            delta=DELTA,
+            stop_min=start_min,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+        )
     rows: list[dict[str, object]] = []
     for count in external_counts:
         sites = nearest_external_sites(data, incident_zone, count)
@@ -298,6 +301,65 @@ def _run_external_support(
                     "max_daily_dispatches_per_ambulance"
                 ],
             }
+        )
+    return rows
+
+
+def _run_external_support_group(
+    data: ProblemData,
+    scenarios: list[dict[str, object]],
+    external_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+) -> list[dict[str, object]]:
+    if not scenarios:
+        return []
+    start_min = float(scenarios[0]["start_min"])
+    if any(not math.isclose(float(scenario["start_min"]), start_min) for scenario in scenarios):
+        raise ValueError("Grouped external-support scenarios must share an incident start")
+
+    first_zone = int(scenarios[0]["incident_zone"])
+    first_calls = scenarios[0]["calls"]
+    if not isinstance(first_calls, list):
+        raise TypeError("Grouped external-support calls must be a list")
+    first_multiplier = incident_rate_multiplier(
+        first_zone,
+        start_min,
+        float(scenarios[0]["end_min"]),
+        len(data.zone_ids),
+    )
+    shared_state = prepare_simulation_state(
+        data,
+        first_calls,
+        strategy="B",
+        beta=BETA,
+        delta=DELTA,
+        stop_min=start_min,
+        rate_multiplier=first_multiplier,
+        rate_multiplier_active_from=start_min,
+    )
+
+    rows: list[dict[str, object]] = []
+    for scenario in scenarios:
+        calls = scenario["calls"]
+        if not isinstance(calls, list):
+            raise TypeError("Grouped external-support calls must be a list")
+        scenario_rows = _run_external_support(
+            data,
+            calls,
+            incident_zone=int(scenario["incident_zone"]),
+            start_min=float(scenario["start_min"]),
+            end_min=float(scenario["end_min"]),
+            external_counts=external_counts,
+            initial_state=shared_state,
+        )
+        metadata = scenario.get("metadata", {})
+        if not isinstance(metadata, dict):
+            raise TypeError("Grouped external-support metadata must be a dictionary")
+        rows.extend(
+            {
+                **row,
+                **metadata,
+            }
+            for row in scenario_rows
         )
     return rows
 
@@ -380,6 +442,70 @@ def _external_scenario_worker(task: dict[str, object]) -> list[dict[str, object]
         }
         for row in rows
     ]
+
+
+def _build_external_tasks(
+    scenarios: pd.DataFrame,
+    seeds: tuple[int, ...],
+    external_counts: tuple[int, ...],
+) -> list[dict[str, object]]:
+    tasks: list[dict[str, object]] = []
+    for (duration, start_hour), group in scenarios.groupby(
+        ["duration_hours", "start_hour"], sort=True
+    ):
+        incident_zones = tuple(
+            sorted(int(zone) - 1 for zone in group["incident_zone"].tolist())
+        )
+        for seed in seeds:
+            tasks.append(
+                {
+                    "duration_hours": float(duration),
+                    "start_hour": float(start_hour),
+                    "seed": int(seed),
+                    "incident_zones": incident_zones,
+                    "external_counts": external_counts,
+                }
+            )
+    return tasks
+
+
+def _external_scenario_group_worker(task: dict[str, object]) -> list[dict[str, object]]:
+    if _WORKER_DATA is None:
+        raise RuntimeError("Worker data is not initialized")
+    duration = float(task["duration_hours"])
+    seed = int(task["seed"])
+    start_hour = float(task["start_hour"])
+    start_min = WARMUP_DAYS * MINUTES_PER_DAY + start_hour * 60.0
+    end_min = start_min + duration * 60.0
+    counts = tuple(int(value) for value in task.get("external_counts", EXTERNAL_COUNTS))
+    incident_zones = tuple(int(value) for value in task["incident_zones"])
+    scenarios = []
+    for zone in incident_zones:
+        scenarios.append(
+            {
+                "incident_zone": zone,
+                "start_min": start_min,
+                "end_min": end_min,
+                "calls": build_scenario_calls(
+                    _WORKER_DATA,
+                    zone,
+                    start_hour,
+                    duration,
+                    seed,
+                ),
+                "metadata": {
+                    "incident_zone": zone + 1,
+                    "duration_hours": duration,
+                    "start_hour": start_hour,
+                    "seed": seed,
+                },
+            }
+        )
+    return _run_external_support_group(
+        _WORKER_DATA,
+        scenarios,
+        external_counts=counts,
+    )
 
 
 def _summaries(replicates: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -1086,16 +1212,7 @@ def _run_external_scenarios(
     seeds: tuple[int, ...],
     external_counts: tuple[int, ...],
 ) -> pd.DataFrame:
-    tasks = [
-        {
-            **row,
-            "incident_zone": int(row["incident_zone"]) - 1,
-            "seed": int(seed),
-            "external_counts": external_counts,
-        }
-        for row in scenarios.to_dict(orient="records")
-        for seed in seeds
-    ]
+    tasks = _build_external_tasks(scenarios, seeds, external_counts)
     started = time.time()
     rows: list[dict[str, object]] = []
     with ProcessPoolExecutor(
@@ -1103,7 +1220,7 @@ def _run_external_scenarios(
         initializer=_init_worker,
         initargs=(str(input_path),),
     ) as executor:
-        futures = [executor.submit(_external_scenario_worker, task) for task in tasks]
+        futures = [executor.submit(_external_scenario_group_worker, task) for task in tasks]
         for completed, future in enumerate(as_completed(futures), start=1):
             rows.extend(future.result())
             if completed == 1 or completed % max(1, len(tasks) // 20) == 0 or completed == len(tasks):
@@ -1115,7 +1232,7 @@ def _run_external_scenarios(
     replicates = pd.DataFrame(rows).sort_values(
         ["incident_zone", "duration_hours", "seed", "external_count"]
     )
-    expected_rows = len(tasks) * len(external_counts)
+    expected_rows = len(scenarios) * len(seeds) * len(external_counts)
     if len(replicates) != expected_rows:
         raise AssertionError(
             f"Expected {expected_rows} external-support rows, received {len(replicates)}"

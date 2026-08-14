@@ -28,7 +28,7 @@ COMPLETE_TABLE_WIDTH_WEIGHTS = (
     (2826, 6044),
     (2886, 2061, 2061, 2062),
     (1365, 1367, 2613, 3525),
-    (1183, 1478, 2070, 2661, 1478),
+    (1183, 1478, 2070, 4139),
     (2534, 6336),
     (1223, 1529, 1529, 2319, 2270),
     (1694, 1095, 2301, 1255, 2525),
@@ -39,7 +39,7 @@ DEFAULT_TABLE_BASELINE = (
     PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).docx"
 )
 DEFAULT_TABLE_BASELINE_SHA256 = (
-    "e9f4cb5377c6c7befa3ec63cf5c5965e56dd4e56e466d865cc09a113a6d3756b"
+    "460f5b2953afefdbc4e506510175ddc641996158dec2006c4969ba31856fd434"
 )
 
 
@@ -91,14 +91,17 @@ def rebind_conversion_manifest(
             sha256_file(table_baseline) if table_baseline else None
         ),
         "table_baseline_mode": (
-            "layout_only" if allow_table_content_drift else "complete_table_xml"
+            "hybrid_table_xml" if allow_table_content_drift else "complete_table_xml"
         ),
         "reason": (
-            "Removed template numbering, preserved the user-corrected v2.5 complete "
-            "table OOXML, installed centered "
-            "PAGE fields, kept the abstract on its own page, and added caption-derived "
-            "alt text to body figures. The current Markdown was synchronized with the "
-            "reviewed Word baseline without changing results."
+            "Removed template numbering, preserved complete user-corrected OOXML for "
+            "unchanged tables, regenerated only tables whose reviewed Markdown content "
+            "changed, installed centered PAGE fields, kept the abstract on its own "
+            "page, and added caption-derived alt text to body figures."
+            if allow_table_content_drift
+            else "Removed template numbering, preserved the user-corrected v2.5 "
+            "complete table OOXML, installed centered PAGE fields, kept the abstract "
+            "on its own page, and added caption-derived alt text to body figures."
         ),
     }
     output_manifest = output_path.with_suffix(".conversion.json")
@@ -152,6 +155,27 @@ def _replace_tables_from_baseline(target, baseline) -> None:
         target_table._tbl.getparent().replace(
             target_table._tbl, deepcopy(baseline_table._tbl)
         )
+
+
+def _replace_unchanged_tables_from_baseline(target, baseline) -> list[int]:
+    """Keep exact manual OOXML for unchanged tables and report changed tables."""
+    if len(target.tables) != len(baseline.tables):
+        raise ValueError(
+            f"Table count mismatch: target={len(target.tables)}, "
+            f"baseline={len(baseline.tables)}"
+        )
+    changed_tables: list[int] = []
+    _copy_referenced_table_styles(target, baseline)
+    for index, (target_table, baseline_table) in enumerate(
+        zip(target.tables, baseline.tables, strict=True), start=1
+    ):
+        if _table_text(target_table) != _table_text(baseline_table):
+            changed_tables.append(index)
+            continue
+        target_table._tbl.getparent().replace(
+            target_table._tbl, deepcopy(baseline_table._tbl)
+        )
+    return changed_tables
 
 
 def _replace_direct_child(parent, tag: str, source) -> None:
@@ -486,6 +510,23 @@ def _normalize_omml_matrix_properties(document) -> tuple[int, int]:
     return fixed_run_properties, fixed_matrix_columns
 
 
+def _remove_duplicate_bookmark_markers(document) -> tuple[int, int]:
+    """Remove duplicate bookmark endpoints imported with locked table XML."""
+    removed = []
+    for tag in ("w:bookmarkStart", "w:bookmarkEnd"):
+        seen: set[str] = set()
+        count = 0
+        for marker in list(document.element.body.findall(".//" + qn(tag))):
+            marker_id = marker.get(qn("w:id"))
+            if marker_id in seen:
+                marker.getparent().remove(marker)
+                count += 1
+            else:
+                seen.add(marker_id)
+        removed.append(count)
+    return removed[0], removed[1]
+
+
 ARRIVAL_RATE_TERM_REPLACEMENTS = (
     ("严格4 min响应率", "4分钟内到达率"),
     ("严格4 min率", "4分钟内到达率"),
@@ -816,13 +857,8 @@ def postprocess_docx(
         _validate_frozen_table_baseline(table_baseline)
         baseline_document = Document(table_baseline)
         if allow_table_content_drift:
-            _copy_table_layout_from_baseline(document, baseline_document)
-            # Content drift necessarily changes line wrapping.  Keep the
-            # reviewed 10 pt font and widen only Table 7's metric column for
-            # this transitional mode; final releases must adopt a new exact
-            # baseline instead of relying on this branch.
-            _set_table_column_widths(document.tables[6], (2.45, 1.75, 1.75, 1.75))
-            _normalize_omml_matrix_properties(document)
+            _format_generated_tables(document)
+            _replace_unchanged_tables_from_baseline(document, baseline_document)
         else:
             # Exact mode is the real formatting lock: complete table elements
             # are copied last and must not be touched by later generic rules.
@@ -830,6 +866,8 @@ def postprocess_docx(
     else:
         _format_generated_tables(document)
 
+    _remove_duplicate_bookmark_markers(document)
+    _normalize_omml_matrix_properties(document)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
 
@@ -915,8 +953,8 @@ def main() -> None:
         "--allow-table-content-drift",
         action="store_true",
         help=(
-            "Retain current table content and copy only the baseline layout. "
-            "Row, column, and paragraph structures must still match."
+            "Regenerate tables whose Markdown content changed while preserving "
+            "complete baseline OOXML for every unchanged table."
         ),
     )
     args = parser.parse_args()

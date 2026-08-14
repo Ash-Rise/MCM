@@ -21,8 +21,10 @@ from ambulance_model import (
     MINUTES_PER_DAY,
     Call,
     ProblemData,
+    SimulationState,
     generate_calls,
     intraday_density,
+    prepare_simulation_state,
     problem_statement_path,
     read_problem,
     sha256,
@@ -42,6 +44,7 @@ MIN_DURATION_SPACING_HOURS = 0.2
 SURFACE_GRID_POINTS = 117
 REPLICATIONS = 10
 BASE_SEED = 600_000
+EXTERNAL_COUNTS = tuple(range(7))
 RESPONSE_SURFACE_METRICS = (
     "mean_response_min",
     "p95_response_min",
@@ -230,6 +233,137 @@ def _call_digest(calls: list[Call]) -> str:
     return hashlib.sha256(payload.encode("ascii")).hexdigest()
 
 
+def nearest_external_sites(
+    data: ProblemData,
+    incident_zone: int,
+    count: int,
+) -> list[int]:
+    if isinstance(incident_zone, bool) or not isinstance(incident_zone, (int, np.integer)):
+        raise ValueError("Incident zone must be an integer index")
+    if not 0 <= int(incident_zone) < len(data.zone_ids):
+        raise ValueError("Incident zone is outside the demand-zone set")
+    if isinstance(count, bool) or not isinstance(count, (int, np.integer)) or count < 0:
+        raise ValueError("External ambulance count must be a nonnegative integer")
+
+    distances = data.distance[int(incident_zone)]
+    nearest_distance = float(np.min(distances))
+    tied_sites = np.flatnonzero(np.isclose(distances, nearest_distance, rtol=0.0, atol=1e-12))
+    return [int(tied_sites[index % len(tied_sites)]) for index in range(int(count))]
+
+
+def _run_external_support(
+    data: ProblemData,
+    calls: list[Call],
+    incident_zone: int,
+    start_min: float,
+    end_min: float,
+    external_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+    initial_state: SimulationState | None = None,
+) -> list[dict[str, object]]:
+    digest = _call_digest(calls)
+    multiplier = incident_rate_multiplier(incident_zone, start_min, end_min, len(data.zone_ids))
+    original_fleet_size = int(np.sum(data.site_caps))
+    if initial_state is None:
+        initial_state = prepare_simulation_state(
+            data,
+            calls,
+            strategy="B",
+            beta=BETA,
+            delta=DELTA,
+            stop_min=start_min,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+        )
+    rows: list[dict[str, object]] = []
+    for count in external_counts:
+        sites = nearest_external_sites(data, incident_zone, count)
+        records, full_metrics = simulate(
+            data,
+            calls,
+            strategy="B",
+            beta=BETA,
+            delta=DELTA,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+            external_sites=sites,
+            external_activation_min=start_min,
+            initial_state=initial_state,
+        )
+        rows.append(
+            {
+                "mode": "B_E",
+                "external_count": int(count),
+                "external_sites": "|".join(data.site_ids[site] for site in sites),
+                "call_digest": digest,
+                **summarize_incident(records, incident_zone, start_min, end_min),
+                "external_dispatches": int((records["ambulance_id"] >= original_fleet_size).sum()),
+                "max_daily_dispatches_per_ambulance": full_metrics[
+                    "max_daily_dispatches_per_ambulance"
+                ],
+            }
+        )
+    return rows
+
+
+def _run_external_support_group(
+    data: ProblemData,
+    scenarios: list[dict[str, object]],
+    external_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+) -> list[dict[str, object]]:
+    if not scenarios:
+        return []
+    start_min = float(scenarios[0]["start_min"])
+    if any(not math.isclose(float(scenario["start_min"]), start_min) for scenario in scenarios):
+        raise ValueError("Grouped external-support scenarios must share an incident start")
+
+    first_zone = int(scenarios[0]["incident_zone"])
+    first_calls = scenarios[0]["calls"]
+    if not isinstance(first_calls, list):
+        raise TypeError("Grouped external-support calls must be a list")
+    first_multiplier = incident_rate_multiplier(
+        first_zone,
+        start_min,
+        float(scenarios[0]["end_min"]),
+        len(data.zone_ids),
+    )
+    shared_state = prepare_simulation_state(
+        data,
+        first_calls,
+        strategy="B",
+        beta=BETA,
+        delta=DELTA,
+        stop_min=start_min,
+        rate_multiplier=first_multiplier,
+        rate_multiplier_active_from=start_min,
+    )
+
+    rows: list[dict[str, object]] = []
+    for scenario in scenarios:
+        calls = scenario["calls"]
+        if not isinstance(calls, list):
+            raise TypeError("Grouped external-support calls must be a list")
+        scenario_rows = _run_external_support(
+            data,
+            calls,
+            incident_zone=int(scenario["incident_zone"]),
+            start_min=float(scenario["start_min"]),
+            end_min=float(scenario["end_min"]),
+            external_counts=external_counts,
+            initial_state=shared_state,
+        )
+        metadata = scenario.get("metadata", {})
+        if not isinstance(metadata, dict):
+            raise TypeError("Grouped external-support metadata must be a dictionary")
+        rows.extend(
+            {
+                **row,
+                **metadata,
+            }
+            for row in scenario_rows
+        )
+    return rows
+
+
 def _init_worker(input_path: str) -> None:
     global _WORKER_DATA
     _WORKER_DATA = read_problem(Path(input_path))
@@ -277,6 +411,101 @@ def _scenario_worker(task: dict[str, float | int]) -> list[dict[str, object]]:
             }
         )
     return rows
+
+
+def _external_scenario_worker(task: dict[str, object]) -> list[dict[str, object]]:
+    if _WORKER_DATA is None:
+        raise RuntimeError("Worker data is not initialized")
+    zone = int(task["incident_zone"])
+    duration = float(task["duration_hours"])
+    seed = int(task["seed"])
+    start_hour = float(task["start_hour"])
+    start_min = WARMUP_DAYS * MINUTES_PER_DAY + start_hour * 60.0
+    end_min = start_min + duration * 60.0
+    calls = build_scenario_calls(_WORKER_DATA, zone, start_hour, duration, seed)
+    counts = tuple(int(value) for value in task.get("external_counts", EXTERNAL_COUNTS))
+    rows = _run_external_support(
+        _WORKER_DATA,
+        calls,
+        incident_zone=zone,
+        start_min=start_min,
+        end_min=end_min,
+        external_counts=counts,
+    )
+    return [
+        {
+            **row,
+            "incident_zone": zone + 1,
+            "duration_hours": duration,
+            "start_hour": start_hour,
+            "seed": seed,
+        }
+        for row in rows
+    ]
+
+
+def _build_external_tasks(
+    scenarios: pd.DataFrame,
+    seeds: tuple[int, ...],
+    external_counts: tuple[int, ...],
+) -> list[dict[str, object]]:
+    tasks: list[dict[str, object]] = []
+    for (duration, start_hour), group in scenarios.groupby(
+        ["duration_hours", "start_hour"], sort=True
+    ):
+        incident_zones = tuple(
+            sorted(int(zone) - 1 for zone in group["incident_zone"].tolist())
+        )
+        for seed in seeds:
+            tasks.append(
+                {
+                    "duration_hours": float(duration),
+                    "start_hour": float(start_hour),
+                    "seed": int(seed),
+                    "incident_zones": incident_zones,
+                    "external_counts": external_counts,
+                }
+            )
+    return tasks
+
+
+def _external_scenario_group_worker(task: dict[str, object]) -> list[dict[str, object]]:
+    if _WORKER_DATA is None:
+        raise RuntimeError("Worker data is not initialized")
+    duration = float(task["duration_hours"])
+    seed = int(task["seed"])
+    start_hour = float(task["start_hour"])
+    start_min = WARMUP_DAYS * MINUTES_PER_DAY + start_hour * 60.0
+    end_min = start_min + duration * 60.0
+    counts = tuple(int(value) for value in task.get("external_counts", EXTERNAL_COUNTS))
+    incident_zones = tuple(int(value) for value in task["incident_zones"])
+    scenarios = []
+    for zone in incident_zones:
+        scenarios.append(
+            {
+                "incident_zone": zone,
+                "start_min": start_min,
+                "end_min": end_min,
+                "calls": build_scenario_calls(
+                    _WORKER_DATA,
+                    zone,
+                    start_hour,
+                    duration,
+                    seed,
+                ),
+                "metadata": {
+                    "incident_zone": zone + 1,
+                    "duration_hours": duration,
+                    "start_hour": start_hour,
+                    "seed": seed,
+                },
+            }
+        )
+    return _run_external_support_group(
+        _WORKER_DATA,
+        scenarios,
+        external_counts=counts,
+    )
 
 
 def _summaries(replicates: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -329,6 +558,237 @@ def _ci95(values: np.ndarray) -> tuple[float, float, float]:
         stats.t.ppf(0.975, len(values) - 1) * stats.sem(values)
     )
     return mean, mean - half, mean + half
+
+
+def build_external_support_table(
+    replicates: pd.DataFrame,
+    expected_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+    require_all_zones: bool = True,
+) -> pd.DataFrame:
+    required = {
+        "external_count",
+        "call_digest",
+        "incident_zone",
+        "duration_hours",
+        "start_hour",
+        "seed",
+        "calls",
+        "mean_response_min",
+        "mean_delay_penalty_yuan_per_call",
+        "max_daily_dispatches_per_ambulance",
+    }
+    missing = required.difference(replicates.columns)
+    if missing:
+        raise ValueError(f"External-support evidence is missing columns: {sorted(missing)}")
+    if replicates.empty:
+        raise AssertionError("External-support evidence cannot be empty")
+    if "mode" in replicates.columns and set(replicates["mode"]) != {"B_E"}:
+        raise AssertionError("External-support evidence must use policy B_E")
+
+    working = replicates.copy()
+    scenario_keys = ["incident_zone", "duration_hours", "start_hour", "seed"]
+    if working.duplicated([*scenario_keys, "external_count"]).any():
+        raise AssertionError("External-support evidence contains duplicate vehicle-count rows")
+    expected = set(expected_counts)
+    for _, group in working.groupby(scenario_keys, sort=False):
+        if set(group["external_count"]) != expected:
+            raise AssertionError("Every external-support scenario must contain counts 0 through 6")
+        if group["call_digest"].nunique() != 1 or group["calls"].nunique() != 1:
+            raise AssertionError("External vehicle counts must receive identical calls")
+    if require_all_zones:
+        expected_zones = set(range(1, 11))
+        for _, group in working.groupby(
+            ["duration_hours", "start_hour", "seed", "external_count"], sort=False
+        ):
+            if set(group["incident_zone"]) != expected_zones:
+                raise AssertionError("External-support evidence must cover all ten incident zones")
+    if working["max_daily_dispatches_per_ambulance"].max() > 12:
+        raise AssertionError("External-support evidence violated the daily dispatch cap")
+
+    working["total_delay_penalty_yuan"] = (
+        working["calls"].to_numpy(dtype=float)
+        * working["mean_delay_penalty_yuan_per_call"].to_numpy(dtype=float)
+    )
+    for column in (
+        "cumulative_response_gain_min",
+        "marginal_response_gain_min",
+        "avoided_penalty_yuan",
+        "avoided_penalty_per_vehicle_yuan",
+        "marginal_break_even_cost_yuan",
+    ):
+        working[column] = np.nan
+
+    for _, group in working.groupby(scenario_keys, sort=False):
+        ordered = group.sort_values("external_count")
+        counts = ordered["external_count"].to_numpy(dtype=int)
+        response = ordered["mean_response_min"].to_numpy(dtype=float)
+        penalty = ordered["total_delay_penalty_yuan"].to_numpy(dtype=float)
+        index = ordered.index
+        working.loc[index, "cumulative_response_gain_min"] = response[0] - response
+        working.loc[index, "avoided_penalty_yuan"] = penalty[0] - penalty
+        positive = counts > 0
+        working.loc[index[positive], "marginal_response_gain_min"] = response[:-1] - response[1:]
+        working.loc[index[positive], "avoided_penalty_per_vehicle_yuan"] = (
+            penalty[0] - penalty[positive]
+        ) / counts[positive]
+        working.loc[index[positive], "marginal_break_even_cost_yuan"] = penalty[:-1] - penalty[1:]
+
+    return working.sort_values([*scenario_keys, "external_count"]).reset_index(drop=True)
+
+
+EXTERNAL_SUMMARY_METRICS = (
+    "mean_response_min",
+    "cumulative_response_gain_min",
+    "marginal_response_gain_min",
+    "total_delay_penalty_yuan",
+    "avoided_penalty_yuan",
+    "avoided_penalty_per_vehicle_yuan",
+    "marginal_break_even_cost_yuan",
+    "external_dispatches",
+)
+
+
+def _summarize_external_groups(frame: pd.DataFrame, group_keys: list[str]) -> pd.DataFrame:
+    rows: list[dict[str, object]] = []
+    metrics = [metric for metric in EXTERNAL_SUMMARY_METRICS if metric in frame.columns]
+    for group_key, group in frame.groupby(group_keys, sort=True):
+        key_values = group_key if isinstance(group_key, tuple) else (group_key,)
+        row: dict[str, object] = dict(zip(group_keys, key_values, strict=True))
+        row["replications"] = int(
+            group.loc[group["mean_response_min"].notna(), "seed"].nunique()
+        )
+        for metric in metrics:
+            values = group[metric].dropna().to_numpy(dtype=float)
+            row[f"{metric}_n"] = int(
+                group.loc[group[metric].notna(), "seed"].nunique()
+            )
+            if len(values) == 0:
+                mean = low = high = np.nan
+            else:
+                mean, low, high = _ci95(values)
+            row[f"{metric}_mean"] = mean
+            row[f"{metric}_ci95_low"] = low
+            row[f"{metric}_ci95_high"] = high
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def build_external_support_summaries(
+    paired_replicates: pd.DataFrame,
+    require_all_zones: bool = True,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    required = {
+        "incident_zone",
+        "duration_hours",
+        "seed",
+        "external_count",
+        "mean_response_min",
+        "cumulative_response_gain_min",
+        "marginal_response_gain_min",
+        "total_delay_penalty_yuan",
+        "avoided_penalty_yuan",
+        "avoided_penalty_per_vehicle_yuan",
+        "marginal_break_even_cost_yuan",
+    }
+    missing = required.difference(paired_replicates.columns)
+    if missing:
+        raise ValueError(f"Paired external-support evidence is missing columns: {sorted(missing)}")
+
+    by_zone = _summarize_external_groups(
+        paired_replicates,
+        ["incident_zone", "duration_hours", "external_count"],
+    )
+
+    scenario_key = ["duration_hours", "seed", "external_count"]
+    expected_zones = set(range(1, 11)) if require_all_zones else None
+    for _, group in paired_replicates.groupby(scenario_key, sort=False):
+        zones = set(group["incident_zone"])
+        if expected_zones is None:
+            expected_zones = zones
+        if zones != expected_zones:
+            raise AssertionError("Citywide external-support summaries require all ten incident zones")
+    metrics = [metric for metric in EXTERNAL_SUMMARY_METRICS if metric in paired_replicates.columns]
+    complete_blocks = (
+        paired_replicates.loc[paired_replicates["mean_response_min"].notna()]
+        .groupby(scenario_key)["incident_zone"]
+        .nunique()
+        .eq(len(expected_zones))
+    )
+    complete_keys = complete_blocks[complete_blocks].index.to_frame(index=False)
+    complete_replicates = paired_replicates.merge(complete_keys, on=scenario_key, how="inner")
+    citywide_seed = complete_replicates.groupby(scenario_key, as_index=False)[metrics].mean()
+    citywide = _summarize_external_groups(
+        citywide_seed,
+        ["duration_hours", "external_count"],
+    )
+    citywide["incident_zone_scenarios"] = len(expected_zones)
+
+    worst_rows: list[pd.Series] = []
+    for _, group in by_zone.groupby(["duration_hours", "external_count"], sort=True):
+        worst_index = group.sort_values(
+            ["mean_response_min_mean", "incident_zone"],
+            ascending=[False, True],
+        ).index[0]
+        worst_rows.append(by_zone.loc[worst_index])
+    worst = pd.DataFrame(worst_rows).reset_index(drop=True)
+    return by_zone, citywide, worst
+
+
+def validate_external_support_evidence(
+    replicates: pd.DataFrame,
+    frozen_emergency: pd.DataFrame,
+    expected_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+    require_all_zones: bool = True,
+) -> pd.DataFrame:
+    paired = build_external_support_table(
+        replicates,
+        expected_counts=expected_counts,
+        require_all_zones=require_all_zones,
+    )
+    frozen = frozen_emergency.copy()
+    if "mode" in frozen.columns:
+        frozen = frozen[frozen["mode"] == "B_E"]
+    keys = ["incident_zone", "duration_hours", "start_hour", "seed"]
+    count_zero = paired[paired["external_count"] == 0]
+    if frozen.duplicated(keys).any() or count_zero.duplicated(keys).any():
+        raise AssertionError("Count-0 equivalence requires unique frozen B_E scenario rows")
+    merged = count_zero.merge(frozen, on=keys, how="left", suffixes=("_external", "_frozen"), indicator=True)
+    if len(merged) != len(count_zero) or not (merged["_merge"] == "both").all():
+        raise AssertionError("External-support count-0 rows do not match frozen B_E scenario keys")
+
+    exact_columns = ("call_digest", "calls", "max_daily_dispatches_per_ambulance")
+    numeric_columns = (
+        "mean_response_min",
+        "p95_response_min",
+        "strict_4min_rate",
+        "mean_wait_min",
+        "mean_delay_penalty_yuan_per_call",
+        "incident_zone_calls",
+        "incident_zone_mean_response_min",
+        "nonincident_zone_calls",
+        "nonincident_zone_mean_response_min",
+        "max_incident_queue",
+        "incident_end_backlog",
+    )
+    for column in exact_columns:
+        left = f"{column}_external"
+        right = f"{column}_frozen"
+        if left in merged.columns and right in merged.columns:
+            if not merged[left].equals(merged[right]):
+                raise AssertionError("External-support count-0 rows do not match frozen B_E")
+    for column in numeric_columns:
+        left = f"{column}_external"
+        right = f"{column}_frozen"
+        if left in merged.columns and right in merged.columns:
+            if not np.allclose(
+                merged[left].to_numpy(dtype=float),
+                merged[right].to_numpy(dtype=float),
+                rtol=1e-12,
+                atol=1e-12,
+                equal_nan=True,
+            ):
+                raise AssertionError("External-support count-0 rows do not match frozen B_E")
+    return paired
 
 
 def build_duration_table(
@@ -758,6 +1218,50 @@ def _run_scenarios(
     return replicates
 
 
+def _run_external_scenarios(
+    input_path: Path,
+    scenarios: pd.DataFrame,
+    workers: int,
+    seeds: tuple[int, ...],
+    external_counts: tuple[int, ...],
+) -> pd.DataFrame:
+    tasks = _build_external_tasks(scenarios, seeds, external_counts)
+    started = time.time()
+    rows: list[dict[str, object]] = []
+    with ProcessPoolExecutor(
+        max_workers=workers,
+        initializer=_init_worker,
+        initargs=(str(input_path),),
+    ) as executor:
+        futures = [executor.submit(_external_scenario_group_worker, task) for task in tasks]
+        for completed, future in enumerate(as_completed(futures), start=1):
+            rows.extend(future.result())
+            if completed == 1 or completed % max(1, len(tasks) // 20) == 0 or completed == len(tasks):
+                elapsed = time.time() - started
+                print(
+                    f"[task-3 external] {completed}/{len(tasks)} scenarios, elapsed={elapsed:.1f}s",
+                    flush=True,
+                )
+    replicates = pd.DataFrame(rows).sort_values(
+        ["incident_zone", "duration_hours", "seed", "external_count"]
+    )
+    expected_rows = len(scenarios) * len(seeds) * len(external_counts)
+    if len(replicates) != expected_rows:
+        raise AssertionError(
+            f"Expected {expected_rows} external-support rows, received {len(replicates)}"
+        )
+    scenario_keys = ["incident_zone", "duration_hours", "seed"]
+    if not (
+        replicates.groupby(scenario_keys)["external_count"].nunique() == len(external_counts)
+    ).all():
+        raise AssertionError("Every external-support scenario must contain every vehicle count")
+    if not (replicates.groupby(scenario_keys)["call_digest"].nunique() == 1).all():
+        raise AssertionError("External-support vehicle counts did not receive identical calls")
+    if replicates["max_daily_dispatches_per_ambulance"].max() > 12:
+        raise AssertionError("External-support experiment violated the daily dispatch cap")
+    return replicates
+
+
 def _validate_reuse_evidence(replicates: pd.DataFrame, scenarios: pd.DataFrame) -> None:
     required_columns = {
         "mode",
@@ -855,6 +1359,47 @@ def _write_outputs(output: Path, scenarios: pd.DataFrame, replicates: pd.DataFra
     return output / "summary.csv"
 
 
+def _write_external_outputs(
+    output: Path,
+    replicates: pd.DataFrame,
+    frozen_emergency: pd.DataFrame,
+    expected_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+    require_all_zones: bool = True,
+) -> Path:
+    output.mkdir(parents=True, exist_ok=True)
+    ordered = replicates.sort_values(
+        ["incident_zone", "duration_hours", "seed", "external_count"]
+    ).reset_index(drop=True)
+    paired = validate_external_support_evidence(
+        ordered,
+        frozen_emergency,
+        expected_counts=expected_counts,
+        require_all_zones=require_all_zones,
+    )
+    by_zone, citywide, worst = build_external_support_summaries(
+        paired,
+        require_all_zones=require_all_zones,
+    )
+    ordered.to_csv(output / "replicates.csv", index=False, encoding="utf-8-sig")
+    paired.to_csv(output / "paired_gains.csv", index=False, encoding="utf-8-sig")
+    by_zone.to_csv(
+        output / "external_support_by_zone_duration.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    citywide.to_csv(
+        output / "external_support_citywide.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    worst.to_csv(
+        output / "external_support_worst_zone.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    return output / "external_support_citywide.csv"
+
+
 def run_full(project_root: Path, workers: int) -> Path:
     input_path = problem_statement_path(project_root)
     if sha256(input_path) != INPUT_SHA256:
@@ -917,16 +1462,93 @@ def run_full(project_root: Path, workers: int) -> Path:
     return _write_outputs(output, scenarios, replicates)
 
 
+def run_external_support(
+    project_root: Path,
+    workers: int,
+    incident_zone: int | None = None,
+    duration_hours: float | None = None,
+    seed: int | None = None,
+    external_counts: tuple[int, ...] = EXTERNAL_COUNTS,
+) -> Path:
+    input_path = problem_statement_path(project_root)
+    if sha256(input_path) != INPUT_SHA256:
+        raise ValueError("Problem A statement hash does not match the frozen model input")
+    if 0 not in external_counts:
+        raise ValueError("External-support experiments must include count 0")
+    if len(set(external_counts)) != len(external_counts):
+        raise ValueError("External ambulance counts must be unique")
+    for count in external_counts:
+        if count not in EXTERNAL_COUNTS:
+            raise ValueError("External ambulance counts must lie between 0 and 6")
+
+    task3_output = project_root / "results" / "task-3"
+    scenarios = pd.read_csv(task3_output / "scenarios.csv")
+    if incident_zone is not None:
+        if not 1 <= incident_zone <= 10:
+            raise ValueError("Incident zone must lie between 1 and 10")
+        scenarios = scenarios[scenarios["incident_zone"] == incident_zone]
+    if duration_hours is not None:
+        duration = validate_duration(duration_hours)
+        scenarios = scenarios[np.isclose(scenarios["duration_hours"], duration)]
+    if scenarios.empty:
+        raise ValueError("No frozen Task 3 scenario matches the requested external-support slice")
+
+    seeds = (seed,) if seed is not None else tuple(range(BASE_SEED, BASE_SEED + REPLICATIONS))
+    replicates = _run_external_scenarios(
+        input_path,
+        scenarios,
+        workers,
+        seeds=seeds,
+        external_counts=tuple(sorted(external_counts)),
+    )
+    frozen = pd.read_csv(task3_output / "replicates.csv")
+    full_design = (
+        incident_zone is None
+        and duration_hours is None
+        and seed is None
+        and tuple(sorted(external_counts)) == EXTERNAL_COUNTS
+    )
+    output = task3_output / "external-support"
+    if not full_design:
+        output = output / "p1"
+    return _write_external_outputs(
+        output,
+        replicates,
+        frozen,
+        expected_counts=tuple(sorted(external_counts)),
+        require_all_zones=incident_zone is None,
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run Task 3 emergency dispatch scenarios")
     parser.add_argument("--project-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--workers", type=int, default=min(12, max(1, (os.cpu_count() or 2) - 1)))
+    parser.add_argument("--external-support", action="store_true")
+    parser.add_argument("--external-zone", type=int)
+    parser.add_argument("--external-duration", type=float)
+    parser.add_argument("--external-seed", type=int)
+    parser.add_argument("--external-counts", type=int, nargs="+")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    print(run_full(args.project_root.resolve(), args.workers))
+    project_root = args.project_root.resolve()
+    if args.external_support:
+        counts = EXTERNAL_COUNTS if args.external_counts is None else tuple(args.external_counts)
+        print(
+            run_external_support(
+                project_root,
+                args.workers,
+                incident_zone=args.external_zone,
+                duration_hours=args.external_duration,
+                seed=args.external_seed,
+                external_counts=counts,
+            )
+        )
+    else:
+        print(run_full(project_root, args.workers))
 
 
 if __name__ == "__main__":

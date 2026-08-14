@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -11,7 +12,7 @@ SOLUTION_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = SOLUTION_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
-from ambulance_model import Call, problem_statement_path, read_problem  # noqa: E402
+from ambulance_model import Call, problem_statement_path, read_problem, simulate  # noqa: E402
 import run_emergency_experiments as emergency  # noqa: E402
 from run_emergency_experiments import (  # noqa: E402
     WARMUP_DAYS,
@@ -87,6 +88,294 @@ class EmergencyExperimentTest(unittest.TestCase):
         self.assertEqual(summary["nonincident_zone_calls"], 1)
         self.assertAlmostEqual(summary["mean_response_min"], 57.0)
         self.assertEqual(summary["max_incident_queue"], 2)
+
+    def test_nearest_external_site_mapping(self) -> None:
+        self.assertEqual(emergency.nearest_external_sites(self.data, incident_zone=0, count=2), [0, 0])
+        self.assertEqual(emergency.nearest_external_sites(self.data, incident_zone=6, count=2), [2, 2])
+        self.assertEqual(
+            emergency.nearest_external_sites(self.data, incident_zone=7, count=5),
+            [3, 5, 3, 5, 3],
+        )
+        with self.assertRaises(ValueError):
+            emergency.nearest_external_sites(self.data, incident_zone=-1, count=1)
+        with self.assertRaises(ValueError):
+            emergency.nearest_external_sites(self.data, incident_zone=0, count=-1)
+        with self.assertRaises(ValueError):
+            emergency.nearest_external_sites(self.data, incident_zone=0, count=1.5)
+
+    def test_external_support_reuses_calls_and_count_zero_matches_emergency_policy(self) -> None:
+        start_min = 100.0
+        end_min = 160.0
+        zone = 7
+        calls = [Call(call_id, start_min, zone) for call_id in range(20)]
+        multiplier = incident_rate_multiplier(zone, start_min, end_min, len(self.data.zone_ids))
+
+        baseline_records, baseline_full = simulate(
+            self.data,
+            calls,
+            strategy="B",
+            beta=emergency.BETA,
+            delta=emergency.DELTA,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+        )
+        baseline = summarize_incident(baseline_records, zone, start_min, end_min)
+        rows = emergency._run_external_support(
+            self.data,
+            calls,
+            incident_zone=zone,
+            start_min=start_min,
+            end_min=end_min,
+            external_counts=(0, 1, 2),
+        )
+
+        self.assertEqual([row["external_count"] for row in rows], [0, 1, 2])
+        self.assertEqual(len({row["call_digest"] for row in rows}), 1)
+        zero = rows[0]
+        for metric, expected in baseline.items():
+            if isinstance(expected, float) and np.isnan(expected):
+                self.assertTrue(np.isnan(zero[metric]))
+            else:
+                self.assertAlmostEqual(float(zero[metric]), float(expected), places=12)
+        self.assertEqual(
+            zero["max_daily_dispatches_per_ambulance"],
+            baseline_full["max_daily_dispatches_per_ambulance"],
+        )
+
+    def test_external_support_group_reuses_a_common_preincident_state(self) -> None:
+        start_min = 100.0
+        end_min = 160.0
+        common_prefix = [
+            Call(0, 0.0, 0),
+            Call(1, 30.0, 1),
+        ]
+        scenarios = [
+            {
+                "incident_zone": 0,
+                "start_min": start_min,
+                "end_min": end_min,
+                "calls": [*common_prefix, Call(2, 100.0, 0), Call(3, 110.0, 0)],
+            },
+            {
+                "incident_zone": 1,
+                "start_min": start_min,
+                "end_min": end_min,
+                "calls": [*common_prefix, Call(2, 100.0, 1), Call(3, 115.0, 1)],
+            },
+        ]
+        expected = []
+        for scenario in scenarios:
+            expected.extend(
+                emergency._run_external_support(
+                    self.data,
+                    scenario["calls"],
+                    incident_zone=scenario["incident_zone"],
+                    start_min=scenario["start_min"],
+                    end_min=scenario["end_min"],
+                    external_counts=(0, 1),
+                )
+            )
+
+        self.assertTrue(hasattr(emergency, "_run_external_support_group"))
+        actual = emergency._run_external_support_group(
+            self.data,
+            scenarios,
+            external_counts=(0, 1),
+        )
+
+        self.assertTrue(pd.DataFrame(actual).equals(pd.DataFrame(expected)))
+
+    def test_external_support_tasks_group_all_zones_by_duration_and_seed(self) -> None:
+        scenarios = pd.DataFrame(
+            [
+                {
+                    "incident_zone": zone,
+                    "duration_hours": duration,
+                    "start_hour": 17.0,
+                }
+                for duration in (0.5, 1.0)
+                for zone in range(1, 11)
+            ]
+        )
+
+        self.assertTrue(hasattr(emergency, "_build_external_tasks"))
+        tasks = emergency._build_external_tasks(
+            scenarios,
+            seeds=(600_000, 600_001),
+            external_counts=(0, 1, 2),
+        )
+
+        self.assertEqual(len(tasks), 4)
+        for task in tasks:
+            self.assertEqual(set(task["incident_zones"]), set(range(10)))
+            self.assertEqual(task["external_counts"], (0, 1, 2))
+
+    @staticmethod
+    def _synthetic_external_support() -> pd.DataFrame:
+        rows = []
+        for zone in range(1, 11):
+            for seed in (1, 2, 3, 4):
+                for count in range(7):
+                    response = 10.0 + 0.01 * zone + 0.02 * seed - 0.5 * min(count, 3) - 0.1 * max(count - 3, 0)
+                    calls = 10 + zone
+                    rows.append(
+                        {
+                            "mode": "B_E",
+                            "external_count": count,
+                            "external_sites": "",
+                            "call_digest": f"zone-{zone}-seed-{seed}",
+                            "incident_zone": zone,
+                            "duration_hours": 2.0,
+                            "start_hour": 17.0,
+                            "seed": seed,
+                            "calls": calls,
+                            "mean_response_min": response,
+                            "mean_delay_penalty_yuan_per_call": 200.0 * max(response - 4.0, 0.0),
+                            "max_daily_dispatches_per_ambulance": 12,
+                        }
+                    )
+        return pd.DataFrame(rows)
+
+    def test_external_support_table_computes_paired_response_and_penalty_gains(self) -> None:
+        table = emergency.build_external_support_table(self._synthetic_external_support())
+        scenario = table[
+            (table["incident_zone"] == 1)
+            & (table["seed"] == 1)
+        ].set_index("external_count")
+        row_m0 = scenario.loc[0]
+        row_m2 = scenario.loc[2]
+        t0 = float(scenario.loc[0, "mean_response_min"])
+        t1 = float(scenario.loc[1, "mean_response_min"])
+        t2 = float(scenario.loc[2, "mean_response_min"])
+        p0 = float(scenario.loc[0, "total_delay_penalty_yuan"])
+        p1 = float(scenario.loc[1, "total_delay_penalty_yuan"])
+        p2 = float(scenario.loc[2, "total_delay_penalty_yuan"])
+
+        self.assertEqual(row_m0["cumulative_response_gain_min"], 0.0)
+        self.assertTrue(np.isnan(row_m0["marginal_response_gain_min"]))
+        self.assertTrue(np.isnan(row_m0["avoided_penalty_per_vehicle_yuan"]))
+        self.assertAlmostEqual(row_m2["cumulative_response_gain_min"], t0 - t2)
+        self.assertAlmostEqual(row_m2["marginal_response_gain_min"], t1 - t2)
+        self.assertAlmostEqual(row_m2["avoided_penalty_yuan"], p0 - p2)
+        self.assertAlmostEqual(row_m2["avoided_penalty_per_vehicle_yuan"], (p0 - p2) / 2)
+        self.assertAlmostEqual(row_m2["marginal_break_even_cost_yuan"], p1 - p2)
+
+    def test_external_support_table_rejects_incomplete_or_unpaired_scenarios(self) -> None:
+        frame = self._synthetic_external_support()
+        with self.assertRaisesRegex(AssertionError, "counts 0 through 6"):
+            emergency.build_external_support_table(frame.drop(frame.index[0]))
+
+        mismatched = frame.copy()
+        mismatched.loc[mismatched.index[1], "call_digest"] = "different"
+        with self.assertRaisesRegex(AssertionError, "identical calls"):
+            emergency.build_external_support_table(mismatched)
+
+        missing_zone = frame[frame["incident_zone"] != 10]
+        with self.assertRaisesRegex(AssertionError, "all ten incident zones"):
+            emergency.build_external_support_table(missing_zone)
+
+    def test_external_support_summaries_keep_duration_and_vehicle_count_separate(self) -> None:
+        paired = emergency.build_external_support_table(self._synthetic_external_support())
+        by_zone, citywide, worst = emergency.build_external_support_summaries(paired)
+
+        self.assertEqual(len(by_zone), 10 * 7)
+        self.assertEqual(len(citywide), 7)
+        self.assertEqual(len(worst), 7)
+        self.assertTrue((by_zone["replications"] == 4).all())
+        self.assertTrue((citywide["replications"] == 4).all())
+        self.assertTrue((citywide["incident_zone_scenarios"] == 10).all())
+        self.assertEqual(set(worst["incident_zone"]), {10})
+
+        indexed = citywide.set_index("external_count")
+        self.assertAlmostEqual(indexed.loc[2, "cumulative_response_gain_min_mean"], 1.0)
+        self.assertAlmostEqual(indexed.loc[4, "cumulative_response_gain_min_mean"], 1.6)
+        self.assertAlmostEqual(indexed.loc[4, "marginal_response_gain_min_mean"], 0.1)
+        self.assertTrue(np.isnan(indexed.loc[0, "marginal_break_even_cost_yuan_mean"]))
+
+    def test_external_support_summaries_exclude_incomplete_citywide_seed_blocks(self) -> None:
+        external = self._synthetic_external_support()
+        zero_call = (external["incident_zone"] == 1) & (external["seed"] == 1)
+        external.loc[zero_call, "calls"] = 0
+        external.loc[zero_call, "mean_response_min"] = np.nan
+        external.loc[zero_call, "mean_delay_penalty_yuan_per_call"] = np.nan
+        paired = emergency.build_external_support_table(external)
+
+        by_zone, citywide, _ = emergency.build_external_support_summaries(paired)
+
+        zone_one = by_zone[by_zone["incident_zone"] == 1]
+        other_zones = by_zone[by_zone["incident_zone"] != 1]
+        self.assertTrue((zone_one["replications"] == 3).all())
+        self.assertTrue((zone_one["mean_response_min_n"] == 3).all())
+        self.assertTrue((other_zones["replications"] == 4).all())
+        self.assertTrue((citywide["replications"] == 3).all())
+        self.assertTrue((citywide["mean_response_min_n"] == 3).all())
+        self.assertTrue((citywide["incident_zone_scenarios"] == 10).all())
+
+        count_zero = citywide.set_index("external_count").loc[0]
+        expected = external[
+            (external["external_count"] == 0) & (external["seed"].isin([2, 3, 4]))
+        ]["mean_response_min"].mean()
+        self.assertAlmostEqual(count_zero["mean_response_min_mean"], expected)
+
+    def test_external_support_validation_requires_count_zero_to_match_frozen_b_e(self) -> None:
+        external = self._synthetic_external_support()
+        frozen = external[external["external_count"] == 0].drop(
+            columns=["external_count", "external_sites"]
+        )
+
+        paired = emergency.validate_external_support_evidence(external, frozen)
+        self.assertEqual(len(paired), len(external))
+
+        damaged = external.copy()
+        mask = (damaged["incident_zone"] == 1) & (damaged["seed"] == 1) & (damaged["external_count"] == 0)
+        damaged.loc[mask, "mean_response_min"] += 0.01
+        with self.assertRaisesRegex(AssertionError, "count-0 rows do not match frozen B_E"):
+            emergency.validate_external_support_evidence(damaged, frozen)
+
+    def test_external_support_writer_creates_separate_reproducible_tables(self) -> None:
+        external = self._synthetic_external_support()
+        frozen = external[external["external_count"] == 0].drop(
+            columns=["external_count", "external_sites"]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            summary_path = emergency._write_external_outputs(output, external, frozen)
+
+            self.assertEqual(summary_path, output / "external_support_citywide.csv")
+            expected = {
+                "replicates.csv",
+                "paired_gains.csv",
+                "external_support_by_zone_duration.csv",
+                "external_support_citywide.csv",
+                "external_support_worst_zone.csv",
+            }
+            self.assertEqual({path.name for path in output.iterdir()}, expected)
+            self.assertEqual(len(pd.read_csv(output / "replicates.csv")), len(external))
+            self.assertEqual(len(pd.read_csv(summary_path)), 7)
+
+    def test_external_support_writer_accepts_a_partial_p1_slice(self) -> None:
+        external = self._synthetic_external_support()
+        external = external[
+            (external["incident_zone"] == 8)
+            & (external["seed"] == 1)
+            & (external["external_count"].isin([0, 1, 2]))
+        ]
+        frozen = external[external["external_count"] == 0].drop(
+            columns=["external_count", "external_sites"]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            summary_path = emergency._write_external_outputs(
+                output,
+                external,
+                frozen,
+                expected_counts=(0, 1, 2),
+                require_all_zones=False,
+            )
+
+            summary = pd.read_csv(summary_path)
+            self.assertEqual(len(summary), 3)
+            self.assertTrue((summary["incident_zone_scenarios"] == 1).all())
 
     def test_any_duration_inside_continuous_domain_is_legal(self) -> None:
         self.assertTrue(hasattr(emergency, "validate_duration"))

@@ -16,14 +16,17 @@ from ambulance_model import DAILY_CAP, problem_statement_path, read_problem, sha
 from run_emergency_experiments import _summaries as emergency_summaries
 from run_emergency_experiments import (
     BASE_SEED,
+    EXTERNAL_COUNTS,
     INITIAL_DURATIONS_HOURS,
     MAX_DURATION_NODES,
     REPLICATIONS,
     RESPONSE_SURFACE_METRICS,
     build_citywide_duration_table,
     build_duration_table,
+    build_external_support_summaries,
     build_response_surfaces,
     build_scoped_paired_surfaces,
+    validate_external_support_evidence,
 )
 
 
@@ -141,6 +144,28 @@ def rebuild_stage(project_root: Path, scope: str) -> None:
     build_scoped_paired_surfaces(q3_replicates).to_csv(
         q3_dir / "scoped_paired_response_surfaces.csv", index=False, encoding="utf-8-sig"
     )
+    external_dir = q3_dir / "external-support"
+    external_replicates_path = external_dir / "replicates.csv"
+    if external_replicates_path.is_file():
+        external = pd.read_csv(external_replicates_path)
+        paired = validate_external_support_evidence(external, q3_replicates)
+        by_zone, citywide, worst = build_external_support_summaries(paired)
+        paired.to_csv(external_dir / "paired_gains.csv", index=False, encoding="utf-8-sig")
+        by_zone.to_csv(
+            external_dir / "external_support_by_zone_duration.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        citywide.to_csv(
+            external_dir / "external_support_citywide.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        worst.to_csv(
+            external_dir / "external_support_worst_zone.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
 
 
 def verify_q1(project_root: Path) -> None:
@@ -309,6 +334,51 @@ def verify_q3(project_root: Path) -> None:
         raise AssertionError("Task 3 evidence table pooled or omitted duration nodes")
     if set(expected_duration["metric"]) != set(RESPONSE_SURFACE_METRICS):
         raise AssertionError("Task 3 duration-resolved metric set has drifted")
+    verify_external_support(project_root)
+
+
+def verify_external_support(project_root: Path) -> None:
+    task3 = project_root / "results" / "task-3"
+    output = task3 / "external-support"
+    replicates = pd.read_csv(output / "replicates.csv")
+    frozen = pd.read_csv(task3 / "replicates.csv")
+    paired = validate_external_support_evidence(replicates, frozen)
+
+    expected_rows = MAX_DURATION_NODES * 10 * REPLICATIONS * len(EXTERNAL_COUNTS)
+    if len(replicates) != expected_rows:
+        raise AssertionError(
+            f"Task 3 external support expected {expected_rows} rows, received {len(replicates)}"
+        )
+    if set(replicates["external_count"]) != set(EXTERNAL_COUNTS):
+        raise AssertionError("Task 3 external-support vehicle counts have drifted")
+    if set(replicates["incident_zone"]) != set(range(1, 11)):
+        raise AssertionError("Task 3 external support must cover all ten incident zones")
+    if set(replicates["seed"]) != set(range(BASE_SEED, BASE_SEED + REPLICATIONS)):
+        raise AssertionError("Task 3 external-support seed block has drifted")
+    if len(set(replicates["duration_hours"])) != MAX_DURATION_NODES:
+        raise AssertionError("Task 3 external support must retain every duration node")
+
+    by_zone, citywide, worst = build_external_support_summaries(paired)
+    _assert_close_frame(
+        pd.read_csv(output / "paired_gains.csv"),
+        paired,
+        ["incident_zone", "duration_hours", "seed", "external_count"],
+    )
+    _assert_close_frame(
+        pd.read_csv(output / "external_support_by_zone_duration.csv"),
+        by_zone,
+        ["incident_zone", "duration_hours", "external_count"],
+    )
+    _assert_close_frame(
+        pd.read_csv(output / "external_support_citywide.csv"),
+        citywide,
+        ["duration_hours", "external_count"],
+    )
+    _assert_close_frame(
+        pd.read_csv(output / "external_support_worst_zone.csv"),
+        worst,
+        ["duration_hours", "external_count"],
+    )
 
 
 def verify_figures(project_root: Path, questions: tuple[str, ...] = ("q1", "q2", "q3")) -> None:
@@ -365,10 +435,16 @@ def verify_stage(project_root: Path, scope: str) -> None:
     raise ValueError(f"Unknown verification scope: {scope}")
 
 
-def _run(project_root: Path, script: str, workers: int | None = None) -> None:
+def _run(
+    project_root: Path,
+    script: str,
+    workers: int | None = None,
+    extra_args: tuple[str, ...] = (),
+) -> None:
     command = [sys.executable, str(project_root / "src" / script), "--project-root", str(project_root)]
     if workers is not None:
         command.extend(["--workers", str(workers)])
+    command.extend(extra_args)
     subprocess.run(command, cwd=project_root, check=True)
 
 
@@ -387,6 +463,13 @@ def main() -> None:
     if args.mode == "full":
         _run(project_root, "run_experiments.py", args.workers)
         _run(project_root, "run_emergency_experiments.py", args.workers)
+        if args.scope == "all":
+            _run(
+                project_root,
+                "run_emergency_experiments.py",
+                args.workers,
+                extra_args=("--external-support",),
+            )
     if args.mode in {"rebuild", "full"}:
         rebuild_stage(project_root, args.scope)
         if args.scope == "all":

@@ -13,10 +13,13 @@ sys.path.insert(0, str(SRC_DIR))
 
 from ambulance_model import (  # noqa: E402
     BUSY_MINUTES,
+    Call,
     DAILY_CAP,
     DELAY_PENALTY_YUAN_PER_MINUTE,
     MINUTES_PER_DAY,
+    _current_candidates,
     _known_wait,
+    _predicted_zone_response,
     build_fleet,
     cumulative_response_loss,
     cumulative_response_losses,
@@ -24,6 +27,7 @@ from ambulance_model import (  # noqa: E402
     generate_calls,
     intraday_density,
     problem_statement_path,
+    prepare_simulation_state,
     read_problem,
     simulate,
     solve_q1,
@@ -81,6 +85,114 @@ class AProblemTest(unittest.TestCase):
         ambulance.busy_until = 1420.0
         self.assertAlmostEqual(_known_wait(ambulance, 1430.0, 1430.0), 10.0)
         self.assertAlmostEqual(_known_wait(ambulance, 1445.0, 1430.0), 0.0)
+
+    def test_external_ambulances_activate_at_incident_start(self) -> None:
+        fleet = build_fleet(
+            self.data,
+            external_sites=[2, 2],
+            external_activation_min=100.0,
+        )
+
+        self.assertEqual(len(fleet), 14)
+        self.assertEqual([ambulance.site for ambulance in fleet[-2:]], [2, 2])
+        self.assertTrue(all(ambulance.external for ambulance in fleet[-2:]))
+        self.assertTrue(all(ambulance.activation_min == 100.0 for ambulance in fleet[-2:]))
+        self.assertEqual(len(_current_candidates(fleet, 99.0)), 12)
+        self.assertEqual(len(_current_candidates(fleet, 100.0)), 14)
+
+    def test_external_ambulance_is_invisible_to_forecast_before_activation(self) -> None:
+        fleet = build_fleet(
+            self.data,
+            external_sites=[3],
+            external_activation_min=100.0,
+        )
+        for ambulance in fleet[:-1]:
+            ambulance.busy_until = 160.0
+
+        before = _predicted_zone_response(
+            self.data,
+            fleet,
+            zone=3,
+            future_min=110.0,
+            state_time_min=99.0,
+            dispatched=None,
+        )
+        after = _predicted_zone_response(
+            self.data,
+            fleet,
+            zone=3,
+            future_min=110.0,
+            state_time_min=100.0,
+            dispatched=None,
+        )
+
+        self.assertGreater(before, after)
+        self.assertAlmostEqual(after, 3.0)
+
+    def test_queued_call_is_dispatched_when_external_ambulance_activates(self) -> None:
+        calls = [Call(call_id, 99.0, 0) for call_id in range(13)]
+
+        records, _ = simulate(
+            self.data,
+            calls,
+            strategy="A",
+            external_sites=[0],
+            external_activation_min=100.0,
+        )
+
+        queued = records.loc[records["call_id"] == 12].iloc[0]
+        self.assertEqual(int(queued["ambulance_id"]), 12)
+        self.assertAlmostEqual(float(queued["dispatch_min"]), 100.0)
+        self.assertAlmostEqual(float(queued["wait_min"]), 1.0)
+
+    def test_warm_started_external_simulation_matches_full_history_exactly(self) -> None:
+        calls = [
+            *[Call(call_id, 99.0, call_id % len(self.data.zone_ids)) for call_id in range(13)],
+            *[Call(call_id, 100.0 + call_id - 13, 7) for call_id in range(13, 21)],
+        ]
+        start_min = 100.0
+        multiplier = lambda future_min: np.where(
+            np.arange(len(self.data.zone_ids)) == 7,
+            5.0 if start_min <= future_min < 160.0 else 1.0,
+            1.0,
+        )
+
+        full_records, full_metrics = simulate(
+            self.data,
+            calls,
+            strategy="B",
+            beta=4.0,
+            delta=2.0,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+            external_sites=[3, 5],
+            external_activation_min=start_min,
+        )
+        state = prepare_simulation_state(
+            self.data,
+            calls,
+            strategy="B",
+            beta=4.0,
+            delta=2.0,
+            stop_min=start_min,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+        )
+        resumed_records, resumed_metrics = simulate(
+            self.data,
+            calls,
+            strategy="B",
+            beta=4.0,
+            delta=2.0,
+            rate_multiplier=multiplier,
+            rate_multiplier_active_from=start_min,
+            external_sites=[3, 5],
+            external_activation_min=start_min,
+            initial_state=state,
+        )
+
+        self.assertTrue(full_records.equals(resumed_records))
+        self.assertEqual(full_metrics, resumed_metrics)
 
     def test_counterfactual_loss_is_finite_and_nonnegative(self) -> None:
         fleet = build_fleet(self.data)

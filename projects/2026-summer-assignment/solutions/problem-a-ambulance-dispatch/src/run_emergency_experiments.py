@@ -532,6 +532,7 @@ def _summarize_external_groups(frame: pd.DataFrame, group_keys: list[str]) -> pd
 
 def build_external_support_summaries(
     paired_replicates: pd.DataFrame,
+    require_all_zones: bool = True,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     required = {
         "incident_zone",
@@ -556,9 +557,12 @@ def build_external_support_summaries(
     )
 
     scenario_key = ["duration_hours", "seed", "external_count"]
-    expected_zones = set(range(1, 11))
+    expected_zones = set(range(1, 11)) if require_all_zones else None
     for _, group in paired_replicates.groupby(scenario_key, sort=False):
-        if set(group["incident_zone"]) != expected_zones:
+        zones = set(group["incident_zone"])
+        if expected_zones is None:
+            expected_zones = zones
+        if zones != expected_zones:
             raise AssertionError("Citywide external-support summaries require all ten incident zones")
     metrics = [metric for metric in EXTERNAL_SUMMARY_METRICS if metric in paired_replicates.columns]
     citywide_seed = paired_replicates.groupby(scenario_key, as_index=False)[metrics].mean()
@@ -566,7 +570,7 @@ def build_external_support_summaries(
         citywide_seed,
         ["duration_hours", "external_count"],
     )
-    citywide["incident_zone_scenarios"] = 10
+    citywide["incident_zone_scenarios"] = len(expected_zones)
 
     worst_rows: list[pd.Series] = []
     for _, group in by_zone.groupby(["duration_hours", "external_count"], sort=True):
@@ -1230,7 +1234,10 @@ def _write_external_outputs(
         expected_counts=expected_counts,
         require_all_zones=require_all_zones,
     )
-    by_zone, citywide, worst = build_external_support_summaries(paired)
+    by_zone, citywide, worst = build_external_support_summaries(
+        paired,
+        require_all_zones=require_all_zones,
+    )
     ordered.to_csv(output / "replicates.csv", index=False, encoding="utf-8-sig")
     paired.to_csv(output / "paired_gains.csv", index=False, encoding="utf-8-sig")
     by_zone.to_csv(

@@ -260,6 +260,30 @@ class EmergencyExperimentTest(unittest.TestCase):
             self.assertEqual(len(pd.read_csv(output / "replicates.csv")), len(external))
             self.assertEqual(len(pd.read_csv(summary_path)), 7)
 
+    def test_external_support_writer_accepts_a_partial_p1_slice(self) -> None:
+        external = self._synthetic_external_support()
+        external = external[
+            (external["incident_zone"] == 8)
+            & (external["seed"] == 1)
+            & (external["external_count"].isin([0, 1, 2]))
+        ]
+        frozen = external[external["external_count"] == 0].drop(
+            columns=["external_count", "external_sites"]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            summary_path = emergency._write_external_outputs(
+                output,
+                external,
+                frozen,
+                expected_counts=(0, 1, 2),
+                require_all_zones=False,
+            )
+
+            summary = pd.read_csv(summary_path)
+            self.assertEqual(len(summary), 3)
+            self.assertTrue((summary["incident_zone_scenarios"] == 1).all())
+
     def test_any_duration_inside_continuous_domain_is_legal(self) -> None:
         self.assertTrue(hasattr(emergency, "validate_duration"))
         self.assertEqual(emergency.validate_duration(3.25), 3.25)

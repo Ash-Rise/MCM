@@ -196,7 +196,7 @@ def test_markdown_uses_chinese_top_level_headings_and_superscript_citations():
         "## 四、符号说明",
         "## 五、任务一：容量约束站点与服务分配",
         "## 六、任务二：连续多日随机呼叫与车辆调度",
-        "## 七、任务三：连续事故时长下的动态应急响应",
+        "## 七、任务三：连续事故时长下的应急调度与效果评估",
         "## 八、模型评价",
     )
 
@@ -215,7 +215,7 @@ def test_markdown_uses_standard_periodic_and_exponential_notation():
 
     assert r"\bmod" not in body
     assert r"\exp" not in body
-    assert body.count(r"f(t\%24)") == 4
+    assert body.count(r"f(t\%24)") == 1
     assert r"\mathrm e^{-\frac{(t-\mu+24k)^2}{2\sigma^2}}" in body
 
 
@@ -242,8 +242,8 @@ def test_markdown_has_algorithm_design_for_all_three_tasks():
     assert markdown.count("算法设计") == 3
     assert "### 5.5 算法设计" in markdown
     assert "### 6.7 算法设计" in markdown
-    assert "### 7.5 算法设计" in markdown
-    assert markdown.count("| Step ") == 20
+    assert "### 7.6 算法设计" in markdown
+    assert markdown.count("| Step ") == 21
     assert "表2 任务一混合整数线性规划模型" in markdown
     assert "表4 任务一算法步骤" in markdown
     assert "表6 任务二算法步骤" in markdown
@@ -257,8 +257,20 @@ def test_figure_numbers_are_continuous_and_appendix_matches():
         for number in re.findall(r"^图(\d+)\s", markdown, flags=re.MULTILINE)
     ]
 
-    assert captions == list(range(1, 11))
-    assert "图1至图10均由" in markdown
+    assert captions == list(range(1, 12))
+    assert "图1至图11均由" in markdown
+
+
+def test_task_three_defines_external_support_decision_boundaries():
+    markdown = MARKDOWN_PATH.read_text(encoding="utf-8")
+    task_three = markdown.split("## 七、任务三", 1)[1].split("## 八、模型评价", 1)[0]
+
+    assert "7000行复制结果" in task_three
+    assert "3辆是90%累计改善规则下的最小统一外援数" in task_three
+    assert "5辆是满足该目标的最小统一数量" in task_three
+    assert "经济最优数量仍由具体调配成本决定" in task_three
+    assert r"c_m(H)" in task_three
+    assert "零呼叫情景的响应时间保留为未定义值" in task_three
 
 
 def test_task_one_uses_only_planning_coverage_and_compact_capacity_proof():

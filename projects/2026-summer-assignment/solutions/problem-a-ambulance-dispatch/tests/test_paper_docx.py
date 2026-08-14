@@ -270,9 +270,13 @@ def test_task_three_defines_external_support_decision_boundaries():
     assert "### 7.9" not in task_three
     assert "余量仅为4次/日，即2.86%" in task_three
     assert "只改变候选车辆的派出顺序" in task_three
-    assert "为$B_E$构造同一事故情景下的反事实基线" in task_three
+    assert "这里的$B_N$仍包含事故呼叫" in task_three
+    assert "反事实基线" in task_three
+    assert "形成最小干预对照" in task_three
+    assert "共同随机数设计" in task_three
+    assert r"D_{k,s}(H)=T_{k,s}^{B_E}(H)-T_{k,s}^{B_N}(H)" in task_three
     assert "事故新增需求造成的负荷冲击" in task_three
-    assert "识别事故信息和派车顺序修正的边际作用" in task_three
+    assert "识别事故信息与派车顺序修正的边际作用" in task_three
     assert "识别运力扩充的边际作用" in task_three
     assert "持续排队" not in task_three
     assert "$H=6,8,10,11,12$ h五个已验证节点" in task_three
@@ -282,15 +286,21 @@ def test_task_three_defines_external_support_decision_boundaries():
     assert "经济最优数量仍由具体调配成本决定" in task_three
     assert r"c_m(H)" in task_three
     assert "零呼叫情景的响应时间保留为未定义值" in task_three
+    assert "表13" not in task_three
+    assert "第1～6辆外援的$B_m$依次为39.01、19.69、8.24、2.48、0.76和0.19万元" in task_three
 
 
-def test_figure_eleven_uses_clear_response_gain_rate_label():
+def test_figure_eleven_includes_response_gain_and_marginal_penalty_panels():
     source = (PROJECT_ROOT / "src" / "generate_figures.py").read_text(encoding="utf-8")
 
     assert 'long_durations = [6.0, 8.0, 10.0, 11.0, 12.0]' in source
-    assert 'axes[1].set_ylabel("响应改善达成率（%）")' in source
-    assert 'axes[1].set_title("长时事故的响应改善达成率"' in source
+    assert 'ax_share.set_ylabel("响应改善达成率（%）")' in source
+    assert 'ax_share.set_title("长时事故的响应改善达成率"' in source
     assert '"6辆外援=100%"' in source
+    assert 'values="marginal_break_even_cost_yuan_mean"' in source
+    assert "colors.LogNorm" in source
+    assert 'ax_penalty.set_title("新增第m辆外援的边际避免罚金"' in source
+    assert '"边际避免罚金（万元/辆·事故情景，对数色阶）"' in source
 
 
 def test_task_one_uses_only_planning_coverage_and_compact_capacity_proof():

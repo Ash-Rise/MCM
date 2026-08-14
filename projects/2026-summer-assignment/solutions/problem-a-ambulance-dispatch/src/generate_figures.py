@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import colors
 from matplotlib.lines import Line2D
+from PIL import Image
 from scipy.interpolate import PchipInterpolator
 
 from ambulance_model import (
@@ -95,9 +96,14 @@ def save(fig: plt.Figure, figures: Path, name: str, size: tuple[float, float]) -
         formats=["svg", "png"],
         size_inches=size,
         dpi=300,
-        grayscale_preview=True,
+        grayscale_preview=False,
         tight=False,
     )
+    png_path = figures / f"{name}.png"
+    grayscale_path = figures / f"{name}_grayscale.png"
+    with Image.open(png_path) as image:
+        image.convert("L").save(grayscale_path, dpi=(300, 300))
+    paths.append(str(grayscale_path))
     qa_dir = figures / "qa"
     qa_dir.mkdir(parents=True, exist_ok=True)
     for path in paths:
@@ -727,12 +733,16 @@ def result_q3_external_support(full: Path, figures: Path) -> None:
     if not path.exists():
         return
     frame = pd.read_csv(path)
-    fig, axes = plt.subplots(
-        1,
+    fig = plt.figure(figsize=(6.3, 5.8))
+    grid = fig.add_gridspec(
         2,
-        figsize=(6.3, 3.5),
-        gridspec_kw={"width_ratios": [1.12, 0.88]},
+        2,
+        width_ratios=[1.12, 0.88],
+        height_ratios=[0.95, 1.15],
     )
+    ax_response = fig.add_subplot(grid[0, 0])
+    ax_share = fig.add_subplot(grid[0, 1])
+    ax_penalty = fig.add_subplot(grid[1, :])
 
     durations = [0.5, 2.0, 4.0, 6.0, 8.0, 12.0]
     line_styles = ["-", "--", "-.", ":", (0, (5, 1)), (0, (3, 1, 1, 1))]
@@ -752,7 +762,7 @@ def result_q3_external_support(full: Path, figures: Path) -> None:
         mean = group["mean_response_min_mean"].to_numpy(dtype=float)
         low = group["mean_response_min_ci95_low"].to_numpy(dtype=float)
         high = group["mean_response_min_ci95_high"].to_numpy(dtype=float)
-        axes[0].errorbar(
+        ax_response.errorbar(
             x,
             mean,
             yerr=np.vstack((mean - low, high - mean)),
@@ -766,13 +776,13 @@ def result_q3_external_support(full: Path, figures: Path) -> None:
             alpha=0.92,
             label=f"H={duration:g} h",
         )
-    axes[0].axvline(3, color=GRAY, linestyle="--", linewidth=0.8)
-    axes[0].set_xlabel("临时外援车辆数（辆）")
-    axes[0].set_ylabel("全市平均响应时间（min）")
-    axes[0].set_xticks(range(7))
-    axes[0].set_ylim(bottom=0.0)
-    axes[0].set_title("不同事故时长下的响应变化", fontsize=8)
-    axes[0].legend(frameon=False, fontsize=6.1, ncol=2, loc="upper right")
+    ax_response.axvline(3, color=GRAY, linestyle="--", linewidth=0.8)
+    ax_response.set_xlabel("临时外援车辆数（辆）")
+    ax_response.set_ylabel("全市平均响应时间（min）")
+    ax_response.set_xticks(range(7))
+    ax_response.set_ylim(bottom=0.0)
+    ax_response.set_title("不同事故时长下的响应变化", fontsize=8)
+    ax_response.legend(frameon=False, fontsize=6.1, ncol=2, loc="upper right")
 
     long_durations = [6.0, 8.0, 10.0, 11.0, 12.0]
     long_colors = plt.get_cmap("viridis")(np.linspace(0.08, 0.92, len(long_durations)))
@@ -793,7 +803,7 @@ def result_q3_external_support(full: Path, figures: Path) -> None:
             group.loc[group["external_count"] == 6, "cumulative_response_gain_min_mean"].iloc[0]
         )
         share = 100.0 * group["cumulative_response_gain_min_mean"].to_numpy(dtype=float) / total_gain
-        axes[1].plot(
+        ax_share.plot(
             group["external_count"],
             share,
             color=color,
@@ -803,32 +813,94 @@ def result_q3_external_support(full: Path, figures: Path) -> None:
             linewidth=1.0,
             label=f"H={duration:g} h",
         )
-    axes[1].axhline(90, color=GRAY, linestyle="--", linewidth=0.8)
-    axes[1].axvline(3, color=GRAY, linestyle="--", linewidth=0.8)
-    axes[1].set_xlabel("临时外援车辆数（辆）")
-    axes[1].set_ylabel("响应改善达成率（%）")
-    axes[1].set_xticks(range(1, 7))
-    axes[1].set_ylim(0, 104)
-    axes[1].set_title("长时事故的响应改善达成率", fontsize=8)
-    axes[1].text(
+    ax_share.axhline(90, color=GRAY, linestyle="--", linewidth=0.8)
+    ax_share.axvline(3, color=GRAY, linestyle="--", linewidth=0.8)
+    ax_share.set_xlabel("临时外援车辆数（辆）")
+    ax_share.set_ylabel("响应改善达成率（%）")
+    ax_share.set_xticks(range(1, 7))
+    ax_share.set_ylim(0, 104)
+    ax_share.set_title("长时事故的响应改善达成率", fontsize=8)
+    ax_share.text(
         0.03,
         0.96,
         "6辆外援=100%",
-        transform=axes[1].transAxes,
+        transform=ax_share.transAxes,
         ha="left",
         va="top",
         fontsize=6.2,
         color=GRAY,
     )
-    axes[1].legend(frameon=False, fontsize=6.2, ncol=2, loc="lower right")
+    ax_share.legend(frameon=False, fontsize=6.2, ncol=2, loc="lower right")
 
-    for label, ax in zip(("(a)", "(b)"), axes, strict=True):
+    penalty = (
+        frame[frame["external_count"] > 0]
+        .pivot(
+            index="duration_hours",
+            columns="external_count",
+            values="marginal_break_even_cost_yuan_mean",
+        )
+        .sort_index()
+        .sort_index(axis=1)
+        / 10_000.0
+    )
+    penalty_values = penalty.to_numpy(dtype=float)
+    penalty_norm = colors.LogNorm(
+        vmin=float(np.nanmin(penalty_values)),
+        vmax=float(np.nanmax(penalty_values)),
+    )
+    penalty_cmap = plt.get_cmap("YlGnBu")
+    for row in range(penalty_values.shape[0]):
+        for column in range(penalty_values.shape[1]):
+            value = penalty_values[row, column]
+            ax_penalty.add_patch(
+                plt.Rectangle(
+                    (column - 0.5, row - 0.5),
+                    1.0,
+                    1.0,
+                    facecolor=penalty_cmap(penalty_norm(value)),
+                    edgecolor="white",
+                    linewidth=0.45,
+                )
+            )
+            ax_penalty.text(
+                column,
+                row,
+                f"{value:.2f}",
+                ha="center",
+                va="center",
+                fontsize=6.1,
+                color="white" if penalty_norm(value) > 0.58 else "#111827",
+            )
+    ax_penalty.set_xlim(-0.5, penalty_values.shape[1] - 0.5)
+    ax_penalty.set_ylim(penalty_values.shape[0] - 0.5, -0.5)
+    ax_penalty.set_xticks(
+        range(len(penalty.columns)),
+        [f"第{int(count)}辆" for count in penalty.columns],
+    )
+    ax_penalty.set_yticks(
+        range(len(penalty.index)),
+        [f"{duration:g}" for duration in penalty.index],
+    )
+    ax_penalty.set_xlabel("新增外援序号")
+    ax_penalty.set_ylabel("事故持续时间 H（h）")
+    ax_penalty.set_title("新增第m辆外援的边际避免罚金", fontsize=8)
+    penalty_map = plt.cm.ScalarMappable(norm=penalty_norm, cmap=penalty_cmap)
+    colorbar = fig.colorbar(penalty_map, ax=ax_penalty, pad=0.025, shrink=0.92)
+    keep_colorbar_vector(colorbar)
+    colorbar.set_label("边际避免罚金（万元/辆·事故情景，对数色阶）", fontsize=6.8)
+    colorbar.ax.tick_params(labelsize=6.0)
+
+    for label, ax in zip(
+        ("(a)", "(b)", "(c)"),
+        (ax_response, ax_share, ax_penalty),
+        strict=True,
+    ):
         ax.text(-0.15, 1.04, label, transform=ax.transAxes, fontsize=8, fontweight="bold")
     issues = audit_layout(fig)
     failures = [message for severity, message in issues if severity == "FAIL"]
     if failures:
         raise RuntimeError("; ".join(failures))
-    save(fig, figures, "result_q3_external_support", (6.3, 3.5))
+    save(fig, figures, "result_q3_external_support", (6.3, 5.8))
 
 
 def main() -> None:

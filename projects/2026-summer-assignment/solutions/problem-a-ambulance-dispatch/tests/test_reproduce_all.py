@@ -98,6 +98,11 @@ class ReproduceAllTest(unittest.TestCase):
             patch("reproduce_all.build_citywide_duration_table", return_value=pd.DataFrame()) as citywide_table,
             patch("reproduce_all.build_response_surfaces", return_value=(pd.DataFrame(), pd.DataFrame())) as surfaces,
             patch("reproduce_all.build_scoped_paired_surfaces", return_value=pd.DataFrame()) as scoped_surfaces,
+            patch("reproduce_all.validate_external_support_evidence", return_value=pd.DataFrame()) as external_validation,
+            patch(
+                "reproduce_all.build_external_support_summaries",
+                return_value=(pd.DataFrame(), pd.DataFrame(), pd.DataFrame()),
+            ) as external_summaries,
             patch.object(pd.DataFrame, "to_csv"),
             patch("pandas.read_csv", return_value=pd.DataFrame()),
         ):
@@ -107,6 +112,8 @@ class ReproduceAllTest(unittest.TestCase):
         citywide_table.assert_called_once()
         surfaces.assert_called_once()
         scoped_surfaces.assert_called_once()
+        external_validation.assert_called_once()
+        external_summaries.assert_called_once()
 
     def test_task_three_verification_includes_external_support_evidence(self) -> None:
         with patch("reproduce_all.verify_external_support") as verify_external:
@@ -123,6 +130,7 @@ class ReproduceAllTest(unittest.TestCase):
                 "process_q3_duration_zone": "response_surfaces.csv",
                 "result_q3_response_curve": "response_surfaces.csv",
                 "result_q3_paired_effect": "scoped_paired_response_surfaces.csv",
+                "result_q3_external_support": "external-support/external_support_citywide.csv",
             },
         )
         self.assertFalse(any("aggregate" in source for source in sources.values()))

@@ -27,6 +27,7 @@ FIGURE_TOOLS = SKILL_ROOT / "tools" / "figure" / "scripts"
 sys.path.insert(0, str(FIGURE_TOOLS))
 from export_figure import export_figure  # noqa: E402
 from setup_style import setup_style  # noqa: E402
+from visual_qa import audit_layout  # noqa: E402
 
 
 BLUE = "#0072B2"
@@ -83,6 +84,7 @@ def q3_evidence_sources() -> dict[str, str]:
         "process_q3_duration_zone": "response_surfaces.csv",
         "result_q3_response_curve": "response_surfaces.csv",
         "result_q3_paired_effect": "scoped_paired_response_surfaces.csv",
+        "result_q3_external_support": "external-support/external_support_citywide.csv",
     }
 
 
@@ -720,6 +722,105 @@ def result_q3_paired_effect(full: Path, figures: Path) -> None:
     save(fig, figures, "result_q3_paired_effect", (6.3, 3.6))
 
 
+def result_q3_external_support(full: Path, figures: Path) -> None:
+    path = full / "external-support" / "external_support_citywide.csv"
+    if not path.exists():
+        return
+    frame = pd.read_csv(path)
+    fig, axes = plt.subplots(
+        1,
+        2,
+        figsize=(6.3, 3.5),
+        gridspec_kw={"width_ratios": [1.12, 0.88]},
+    )
+
+    durations = [0.5, 2.0, 4.0, 6.0, 8.0, 12.0]
+    line_styles = ["-", "--", "-.", ":", (0, (5, 1)), (0, (3, 1, 1, 1))]
+    markers = ["o", "s", "^", "D", "v", "P"]
+    duration_colors = plt.get_cmap("viridis")(np.linspace(0.08, 0.92, len(durations)))
+    for duration, color, linestyle, marker in zip(
+        durations,
+        duration_colors,
+        line_styles,
+        markers,
+        strict=True,
+    ):
+        group = frame[np.isclose(frame["duration_hours"], duration)].sort_values(
+            "external_count"
+        )
+        x = group["external_count"].to_numpy(dtype=float)
+        mean = group["mean_response_min_mean"].to_numpy(dtype=float)
+        low = group["mean_response_min_ci95_low"].to_numpy(dtype=float)
+        high = group["mean_response_min_ci95_high"].to_numpy(dtype=float)
+        axes[0].errorbar(
+            x,
+            mean,
+            yerr=np.vstack((mean - low, high - mean)),
+            color=color,
+            linestyle=linestyle,
+            marker=marker,
+            markersize=3.2,
+            linewidth=1.0,
+            elinewidth=0.45,
+            capsize=1.4,
+            alpha=0.92,
+            label=f"H={duration:g} h",
+        )
+    axes[0].axvline(3, color=GRAY, linestyle="--", linewidth=0.8)
+    axes[0].set_xlabel("临时外援车辆数（辆）")
+    axes[0].set_ylabel("全市平均响应时间（min）")
+    axes[0].set_xticks(range(7))
+    axes[0].set_ylim(bottom=0.0)
+    axes[0].set_title("不同事故时长下的响应变化", fontsize=8)
+    axes[0].legend(frameon=False, fontsize=6.1, ncol=2, loc="upper right")
+
+    long_durations = [6.0, 8.0, 10.0, 12.0]
+    long_colors = [BLUE, GREEN, ORANGE, PURPLE]
+    long_styles = ["-", "--", "-.", ":"]
+    long_markers = ["o", "s", "^", "D"]
+    for duration, color, linestyle, marker in zip(
+        long_durations,
+        long_colors,
+        long_styles,
+        long_markers,
+        strict=True,
+    ):
+        group = frame[np.isclose(frame["duration_hours"], duration)].sort_values(
+            "external_count"
+        )
+        group = group[group["external_count"] > 0]
+        total_gain = float(
+            group.loc[group["external_count"] == 6, "cumulative_response_gain_min_mean"].iloc[0]
+        )
+        share = 100.0 * group["cumulative_response_gain_min_mean"].to_numpy(dtype=float) / total_gain
+        axes[1].plot(
+            group["external_count"],
+            share,
+            color=color,
+            linestyle=linestyle,
+            marker=marker,
+            markersize=3.2,
+            linewidth=1.0,
+            label=f"H={duration:g} h",
+        )
+    axes[1].axhline(90, color=GRAY, linestyle="--", linewidth=0.8)
+    axes[1].axvline(3, color=GRAY, linestyle="--", linewidth=0.8)
+    axes[1].set_xlabel("临时外援车辆数（辆）")
+    axes[1].set_ylabel("累计响应改善占6辆方案比例（%）")
+    axes[1].set_xticks(range(1, 7))
+    axes[1].set_ylim(0, 104)
+    axes[1].set_title("长时事故的收益拐点", fontsize=8)
+    axes[1].legend(frameon=False, fontsize=6.2, ncol=2, loc="lower right")
+
+    for label, ax in zip(("(a)", "(b)"), axes, strict=True):
+        ax.text(-0.15, 1.04, label, transform=ax.transAxes, fontsize=8, fontweight="bold")
+    issues = audit_layout(fig)
+    failures = [message for severity, message in issues if severity == "FAIL"]
+    if failures:
+        raise RuntimeError("; ".join(failures))
+    save(fig, figures, "result_q3_external_support", (6.3, 3.5))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project-root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -748,6 +849,7 @@ def main() -> None:
     process_q3_duration_zone(emergency, figures)
     result_q3_response_curve(emergency, figures)
     result_q3_paired_effect(emergency, figures)
+    result_q3_external_support(emergency, figures)
 
 
 if __name__ == "__main__":

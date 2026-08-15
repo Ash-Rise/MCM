@@ -1,4 +1,4 @@
-profile_version: 1.2
+profile_version: 1.3
 name: ash-rise-chinese-modeling-paper
 priority:
   - current_official_rules
@@ -215,6 +215,34 @@ workflow:
           - complete_table_ooxml_save_reload_test
           - affected_page_render_review
         scope: manual_word_table_baselines_and_docx_regeneration
+      - id: source_file_purpose_header
+        added_on: '2026-08-15'
+        source: problem_a_src_inventory_review
+        evidence:
+          - purpose_headers_added_to_tracked_source_files
+          - python_compileall_passed
+          - independent_p2_source_header_review_passed
+        scope: modeling_project_source_files
+
+implementation:
+  source_file_purpose_header:
+    required: true
+    scope: src_source_files
+    extensions:
+      - .py
+      - .m
+    position: first_line
+    language: concise_chinese
+    comment_markers:
+      python: '#'
+      matlab: '%'
+    describe:
+      - file_purpose
+      - pipeline_role
+    forbid:
+      - implementation_details
+      - parameter_lists
+      - change_history
 
 release:
   paper_directory_pattern: paper/vX.Y

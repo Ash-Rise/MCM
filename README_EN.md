@@ -85,6 +85,12 @@ The first complete paper covering all three tasks, serving as the baseline for l
 
 This section records generation-pipeline, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
 
+### 2026-08-15 14:51 UTC+8 — Source Purpose Headers Added to the Personalized Template
+
+- Moved the rule requiring each source file to begin with its purpose and pipeline role from the Problem A project agent guidance into the reusable modeling workflow, advancing the template to v1.3.
+- Added machine-readable Python and MATLAB comment markers, source extensions, and forbidden content; the contract test now recursively inspects real source files under `src/` to prevent regression.
+- This update changes only the workflow template, tests, and changelog; it does not alter the v2.5 paper, DOCX, or release timestamp.
+
 ### 2026-08-13 23:44 UTC+8 — Strict Manual Table Lock
 
 - Promoted the user-revised v2.5 Word tables to the new authoritative baseline; formal rebuilds must reproduce complete table OOXML when content matches, while partial layout inheritance remains draft-only.

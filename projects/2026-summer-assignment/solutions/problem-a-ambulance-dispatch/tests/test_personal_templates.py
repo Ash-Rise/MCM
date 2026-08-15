@@ -5,6 +5,7 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = PROJECT_ROOT.parents[3]
+SOURCE_ROOT = PROJECT_ROOT / "src"
 PROFILE_PATH = PROJECT_ROOT / "templates" / "personal-paper-profile.yaml"
 PLAYBOOK_PATH = PROJECT_ROOT / "templates" / "personal-modeling-playbook.md"
 
@@ -13,7 +14,7 @@ def test_machine_profile_encodes_single_pandoc_markdown_source():
     profile = yaml.safe_load(PROFILE_PATH.read_text(encoding="utf-8"))
     markdown = profile["markdown"]
 
-    assert profile["profile_version"] == 1.2
+    assert profile["profile_version"] == 1.3
     assert markdown["source_target"]["dialect"] == "pandoc_markdown"
     assert markdown["source_target"]["editable"] is True
     assert markdown["publish_derived_github_preview"] is False
@@ -68,6 +69,17 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
             ],
             "scope": "manual_word_table_baselines_and_docx_regeneration",
         },
+        {
+            "id": "source_file_purpose_header",
+            "added_on": "2026-08-15",
+            "source": "problem_a_src_inventory_review",
+            "evidence": [
+                "purpose_headers_added_to_tracked_source_files",
+                "python_compileall_passed",
+                "independent_p2_source_header_review_passed",
+            ],
+            "scope": "modeling_project_source_files",
+        },
     ]
 
     table_lock = profile["tables"]["manual_word_baseline"]
@@ -83,7 +95,7 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
     assert release["tooling_and_template_changelog_separate"] is True
 
     assert "Pandoc Markdown单一正文源" in playbook
-    assert playbook.startswith("# 个性化数模工作流与论文模板 v1.2")
+    assert playbook.startswith("# 个性化数模工作流与论文模板 v1.3")
     assert "我们的个性化数模工作流与论文模板" not in playbook
     assert "优质规则自动沉淀机制" in playbook
     assert "真实论文、官方渲染器或可复现测试" in playbook
@@ -91,6 +103,44 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
     assert "记录来源和日期" in playbook
     assert "不得自动提升为长期规则" in playbook
     assert "工作流与模板更新记录" in playbook
+
+
+def test_source_files_require_first_line_purpose_comment():
+    profile = yaml.safe_load(PROFILE_PATH.read_text(encoding="utf-8"))
+    playbook = PLAYBOOK_PATH.read_text(encoding="utf-8")
+    source_header = profile["implementation"]["source_file_purpose_header"]
+
+    assert source_header == {
+        "required": True,
+        "scope": "src_source_files",
+        "extensions": [".py", ".m"],
+        "position": "first_line",
+        "language": "concise_chinese",
+        "comment_markers": {"python": "#", "matlab": "%"},
+        "describe": ["file_purpose", "pipeline_role"],
+        "forbid": ["implementation_details", "parameter_lists", "change_history"],
+    }
+    assert "每个源码文件的首行" in playbook
+    assert "文件用途及其在计算链中的职责" in playbook
+    assert "字节码缓存不属于源码，不纳入检查" in playbook
+
+    source_files = sorted(
+        path
+        for extension in source_header["extensions"]
+        for path in SOURCE_ROOT.rglob(f"*{extension}")
+    )
+    assert source_files
+    marker_by_extension = {
+        ".py": source_header["comment_markers"]["python"],
+        ".m": source_header["comment_markers"]["matlab"],
+    }
+    for source_file in source_files:
+        first_line = source_file.read_text(encoding="utf-8").splitlines()[0]
+        marker = marker_by_extension[source_file.suffix]
+        assert first_line.startswith(marker), source_file
+        description = first_line[len(marker):].strip()
+        assert description, source_file
+        assert any("\u4e00" <= char <= "\u9fff" for char in description), source_file
 
 
 def test_paper_release_time_is_separate_from_tooling_changelog():
@@ -105,3 +155,5 @@ def test_paper_release_time_is_separate_from_tooling_changelog():
     assert "### 2026-08-13 13:03 UTC+8 — Personalized Template v1.1" in readme_en
     assert "这些变更不修改论文版本的发行时间" in readme_zh
     assert "These changes do not modify the paper release timestamp" in readme_en
+    assert "### 2026-08-15 14:51 UTC+8 — 源码用途注释纳入个性化模板" in readme_zh
+    assert "### 2026-08-15 14:51 UTC+8 — Source Purpose Headers Added to the Personalized Template" in readme_en

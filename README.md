@@ -13,6 +13,25 @@
 - Word源文档：[`A题论文(v2.5).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).docx)
 - 论文代码与复现材料：[`A题救护车配置与调度项目复现入口`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/README.md#reproduction)
 
+## A题项目目录
+
+| 目录 | 作用 |
+|---|---|
+| [`paper/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/) | 按 `v2.1`—`v2.5` 保存论文历史版本；每版包含Pandoc Markdown、Word交付物和转换清单。 |
+| [`src/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/src/) | 站点配置、车辆调度、事故仿真、临时外援实验、绘图、Word后处理和统一复现代码。 |
+| [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | 三项任务的冻结结果、复制级数据、参数筛选结果与[`复现清单`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json)。 |
+| [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | 论文正式图表；`raw_`、`process_`、`result_`分别表示数据特征、算法过程和最终结果。 |
+| [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | 题目分析、术语、图表合同、方案设计和历史项目复盘，不作为最终论文交付物。 |
+| [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | 模型约束、随机实验、论文格式、模板和复现流程的自动化检查。 |
+| [`templates/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/templates/) | 可供后续数模项目复用的个性化工作流和机器可读论文排版配置。 |
+| [`utils/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/utils/) | 图表字体、配色、尺寸和导出格式等通用辅助代码。 |
+| [`docs/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/docs/) | 仓库接入与Git协作说明使用的图片素材。 |
+
+```text
+题面数据 -> src模型与仿真 -> results冻结结果 -> figures论文图表 -> paper最终论文
+                 tests与复现清单负责核验整个过程
+```
+
 ## 版本发行说明
 
 ### v2.5（2026-08-13 19:22 UTC+8）

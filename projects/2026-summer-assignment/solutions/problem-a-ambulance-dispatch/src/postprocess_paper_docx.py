@@ -1,3 +1,4 @@
+# 对Pandoc生成的A题DOCX执行字体、公式、表格、分页和图像等版式后处理。
 from __future__ import annotations
 
 import argparse

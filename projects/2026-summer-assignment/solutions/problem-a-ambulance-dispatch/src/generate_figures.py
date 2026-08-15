@@ -1,3 +1,4 @@
+# 根据冻结结果生成A题三项任务的正式论文图及灰度预览。
 from __future__ import annotations
 
 import argparse

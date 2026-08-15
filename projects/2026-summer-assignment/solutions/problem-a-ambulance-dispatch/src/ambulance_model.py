@@ -1,3 +1,4 @@
+# 读取A题数据，并提供任务一优化与任务二、三共用的救护车调度仿真核心。
 from __future__ import annotations
 
 import argparse

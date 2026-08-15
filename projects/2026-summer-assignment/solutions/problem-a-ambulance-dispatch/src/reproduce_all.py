@@ -1,3 +1,4 @@
+# 统一重建或校验A题三项任务的冻结结果、图表和复现证据。
 from __future__ import annotations
 
 import argparse

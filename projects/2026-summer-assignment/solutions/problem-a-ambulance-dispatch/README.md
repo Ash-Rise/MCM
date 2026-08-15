@@ -2,11 +2,22 @@
 
 Summer-assignment modeling solution for ambulance station location, vehicle allocation, routine dispatch, reserve configuration, and emergency response. The 2026 national-contest template is used only as a layout reference; this project does not claim to be a 2026 national-contest entry.
 
+## Latest Paper: v2.5
+
+- Pandoc source: [`A题论文(v2.5).md`](paper/v2.5/A题论文(v2.5).md)
+- Word deliverable: [`A题论文(v2.5).docx`](paper/v2.5/A题论文(v2.5).docx)
+- Source code: [`src/`](src/)
+- Frozen results and replication data: [`results/`](results/)
+- Reproduction manifest: [`results/复现清单.json`](results/复现清单.json)
+- Publication figures: [`figures/`](figures/)
+
+The current paper release is **v2.5**. Its Task 3 analysis includes the existing 12-vehicle incident-aware dispatch process and the 0--6 vehicle temporary-support experiment used to derive the 1/3/5-vehicle aid tiers.
+
 ## Layout
 
 - `src/`: optimization, simulation, experiments, and figure generation.
 - `tests/`: regression and model-contract tests.
-- `analysis/`: historical modeling materials and the authoritative v2.4 retrospective.
+- `analysis/`: historical modeling materials and project retrospectives.
 - `templates/`: personalized workflow, paper profile, and reusable task prompts.
 - `results/task-1/`: verified compact results for Task 1.
 - `results/task-2/`: generated Task 2 results after the revised model passes validation.
@@ -20,7 +31,7 @@ Tasks 1--3 have frozen result tables and publication figures. Task 2 uses exactl
 
 The current paper release is `paper/v2.5/A题论文(v2.5)`. `A题论文(v2.5).md` is its authoritative Pandoc/DOCX source. Derived GitHub-preview Markdown is no longer published. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`. The root `README.md` records release notes.
 
-The complete v2.4 project retrospective is `analysis/project-retrospective-v2.4.md`. Future projects should start from `templates/personal-modeling-playbook.md`; its exact Word, single-source Pandoc Markdown, table, figure, and verified-rule-promotion defaults are mirrored in `templates/personal-paper-profile.yaml`.
+`analysis/project-retrospective-v2.4.md` is a historical checkpoint covering work through v2.4; it does not represent the current paper version. Future projects should start from `templates/personal-modeling-playbook.md`; its exact Word, single-source Pandoc Markdown, table, figure, and verified-rule-promotion defaults are mirrored in `templates/personal-paper-profile.yaml`.
 
 ## Reproduction
 

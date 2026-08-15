@@ -13,6 +13,25 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 - Word deliverable: [`A题论文(v2.5).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).docx)
 - Paper code and reproducibility materials: [`Problem A ambulance-dispatch reproduction entrypoint`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/README.md#reproduction)
 
+## Problem A Project Layout
+
+| Directory | Purpose |
+|---|---|
+| [`paper/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/) | Paper history from `v2.1` through `v2.5`; each release contains the Pandoc Markdown, Word deliverable, and conversion manifest. |
+| [`src/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/src/) | Station planning, dispatch simulation, incident experiments, temporary-support analysis, figure generation, Word postprocessing, and unified reproduction code. |
+| [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | Frozen outputs, replication-level data, parameter-screening results, and the [`reproduction manifest`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json). |
+| [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | Publication figures; `raw_`, `process_`, and `result_` identify data, algorithm-process, and final-result figures. |
+| [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | Problem analysis, terminology, figure contracts, design notes, and historical retrospectives; these are not final paper deliverables. |
+| [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | Automated checks for model constraints, stochastic experiments, paper formatting, templates, and reproduction. |
+| [`templates/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/templates/) | Reusable personalized modeling workflow and machine-readable paper-format profile. |
+| [`utils/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/utils/) | Shared helpers for figure fonts, colors, dimensions, and export formats. |
+| [`docs/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/docs/) | Image assets used by repository-onboarding and Git-collaboration documentation. |
+
+```text
+Problem data -> src models and simulations -> frozen results -> publication figures -> final paper
+                         tests and the reproduction manifest verify the pipeline
+```
+
 ## Release Notes
 
 ### v2.5 (2026-08-13 19:22 UTC+8)

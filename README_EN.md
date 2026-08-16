@@ -85,6 +85,13 @@ The first complete paper covering all three tasks, serving as the baseline for l
 
 This section records generation-pipeline, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
 
+### 2026-08-16 20:21 UTC+8 — Personalized Template v2.0
+
+- Reviewed the complete evolution since v1.0, released at 2026-08-13 05:06 UTC+8, covering Problem A collaboration, paper audit, Word formatting, version migration, and Git cleanup; consolidated the evidence into four executable protocols for audit, documents, appendices, and version control.
+- Added a numeric-conflict evidence chain that starts from replication-level raw results, an explicit statistical formula, and an independent recalculation before checking tables, figures, and prose; agreement between manuscripts or an automated finding alone is not proof.
+- Added joint structural-and-visual DOCX review, boundaries for source code in paper appendices, and classified handling of tracked, untracked, ignored, stashed, and ahead/behind Git state with precise local exclusions; upgraded the machine-readable profile and contract tests accordingly.
+- This update changes only the workflow template, tests, and bilingual changelog; it does not alter the v2.5 paper, DOCX, results, figures, or release timestamp.
+
 ### 2026-08-16 19:50 UTC+8 — Fixed Paper Entrypoint and Tag-Based History
 
 - Standardized the paper artifacts on `main` as `paper/paper.md`, `paper/paper.docx`, and `paper/paper.conversion.json`, eliminating per-version copies of Markdown and DOCX.

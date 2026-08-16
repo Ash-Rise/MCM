@@ -14,7 +14,7 @@ def test_machine_profile_encodes_single_pandoc_markdown_source():
     profile = yaml.safe_load(PROFILE_PATH.read_text(encoding="utf-8"))
     markdown = profile["markdown"]
 
-    assert profile["profile_version"] == 1.4
+    assert profile["profile_version"] == 2.0
     assert markdown["source_target"]["dialect"] == "pandoc_markdown"
     assert markdown["source_target"]["editable"] is True
     assert markdown["publish_derived_github_preview"] is False
@@ -91,6 +91,38 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
             ],
             "scope": "multi_project_paper_versioning",
         },
+        {
+            "id": "raw_evidence_numeric_audit",
+            "added_on": "2026-08-16",
+            "source": "problem_a_strategy_b_confidence_interval_recalculation",
+            "evidence": [
+                "replication_level_results",
+                "explicit_t_interval_formula",
+                "independent_recalculation",
+            ],
+            "scope": "numeric_and_statistical_conflict_resolution",
+        },
+        {
+            "id": "docx_structure_visual_joint_review",
+            "added_on": "2026-08-16",
+            "source": "problem_a_docx_section_location_correction",
+            "evidence": [
+                "docx_structure_inspection",
+                "rendered_page_and_screenshot_confirmation",
+            ],
+            "scope": "docx_cross_reference_and_layout_review",
+        },
+        {
+            "id": "local_git_state_classification",
+            "added_on": "2026-08-16",
+            "source": "problem_a_github_desktop_and_stash_cleanup",
+            "evidence": [
+                "tracked_untracked_ignored_stash_classification",
+                "stash_content_value_review",
+                "precise_git_info_exclude_validation",
+            ],
+            "scope": "mixed_worktree_and_local_only_material",
+        },
     ]
 
     table_lock = profile["tables"]["manual_word_baseline"]
@@ -114,7 +146,7 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
     assert release["tag_pattern"] == "<project-id>/vX.Y"
 
     assert "Pandoc Markdown单一正文源" in playbook
-    assert playbook.startswith("# 个性化数模工作流与论文模板 v1.4")
+    assert playbook.startswith("# 个性化数模工作流与论文模板 v2.0")
     assert "我们的个性化数模工作流与论文模板" not in playbook
     assert "优质规则自动沉淀机制" in playbook
     assert "真实论文、官方渲染器或可复现测试" in playbook
@@ -122,6 +154,50 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
     assert "记录来源和日期" in playbook
     assert "不得自动提升为长期规则" in playbook
     assert "工作流与模板更新记录" in playbook
+    assert "证据与审核协议" in playbook
+    assert "结构定位 + 视觉定位" in playbook
+    assert "Git本地状态与版本治理" in playbook
+
+
+def test_audit_appendix_and_local_git_contracts():
+    profile = yaml.safe_load(PROFILE_PATH.read_text(encoding="utf-8"))
+
+    audit = profile["workflow"]["audit"]
+    assert audit["evidence_labels"] == [
+        "verified_fact",
+        "reasoned_inference",
+        "unknown",
+    ]
+    numeric = audit["numeric_conflict_resolution"]
+    assert numeric["order"] == [
+        "raw_replication_or_observation_data",
+        "explicit_statistical_formula_and_parameters",
+        "independent_recalculation",
+        "comparison_with_tables_figures_and_manuscript",
+    ]
+    assert numeric["manuscript_agreement_is_not_proof"] is True
+    assert audit["automated_findings_require_manual_confirmation"] is True
+    assert audit["docx_review"]["require_structure_and_render"] is True
+    assert audit["docx_review"]["plain_text_extraction_is_insufficient"] is True
+
+    appendix = profile["appendix"]
+    assert appendix["full_source_code_policy"] == "repository_or_separate_attachment"
+    assert "core_pseudocode" in appendix["include_in_paper"]
+    assert "full_multi_file_source_dump" in appendix["exclude_from_paper"]
+    assert appendix["page_limit_claim_requires_official_rule"] is True
+
+    git_policy = profile["git"]
+    assert git_policy["status_classification_required"] == [
+        "tracked_modifications",
+        "untracked_files",
+        "ignored_files",
+        "stash",
+        "branch_ahead_behind",
+    ]
+    assert git_policy["local_only_material"]["preferred_exclusion"] == ".git/info/exclude"
+    assert git_policy["local_only_material"]["use_exact_paths"] is True
+    assert git_policy["local_only_material"]["forbid_broad_shared_directory_exclusion"] is True
+    assert len(git_policy["stash_drop_requires"]) == 4
 
 
 def test_source_files_require_first_line_purpose_comment():

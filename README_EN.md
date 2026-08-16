@@ -20,7 +20,7 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 | [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | Frozen outputs, replication-level data, parameter-screening results, and the [`reproduction manifest`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json). |
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | Publication figures; `raw_`, `process_`, and `result_` identify data, algorithm-process, and final-result figures. |
 | [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | Automated checks for model constraints, stochastic experiments, paper formatting, templates, and reproduction. |
-| [`shared/templates/`](shared/templates/) | Repository-wide personalized workflow, machine-readable formatting profile, Word templates, and inspection tools. |
+| [`shared/templates/`](shared/templates/) | Repository-wide personalized workflow, machine-readable formatting profile, Word templates, and contract tests. |
 
 ```text
 Problem data -> src models and simulations -> frozen results -> publication figures -> final paper
@@ -80,11 +80,17 @@ The first complete paper covering all three tasks, serving as the baseline for l
 
 This section records generation-pipeline, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
 
+### 2026-08-17 00:46 UTC+8 — Global Template Directory Cleanup
+
+- Removed two one-off Word-template inspection scripts that were used during repository initialization and now referenced nonexistent external files.
+- Retained the personalized workflow, machine-readable formatting profile, physical Word reference template, and contract tests; locally excluded enhanced-template material remains reserved for separate publication.
+- This change does not modify the paper, DOCX, model results, or paper release timestamp.
+
 ### 2026-08-16 20:28 UTC+8 — Global Template Entrypoint
 
 - Moved the personalized workflow and machine-readable formatting profile from Problem A to `shared/templates/`, establishing one repository-wide entrypoint for all future modeling projects.
-- Moved the template contract test with them and updated repository guidance, the Problem A README, and current-entry references in the historical retrospective; the Problem A directory now retains only project-specific evidence, retrospectives, and implementation.
-- Physical Word templates and their inspection tools remain centralized in `shared/templates/`; this change does not include local untracked Word material reserved for a separate publishing workflow.
+- Moved the template contract test with them and updated repository guidance and the Problem A README; Problem A no longer acts as the global template entrypoint.
+- Physical Word templates and their contract tests remain centralized in `shared/templates/`; this change does not include local untracked Word material reserved for a separate publishing workflow.
 - This migration changes no v2.5 paper content, DOCX, results, figures, or release timestamp.
 
 ### 2026-08-16 20:21 UTC+8 — Personalized Template v2.0

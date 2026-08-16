@@ -20,7 +20,7 @@
 | [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | 三项任务的冻结结果、复制级数据、参数筛选结果与[`复现清单`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json)。 |
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | 论文正式图表；`raw_`、`process_`、`result_`分别表示数据特征、算法过程和最终结果。 |
 | [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | 模型约束、随机实验、论文格式、模板和复现流程的自动化检查。 |
-| [`shared/templates/`](shared/templates/) | 仓库全局的个性化工作流、机器可读排版配置、实体Word模板与检查工具。 |
+| [`shared/templates/`](shared/templates/) | 仓库全局的个性化工作流、机器可读排版配置、实体Word模板与合同测试。 |
 
 ```text
 题面数据 -> src模型与仿真 -> results冻结结果 -> figures论文图表 -> paper最终论文
@@ -80,11 +80,17 @@
 
 本节记录不会改变正式论文内容的生成链、测试和复用模板更新；这些变更不修改论文版本的发行时间。
 
+### 2026-08-17 00:46 UTC+8 — 全局模板目录清理
+
+- 删除两个仅用于仓库初始化、且已引用不存在外部文件的一次性Word模板探查脚本。
+- 保留个性化工作流、机器可读排版配置、实体Word参考模板和合同测试；本地排除的增强模板资料继续保留，等待独立发布。
+- 本次不修改论文内容、DOCX、模型结果或论文发行时间。
+
 ### 2026-08-16 20:28 UTC+8 — 全局模板入口
 
 - 将个性化工作流和机器可读排版配置从A题项目迁移到`shared/templates/`，作为所有后续数模项目共同读取的仓库级唯一入口。
-- 将模板合同测试同步迁到全局模板目录，并修正仓库规则、A题README与历史复盘中的当前入口；A题目录只保留项目专属证据、复盘和实现。
-- 实体Word模板及检查工具继续统一存放在`shared/templates/`；本次不纳入约定由其他工作流独立发布的本地未跟踪Word资料。
+- 将模板合同测试同步迁到全局模板目录，并修正仓库规则与A题README中的当前入口；A题项目不再承担全局模板入口职责。
+- 实体Word模板及合同测试继续统一存放在`shared/templates/`；本次不纳入约定由其他工作流独立发布的本地未跟踪Word资料。
 - 本次仅迁移模板及其引用，不改变v2.5论文内容、DOCX、结果、图表或发行时间。
 
 ### 2026-08-16 20:21 UTC+8 — 个性化模板 v2.0

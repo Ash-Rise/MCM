@@ -164,7 +164,7 @@ D-<编号> <主题>
 
 ## 7. Word 排版基线
 
-精确机器配置见同目录的 `personal-paper-profile.yaml`；实体 Word 模板及其检查工具也统一存放在本目录。默认视觉规范：
+精确机器配置见同目录的 `personal-paper-profile.yaml`；实体 Word 模板及其合同测试也统一存放在本目录。默认视觉规范：
 
 | 元素 | 默认格式 |
 |---|---|

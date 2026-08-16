@@ -17,8 +17,7 @@ The current paper release is **v2.5**. Its Task 3 analysis includes the existing
 
 - `src/`: optimization, simulation, experiments, and figure generation.
 - `tests/`: regression and model-contract tests.
-- `analysis/`: model contracts, terminology, and technical design notes.
-- Repository-wide workflow and formatting defaults: [`shared/templates/`](../../../../shared/templates/); this project keeps only project-specific analysis and evidence locally.
+- Repository-wide workflow and formatting defaults: [`shared/templates/`](../../../../shared/templates/).
 - `results/task-1/`: verified compact results for Task 1.
 - `results/task-2/`: generated Task 2 results after the revised model passes validation.
 - `figures/`: approved publication figures.

@@ -19,7 +19,6 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 | [`src/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/src/) | Station planning, dispatch simulation, incident experiments, temporary-support analysis, figure generation, Word postprocessing, and unified reproduction code. |
 | [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | Frozen outputs, replication-level data, parameter-screening results, and the [`reproduction manifest`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json). |
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | Publication figures; `raw_`, `process_`, and `result_` identify data, algorithm-process, and final-result figures. |
-| [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | Problem analysis, terminology, and design notes; these are not final paper deliverables. |
 | [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | Automated checks for model constraints, stochastic experiments, paper formatting, templates, and reproduction. |
 | [`shared/templates/`](shared/templates/) | Repository-wide personalized workflow, machine-readable formatting profile, Word templates, and inspection tools. |
 
@@ -161,7 +160,6 @@ MCM/
 |       |-- problem-statements/       # Original assignment statements
 |       `-- solutions/
 |           `-- problem-a-ambulance-dispatch/
-|               |-- analysis/         # Modeling report and terminology
 |               |-- figures/          # Publication figures (PNG and SVG)
 |               |-- paper/             # Fixed-name current Pandoc source, DOCX, and manifest
 |               |-- results/          # Reproducible result tables and manifest
@@ -175,8 +173,8 @@ MCM/
 ## Repository Conventions
 
 - Original prompts use the suffix `-statement` and live under each assignment's `problem-statements/` directory.
-- Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
-- Project analysis and decision evidence live under each solution's `analysis/` directory; the global workflow and formatting profile live in `shared/templates/` as the common project entrypoint.
+- Solutions are self-contained under `solutions/` with separate source, tests, results, figures, and paper directories.
+- The global workflow and formatting profile live in `shared/templates/` as the common project entrypoint.
 - `main` retains only the fixed-name current paper artifacts. Every formal release updates both language release notes in the same commit and creates a project-qualified tag and Release; timestamps use `YYYY-MM-DD HH:MM UTC+8`.
 - Use tags to inspect historical source and repository state and Releases to download versioned Word artifacts; do not copy `vX.Y` paper directories on `main`.
 - Update the paper release timestamp only when the formal paper deliverable changes; record preview, generator, test, and template changes in the separate workflow and template changelog.

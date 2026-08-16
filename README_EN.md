@@ -34,6 +34,8 @@ Problem data -> src models and simulations -> frozen results -> publication figu
 
 ## Release Notes
 
+> The entries below describe the repository layout and workflow **as they existed when each version was released**, so they may contain paths or practices that were later retired. For current file organization, version control, and publishing rules, follow the “Repository Conventions” section, the latest “Workflow and Template Changelog” entries, and the repository-level `AGENTS.md`.
+
 ### v2.5 (2026-08-13 19:22 UTC+8)
 
 Paper content and layout updated: 2026-08-15 04:31 UTC+8. This update completes the Task 3 emergency-response and temporary-support analysis and adopts the user's final proofreading of both the Markdown and DOCX while retaining the v2.5 version number.
@@ -109,7 +111,7 @@ This section records generation-pipeline, test, and reusable-template changes th
 
 - Moved the rule requiring each source file to begin with its purpose and pipeline role from the Problem A project agent guidance into the reusable modeling workflow, advancing the template to v1.3.
 - Added machine-readable Python and MATLAB comment markers, source extensions, and forbidden content; the contract test now recursively inspects real source files under `src/` to prevent regression.
-- This update changes only the workflow template, tests, and changelog; it does not alter the v2.5 paper, DOCX, or release timestamp.
+- This update changes only the workflow template, tests, and changelog; it does not alter the v2.5 paper, DOCX, results, figures, or release timestamp.
 
 ### 2026-08-13 23:44 UTC+8 — Strict Manual Table Lock
 

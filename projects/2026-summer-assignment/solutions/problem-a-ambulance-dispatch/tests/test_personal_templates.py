@@ -14,7 +14,7 @@ def test_machine_profile_encodes_single_pandoc_markdown_source():
     profile = yaml.safe_load(PROFILE_PATH.read_text(encoding="utf-8"))
     markdown = profile["markdown"]
 
-    assert profile["profile_version"] == 1.3
+    assert profile["profile_version"] == 1.4
     assert markdown["source_target"]["dialect"] == "pandoc_markdown"
     assert markdown["source_target"]["editable"] is True
     assert markdown["publish_derived_github_preview"] is False
@@ -80,6 +80,17 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
             ],
             "scope": "modeling_project_source_files",
         },
+        {
+            "id": "fixed_paper_entrypoint",
+            "added_on": "2026-08-16",
+            "source": "problem_a_tag_history_migration",
+            "evidence": [
+                "fixed_main_artifacts",
+                "existing_release_tags",
+                "conversion_manifest_verification",
+            ],
+            "scope": "multi_project_paper_versioning",
+        },
     ]
 
     table_lock = profile["tables"]["manual_word_baseline"]
@@ -93,9 +104,17 @@ def test_personal_workflow_records_verified_rule_promotion_contract():
     release = profile["release"]
     assert release["paper_timestamp_changes_only_with_formal_paper_deliverable"] is True
     assert release["tooling_and_template_changelog_separate"] is True
+    assert release["current_artifacts"] == {
+        "markdown": "paper/paper.md",
+        "docx": "paper/paper.docx",
+        "conversion_manifest": "paper/paper.conversion.json",
+    }
+    assert release["retain_version_copies_on_main"] is False
+    assert release["history_source"] == "git_tag"
+    assert release["tag_pattern"] == "<project-id>/vX.Y"
 
     assert "Pandoc Markdown单一正文源" in playbook
-    assert playbook.startswith("# 个性化数模工作流与论文模板 v1.3")
+    assert playbook.startswith("# 个性化数模工作流与论文模板 v1.4")
     assert "我们的个性化数模工作流与论文模板" not in playbook
     assert "优质规则自动沉淀机制" in playbook
     assert "真实论文、官方渲染器或可复现测试" in playbook
@@ -157,3 +176,5 @@ def test_paper_release_time_is_separate_from_tooling_changelog():
     assert "These changes do not modify the paper release timestamp" in readme_en
     assert "### 2026-08-15 14:51 UTC+8 — 源码用途注释纳入个性化模板" in readme_zh
     assert "### 2026-08-15 14:51 UTC+8 — Source Purpose Headers Added to the Personalized Template" in readme_en
+    assert "### 2026-08-16 19:50 UTC+8 — 固定论文入口与Tag历史" in readme_zh
+    assert "### 2026-08-16 19:50 UTC+8 — Fixed Paper Entrypoint and Tag-Based History" in readme_en

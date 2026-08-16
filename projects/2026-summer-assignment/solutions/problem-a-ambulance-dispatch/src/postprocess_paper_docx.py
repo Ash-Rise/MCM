@@ -37,7 +37,7 @@ COMPLETE_TABLE_WIDTH_WEIGHTS = (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_TABLE_BASELINE = (
-    PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).docx"
+    PROJECT_ROOT / "paper" / "paper.docx"
 )
 DEFAULT_TABLE_BASELINE_SHA256 = (
     "460f5b2953afefdbc4e506510175ddc641996158dec2006c4969ba31856fd434"

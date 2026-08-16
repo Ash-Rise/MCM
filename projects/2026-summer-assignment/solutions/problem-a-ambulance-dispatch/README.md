@@ -4,8 +4,8 @@ Summer-assignment modeling solution for ambulance station location, vehicle allo
 
 ## Latest Paper: v2.5
 
-- Pandoc source: [`A题论文(v2.5).md`](paper/v2.5/A题论文(v2.5).md)
-- Word deliverable: [`A题论文(v2.5).docx`](paper/v2.5/A题论文(v2.5).docx)
+- Current Pandoc source: [`paper.md`](paper/paper.md)
+- Current Word deliverable: [`paper.docx`](paper/paper.docx)
 - Source code: [`src/`](src/)
 - Frozen results and replication data: [`results/`](results/)
 - Reproduction manifest: [`results/复现清单.json`](results/复现清单.json)
@@ -22,14 +22,14 @@ The current paper release is **v2.5**. Its Task 3 analysis includes the existing
 - `results/task-1/`: verified compact results for Task 1.
 - `results/task-2/`: generated Task 2 results after the revised model passes validation.
 - `figures/`: approved publication figures.
-- `paper/vX.Y/`: Word paper, authoritative Pandoc Markdown source, and conversion manifest per release.
+- `paper/`: fixed-name current Markdown, Word deliverable, and conversion manifest; historical repository snapshots are available through Git tags and versioned downloads through Releases.
 - `utils/`: project-specific helpers.
 
 ## Current Status
 
 Tasks 1--3 have frozen result tables and publication figures. Task 2 uses exactly 140 calls per day, a fixed 30-day warmup, conditional-NHPP arrival times, a per-vehicle 12-dispatch limit, and continuous cross-midnight vehicle state. Task 3 treats incident duration as continuous on `[0.5, 12]` hours: the six initial durations are expanded adaptively to ten simulation nodes, and replication-level PCHIP surfaces with 95% confidence bands are used only as numerical response approximations. No result is pooled across incident durations.
 
-The current paper release is `paper/v2.5/A题论文(v2.5)`. `A题论文(v2.5).md` is its authoritative Pandoc/DOCX source. Derived GitHub-preview Markdown is no longer published. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`. The root `README.md` records release notes.
+The current paper release is v2.5. [`paper/paper.md`](paper/paper.md) is the authoritative Pandoc/DOCX source on `main`; Git tags preserve historical repository snapshots, while Releases provide versioned Word downloads. Derived GitHub-preview Markdown is no longer published. Future tags use a project-qualified name such as `2026-summer-a/v2.6`. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`. The root `README.md` records release notes.
 
 `analysis/project-retrospective-v2.4.md` is a historical checkpoint covering work through v2.4; it does not represent the current paper version. Future projects should start from `templates/personal-modeling-playbook.md`; its exact Word, single-source Pandoc Markdown, table, figure, and verified-rule-promotion defaults are mirrored in `templates/personal-paper-profile.yaml`.
 

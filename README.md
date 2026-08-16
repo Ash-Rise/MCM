@@ -9,15 +9,15 @@
 ## 项目
 
 - [`2026 暑期作业`](projects/2026-summer-assignment/README.md)
-- Markdown源文档：[`A题论文(v2.5).md`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).md)
-- Word源文档：[`A题论文(v2.5).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).docx)
+- 当前Markdown源文档：[`paper.md`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/paper.md)
+- 当前Word交付物：[`paper.docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/paper.docx)
 - 论文代码与复现材料：[`A题救护车配置与调度项目复现入口`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/README.md#reproduction)
 
 ## A题项目目录
 
 | 目录 | 作用 |
 |---|---|
-| [`paper/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/) | 按 `v2.1`—`v2.5` 保存论文历史版本；每版包含Pandoc Markdown、Word交付物和转换清单。 |
+| [`paper/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/) | 只保存固定命名的当前Pandoc Markdown、Word交付物和转换清单；历史仓库状态由Tag保存，版本化Word由Release提供。 |
 | [`src/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/src/) | 站点配置、车辆调度、事故仿真、临时外援实验、绘图、Word后处理和统一复现代码。 |
 | [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | 三项任务的冻结结果、复制级数据、参数筛选结果与[`复现清单`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json)。 |
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | 论文正式图表；`raw_`、`process_`、`result_`分别表示数据特征、算法过程和最终结果。 |
@@ -85,6 +85,12 @@
 
 本节记录不会改变正式论文内容的生成链、测试和复用模板更新；这些变更不修改论文版本的发行时间。
 
+### 2026-08-16 19:50 UTC+8 — 固定论文入口与Tag历史
+
+- 将`main`中的论文三件套统一为`paper/paper.md`、`paper/paper.docx`和`paper/paper.conversion.json`，停止为每个版本复制Markdown与DOCX。
+- 历史仓库状态改由Git Tag保存，正式Word下载由GitHub Release提供；现有`v2.3`—`v2.5` Tag和Release保持不变，后续多项目Tag采用`<项目标识>/vX.Y`。
+- 同步生成脚本、回归测试、协作文档和个性化模板v1.4；本次只迁移路径，不改变v2.5论文内容、DOCX或发行时间。
+
 ### 2026-08-15 14:51 UTC+8 — 源码用途注释纳入个性化模板
 
 - 将“每个源码文件首行说明文件用途及其在计算链中的职责”从A题项目级代理约定迁入个性化数模工作流，并将模板版本升级为v1.3。
@@ -147,7 +153,7 @@ MCM/
 |           `-- problem-a-ambulance-dispatch/
 |               |-- analysis/         # 建模报告与术语表
 |               |-- figures/          # 论文插图（PNG 与 SVG）
-|               |-- paper/vX.Y/       # 各版Pandoc源、DOCX与转换清单
+|               |-- paper/             # 固定命名的当前Pandoc源、DOCX与转换清单
 |               |-- results/          # 可复现结果表与清单
 |               |-- src/              # 优化、仿真与绘图代码
 |               |-- templates/        # 个性化工作流、排版配置与复用指令
@@ -163,7 +169,8 @@ MCM/
 - 原题文件名使用 `-statement` 后缀，并存放在对应作业的 `problem-statements/` 目录中。
 - 每份解答独立存放在 `solutions/` 下，并分别管理源码、测试、分析、结果、插图和论文。
 - 复盘报告和个性化工作流保存在对应解答的 `analysis/` 与 `templates/` 下，作为后续项目启动与上下文恢复依据。
-- 每次发布新版论文时，必须在同一提交中新增对应版本目录，并同步更新中文 `README.md` 与英文 `README_EN.md` 的发行说明；发布时间统一使用 `YYYY-MM-DD HH:MM UTC+8` 格式。
+- `main`只维护固定命名的当前论文三件套；每次正式发布在同一提交中同步更新中英文发行说明，并创建项目化Tag与Release。发布时间统一使用 `YYYY-MM-DD HH:MM UTC+8` 格式。
+- 历史正文和仓库状态通过Tag查看，版本化Word附件通过Release下载；不得在`main`中复制`vX.Y`论文目录。
 - 论文发行时间只在正式论文交付物发生变更时更新；预览、生成器、测试和模板更新写入独立的工作流与模板更新记录。
 - 通用模板和参考资料存放在 `shared/` 下。
 - 生成的缓存和本地临时文件不纳入版本控制。

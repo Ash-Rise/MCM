@@ -1,4 +1,4 @@
-profile_version: 1.3
+profile_version: 1.4
 name: ash-rise-chinese-modeling-paper
 priority:
   - current_official_rules
@@ -223,6 +223,14 @@ workflow:
           - python_compileall_passed
           - independent_p2_source_header_review_passed
         scope: modeling_project_source_files
+      - id: fixed_paper_entrypoint
+        added_on: '2026-08-16'
+        source: problem_a_tag_history_migration
+        evidence:
+          - fixed_main_artifacts
+          - existing_release_tags
+          - conversion_manifest_verification
+        scope: multi_project_paper_versioning
 
 implementation:
   source_file_purpose_header:
@@ -245,7 +253,15 @@ implementation:
       - change_history
 
 release:
-  paper_directory_pattern: paper/vX.Y
+  current_paper_directory: paper
+  current_artifacts:
+    markdown: paper/paper.md
+    docx: paper/paper.docx
+    conversion_manifest: paper/paper.conversion.json
+  retain_version_copies_on_main: false
+  history_source: git_tag
+  tag_pattern: <project-id>/vX.Y
+  release_asset_pattern: <paper-name>-vX.Y.docx
   required_artifacts:
     - pandoc_markdown_source
     - docx

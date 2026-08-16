@@ -9,15 +9,15 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 ## Projects
 
 - [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)
-- Pandoc source: [`A题论文(v2.5).md`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).md)
-- Word deliverable: [`A题论文(v2.5).docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).docx)
+- Current Pandoc source: [`paper.md`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/paper.md)
+- Current Word deliverable: [`paper.docx`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/paper.docx)
 - Paper code and reproducibility materials: [`Problem A ambulance-dispatch reproduction entrypoint`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/README.md#reproduction)
 
 ## Problem A Project Layout
 
 | Directory | Purpose |
 |---|---|
-| [`paper/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/) | Paper history from `v2.1` through `v2.5`; each release contains the Pandoc Markdown, Word deliverable, and conversion manifest. |
+| [`paper/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/) | Fixed-name current Pandoc Markdown, Word deliverable, and conversion manifest; tags preserve historical repository snapshots and Releases provide versioned Word downloads. |
 | [`src/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/src/) | Station planning, dispatch simulation, incident experiments, temporary-support analysis, figure generation, Word postprocessing, and unified reproduction code. |
 | [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | Frozen outputs, replication-level data, parameter-screening results, and the [`reproduction manifest`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json). |
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | Publication figures; `raw_`, `process_`, and `result_` identify data, algorithm-process, and final-result figures. |
@@ -85,6 +85,12 @@ The first complete paper covering all three tasks, serving as the baseline for l
 
 This section records generation-pipeline, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
 
+### 2026-08-16 19:50 UTC+8 — Fixed Paper Entrypoint and Tag-Based History
+
+- Standardized the paper artifacts on `main` as `paper/paper.md`, `paper/paper.docx`, and `paper/paper.conversion.json`, eliminating per-version copies of Markdown and DOCX.
+- Assigned historical repository state to Git tags and formal Word downloads to GitHub Releases; existing `v2.3`—`v2.5` tags and Releases remain unchanged, while future multi-project tags use `<project-id>/vX.Y`.
+- Updated the generator, regression tests, collaboration guides, and personalized template v1.4. This is a path-only migration and does not change the v2.5 paper content, DOCX, or release timestamp.
+
 ### 2026-08-15 14:51 UTC+8 — Source Purpose Headers Added to the Personalized Template
 
 - Moved the rule requiring each source file to begin with its purpose and pipeline role from the Problem A project agent guidance into the reusable modeling workflow, advancing the template to v1.3.
@@ -147,7 +153,7 @@ MCM/
 |           `-- problem-a-ambulance-dispatch/
 |               |-- analysis/         # Modeling report and terminology
 |               |-- figures/          # Publication figures (PNG and SVG)
-|               |-- paper/vX.Y/       # Pandoc source, DOCX, and manifest
+|               |-- paper/             # Fixed-name current Pandoc source, DOCX, and manifest
 |               |-- results/          # Reproducible result tables and manifest
 |               |-- src/              # Optimization, simulation, and plotting code
 |               |-- templates/        # Personalized workflow, paper profile, and reusable prompts
@@ -163,7 +169,8 @@ MCM/
 - Original prompts use the suffix `-statement` and live under each assignment's `problem-statements/` directory.
 - Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
 - Retrospectives and personalized workflows live under each solution's `analysis/` and `templates/` directories for future project kickoff and context recovery.
-- Every new paper release must add its version directory and update the release notes in both the Chinese `README.md` and English `README_EN.md` in the same commit; release timestamps use `YYYY-MM-DD HH:MM UTC+8`.
+- `main` retains only the fixed-name current paper artifacts. Every formal release updates both language release notes in the same commit and creates a project-qualified tag and Release; timestamps use `YYYY-MM-DD HH:MM UTC+8`.
+- Use tags to inspect historical source and repository state and Releases to download versioned Word artifacts; do not copy `vX.Y` paper directories on `main`.
 - Update the paper release timestamp only when the formal paper deliverable changes; record preview, generator, test, and template changes in the separate workflow and template changelog.
 - Reusable templates and reference material live under `shared/`.
 - Generated caches and local scratch files remain outside version history.

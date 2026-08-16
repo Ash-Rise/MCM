@@ -14,7 +14,7 @@
 ## 论文交付物
 
 - 用户在 WPS/Word 中人工修订的 DOCX 视为权威排版输入。后续需要重建时，先把相关修改同步到后处理脚本和测试；未经确认不得用自动生成文件覆盖。
-- 论文版本目录采用 `paper/vX.Y/`。每个版本只维护一份正式 Markdown 内容源；DOCX 和转换清单分别承担排版交付与转换记录职责。
+- 每个项目的 `paper/` 只保留固定命名的当前 Markdown、DOCX 和转换清单；Git Tag 保存仓库快照，GitHub Release 保存带版本号的下载附件，不在 `main` 重复存放版本副本。
 - 处理 A 题论文协作任务前，必须继续读取 `projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/AGENTS.md`；协作者只负责提出内容修改，Git 同步、分支、验证、提交、推送和 PR 由代理按该文件执行。
 
 ## 发布与验证

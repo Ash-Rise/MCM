@@ -70,7 +70,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File $bootstrapFile `
 2. `projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/AGENTS.md`。
 3. `projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/仓库接入与AI协作指南.md`。
 
-论文协作只使用 `main` 和临时 `review/*` 分支；`A题论文(vX.Y).md` 是唯一正文基准。AI 可以同步、建分支、验证、Commit、Push 和创建 PR，但不得自动 Merge。
+论文协作只使用 `main` 和临时 `review/*` 分支；项目内的 `paper/paper.md` 是唯一正文基准。AI 可以同步、建分支、验证、Commit、Push 和创建 PR，但不得自动 Merge。
 
 ## 故障处理
 
@@ -79,4 +79,3 @@ powershell -NoProfile -ExecutionPolicy Bypass -File $bootstrapFile `
 - 目标目录已存在但不是 Git 仓库：停止，不覆盖、不删除目录。
 - GitHub 尚未接受协作者邀请：可以 Clone 公共仓库，但 Push 前必须先接受邀请。
 - 权限、登录或网络失败：报告原始错误，不改用第三方镜像或索要令牌。
-

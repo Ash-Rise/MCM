@@ -98,12 +98,13 @@ code MCM
 
 ## 六、论文文件职责
 
-- `paper/vX.Y/A题论文(vX.Y).md`：唯一正文和预览基准，也是唯一允许直接修改的论文文件。
-- `paper/vX.Y/A题论文(vX.Y).docx`：Word 交付物，由论文负责人在 Markdown 内容审核通过后统一生成和排版；协作者不要并行编辑。
+- `paper/paper.md`：唯一正文和预览基准，也是唯一允许直接修改的论文文件。
+- `paper/paper.docx`：当前Word交付物，由论文负责人在Markdown内容审核通过后统一生成和排版；协作者不要并行编辑。
+- `paper/paper.conversion.json`：当前Markdown到Word的转换记录。
 - `README.md`：项目入口、当前正式版本、在线预览、Word 下载和版本发行说明。
 - `AGENTS.md`：AI 必须遵守的仓库操作规则。根目录和 A 题项目目录各有一份，必须同时读取。
 
-开发中的版本可能尚未写入 README 的正式发行说明。查看协作中的最新版时，以 `main` 上最新 `paper/vX.Y/` 目录及仓库规则为准；下载正式稳定版时看 GitHub `Releases`。
+开发中的版本可能尚未写入README的正式发行说明。查看协作中的最新版时，以`main`上的固定`paper/`三件套及仓库规则为准；查看历史仓库状态时切换Git Tag，下载正式稳定版时看GitHub `Releases`。
 
 ## 七、日常固定入口
 

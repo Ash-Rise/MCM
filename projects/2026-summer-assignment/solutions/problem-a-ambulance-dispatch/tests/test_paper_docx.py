@@ -15,10 +15,10 @@ from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DOCX_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).docx"
-MARKDOWN_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).md"
+DOCX_PATH = PROJECT_ROOT / "paper" / "paper.docx"
+MARKDOWN_PATH = PROJECT_ROOT / "paper" / "paper.md"
 POSTPROCESS_PATH = PROJECT_ROOT / "src" / "postprocess_paper_docx.py"
-TABLE_BASELINE_PATH = PROJECT_ROOT / "paper" / "v2.5" / "A题论文(v2.5).docx"
+TABLE_BASELINE_PATH = PROJECT_ROOT / "paper" / "paper.docx"
 
 
 def _load_postprocessor():

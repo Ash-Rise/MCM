@@ -386,20 +386,21 @@ def verify_figures(project_root: Path, questions: tuple[str, ...] = ("q1", "q2",
     figures = project_root / "figures"
     by_question = {
         "q1": {
-            "raw_q1_demand",
-            "process_q1_transport_network",
-            "result_q1_coverage",
+            "raw_q1_spatial",
+            "process_q1_assignment_heatmap",
         },
         "q2": {
             "raw_q2_nhpp_intensity",
             "process_q2_b_grid",
-            "result_q2_mean_response",
+            "process_q2_c_screen",
             "result_q2_multi_metric",
         },
         "q3": {
             "raw_q3_incident_load",
             "process_q3_duration_zone",
+            "result_q3_response_curve",
             "result_q3_paired_effect",
+            "result_q3_external_support",
         },
     }
     expected = set().union(*(by_question[question] for question in questions))

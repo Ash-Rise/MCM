@@ -15,8 +15,6 @@ from PIL import Image
 from scipy.interpolate import PchipInterpolator
 
 from ambulance_model import (
-    PREP_MINUTES,
-    SPEED_KMH,
     intraday_density,
     problem_statement_path,
     read_problem,
@@ -165,18 +163,6 @@ def q1_tables(project_root: Path) -> tuple[object, dict[str, object]]:
     return data, result
 
 
-def raw_q1_demand(data, figures: Path) -> None:
-    order = np.argsort(data.demand)
-    fig, ax = plt.subplots(figsize=(6.3, 3.7))
-    ax.barh(np.array(data.zone_names)[order], data.demand[order], color=BLUE, alpha=0.85)
-    for y, value in enumerate(data.demand[order]):
-        ax.text(value + 0.4, y, f"{value:.0f}", va="center", fontsize=7)
-    ax.set_xlabel("日均急救呼叫量（次）")
-    ax.set_ylabel("")
-    ax.set_xlim(0, max(data.demand) * 1.15)
-    save(fig, figures, "raw_q1_demand", (6.3, 3.7))
-
-
 def raw_q1_spatial(data, figures: Path) -> None:
     fig, ax = plt.subplots(figsize=(6.3, 4.5))
     size = 35 + 8 * data.demand
@@ -215,34 +201,6 @@ def raw_q2_intensity(data, figures: Path) -> None:
     save(fig, figures, "raw_q2_nhpp_intensity", (6.3, 3.6))
 
 
-def process_q1_distance(data, result: dict[str, object], figures: Path) -> None:
-    assignment = np.asarray(result["assignment"])
-    fig, ax = plt.subplots(figsize=(6.3, 4.4))
-    for i in range(len(data.zone_ids)):
-        for j in range(len(data.site_ids)):
-            amount = assignment[i, j]
-            if amount <= 1e-8:
-                continue
-            ax.plot(
-                [data.zone_xy[i, 0], data.site_xy[j, 0]],
-                [data.zone_xy[i, 1], data.site_xy[j, 1]],
-                color=SITE_COLORS[j],
-                linewidth=0.7 + 0.09 * amount,
-                alpha=0.62,
-                zorder=1,
-            )
-    ax.scatter(data.zone_xy[:, 0], data.zone_xy[:, 1], s=28 + 5 * data.demand, c="white", edgecolor=BLUE, zorder=3)
-    ax.scatter(data.site_xy[:, 0], data.site_xy[:, 1], s=100, c=SITE_COLORS, marker="s", edgecolor="black", zorder=4)
-    for i, (x, y) in enumerate(data.zone_xy):
-        ax.annotate(f"R{data.zone_ids[i]}", (x, y), xytext=(4, 4), textcoords="offset points", fontsize=7)
-    for i, (x, y) in enumerate(data.site_xy):
-        ax.annotate(data.site_ids[i], (x, y), xytext=(-8, -14), textcoords="offset points", fontsize=7)
-    ax.set_xlabel("X 坐标（km）")
-    ax.set_ylabel("Y 坐标（km）")
-    ax.set_aspect("equal", adjustable="box")
-    save(fig, figures, "process_q1_transport_network", (6.3, 4.4))
-
-
 def process_q1_heatmap(data, result: dict[str, object], figures: Path) -> None:
     assignment = np.asarray(result["assignment"])
     fig, ax = plt.subplots(figsize=(6.3, 4.2))
@@ -265,84 +223,6 @@ def process_q1_heatmap(data, result: dict[str, object], figures: Path) -> None:
     ax.legend(title="服务站点", frameon=False, ncols=6, loc="lower center",
               bbox_to_anchor=(0.5, 1.01), columnspacing=0.8, handlelength=1.2)
     save(fig, figures, "process_q1_assignment_heatmap", (6.3, 4.2))
-
-
-def result_q1_capacity(data, result: dict[str, object], figures: Path) -> None:
-    loads = np.asarray(result["loads"])
-    capacity = 12 * np.asarray(result["vehicles"])
-    x = np.arange(len(data.site_ids))
-    fig, ax = plt.subplots(figsize=(6.3, 3.7))
-    ax.bar(x, capacity, color="#DCE6F1", edgecolor=BLUE, label="日服务上限")
-    ax.bar(x, loads, color=BLUE, alpha=0.85, label="优化分配负荷")
-    for xi, load, cap in zip(x, loads, capacity, strict=True):
-        ax.text(xi, load + 0.6, f"{load:.0f}/{cap:.0f}", ha="center", fontsize=7)
-    ax.set_xticks(x, data.site_ids)
-    ax.set_xlabel("站点")
-    ax.set_ylabel("呼叫量（次/日）")
-    ax.set_ylim(0, max(capacity) * 1.15)
-    ax.legend(frameon=False, ncols=2)
-    save(fig, figures, "result_q1_site_capacity", (6.3, 3.7))
-
-
-def result_q1_coverages(result: dict[str, object], figures: Path) -> None:
-    labels = ["3 km规划服务覆盖", "严格4分钟中心代理", "潜在3 km覆盖"]
-    values = 100 * np.array([
-        result["service_3km_coverage"],
-        result["strict_center_proxy_coverage"],
-        result["potential_3km_coverage"],
-    ])
-    fig, ax = plt.subplots(figsize=(6.3, 3.4))
-    y = np.arange(len(labels))
-    ax.barh(y, values, color=[BLUE, ORANGE, GREEN])
-    for yi, value in enumerate(values):
-        ax.text(value + 1.0, yi, f"{value:.3f}%", va="center", fontsize=8)
-    ax.set_yticks(y, labels)
-    ax.set_xlim(0, 105)
-    ax.set_xlabel("覆盖率（%）")
-    ax.invert_yaxis()
-    save(fig, figures, "result_q1_coverage", (6.3, 3.4))
-
-
-def result_q1_response(data, result: dict[str, object], figures: Path) -> None:
-    assignment = np.asarray(result["assignment"])
-    rows = []
-    for i, zone in enumerate(data.zone_ids):
-        positive = assignment[i] > 1e-8
-        weighted = float(np.sum(assignment[i, positive] * data.distance[i, positive]) / data.demand[i])
-        rows.append((zone, PREP_MINUTES + 60 * weighted / SPEED_KMH))
-    rows.sort(key=lambda item: item[1])
-    fig, ax = plt.subplots(figsize=(6.3, 3.6))
-    x = np.arange(len(rows))
-    values = np.array([value for _, value in rows])
-    colors = np.where(values <= 4.0, GREEN, ORANGE)
-    ax.scatter(x, values, c=colors, s=36, edgecolor="black", linewidth=0.4)
-    ax.axhline(4.0, color=GRAY, linestyle="--", linewidth=0.9, label="4分钟时限")
-    ax.set_xticks(x, [f"R{zone}" for zone, _ in rows])
-    ax.set_xlabel("需求区")
-    ax.set_ylabel("静态加权响应下界（min）")
-    ax.legend(frameon=False)
-    save(fig, figures, "result_q1_zone_response", (6.3, 3.6))
-
-
-def raw_q2_region_rates(data, figures: Path) -> None:
-    fig, ax = plt.subplots(figsize=(6.3, 3.6))
-    order = np.argsort(data.demand)[::-1]
-    ax.bar(np.arange(len(order)), data.demand[order] / 140, color=BLUE)
-    ax.set_xticks(np.arange(len(order)), [f"R{i}" for i in np.array(data.zone_ids)[order]])
-    ax.set_xlabel("需求区")
-    ax.set_ylabel("呼叫区域概率")
-    ax.set_ylim(0, max(data.demand / 140) * 1.18)
-    save(fig, figures, "raw_q2_region_probability", (6.3, 3.6))
-
-
-def raw_q1_hospital_distance(data, figures: Path) -> None:
-    fig, ax = plt.subplots(figsize=(6.3, 3.6))
-    ax.scatter(data.demand, data.hospital_distance, s=34 + 3 * data.demand, color=ORANGE, edgecolor="black", linewidth=0.4)
-    for zone, x, y in zip(data.zone_ids, data.demand, data.hospital_distance, strict=True):
-        ax.annotate(f"R{zone}", (x, y), xytext=(4, 4), textcoords="offset points", fontsize=7)
-    ax.set_xlabel("日均急救呼叫量（次）")
-    ax.set_ylabel("距最近医院距离（km）")
-    save(fig, figures, "raw_q1_hospital_distance", (6.3, 3.6))
 
 
 def process_q2_b_grid(full: Path, figures: Path) -> None:
@@ -407,20 +287,6 @@ def result_q2_summary(full: Path, figures: Path) -> None:
     if not path.exists():
         return
     frame = pd.read_csv(path)
-    sub = frame[frame["metric"] == "mean_response_min"].copy()
-    sub = sub.sort_values("mean")
-    fig, ax = plt.subplots(figsize=(6.3, 2.7))
-    y = np.arange(len(sub))
-    ax.errorbar(
-        sub["mean"], y,
-        xerr=np.vstack([sub["mean"] - sub["ci95_low"], sub["ci95_high"] - sub["mean"]]),
-        fmt="o", color=BLUE, capsize=3,
-    )
-    ax.set_yticks(y, [policy_label(value) for value in sub["candidate"]])
-    ax.set_xlabel("平均响应时间及复制均值95%置信区间（min）")
-    ax.invert_yaxis()
-    save(fig, figures, "result_q2_mean_response", (6.3, 2.7))
-
     replicate_path = full / "final_replicates_W030.csv"
     if replicate_path.exists():
         replicates = pd.read_csv(replicate_path)
@@ -913,16 +779,9 @@ def main() -> None:
     figures.mkdir(parents=True, exist_ok=True)
     setup_style(journal="general", lang="zh", serif_for_zh=False, constrained_layout=True)
     data, result = q1_tables(project_root)
-    raw_q1_demand(data, figures)
     raw_q1_spatial(data, figures)
-    raw_q1_hospital_distance(data, figures)
     raw_q2_intensity(data, figures)
-    raw_q2_region_rates(data, figures)
-    process_q1_distance(data, result, figures)
     process_q1_heatmap(data, result, figures)
-    result_q1_capacity(data, result, figures)
-    result_q1_coverages(result, figures)
-    result_q1_response(data, result, figures)
     full = project_root / "results" / "task-2"
     process_q2_b_grid(full, figures)
     process_q2_c_screen(full, figures)

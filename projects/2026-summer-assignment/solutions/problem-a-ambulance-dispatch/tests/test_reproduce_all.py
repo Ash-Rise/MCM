@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import tempfile
 import unittest
+import re
 from unittest.mock import patch
 from pathlib import Path
 
@@ -15,6 +16,7 @@ sys.path.insert(0, str(SRC_DIR))
 
 from reproduce_all import (  # noqa: E402
     LEGACY_Q3_EVIDENCE_FILENAMES,
+    verify_figures,
     q2_aggregates,
     rebuild_stage,
     remove_legacy_q3_outputs,
@@ -25,6 +27,26 @@ from generate_figures import q3_evidence_sources  # noqa: E402
 
 
 class ReproduceAllTest(unittest.TestCase):
+    def test_figure_gate_matches_current_paper_images(self) -> None:
+        paper = (SOLUTION_ROOT / "paper" / "paper.md").read_text(encoding="utf-8")
+        expected = {
+            "raw_q1_spatial",
+            "process_q1_assignment_heatmap",
+            "raw_q2_nhpp_intensity",
+            "process_q2_b_grid",
+            "process_q2_c_screen",
+            "result_q2_multi_metric",
+            "raw_q3_incident_load",
+            "process_q3_duration_zone",
+            "result_q3_response_curve",
+            "result_q3_paired_effect",
+            "result_q3_external_support",
+        }
+        paper_stems = set(re.findall(r"\.\./figures/([^/)]+)\.png", paper))
+
+        self.assertEqual(paper_stems, expected)
+        verify_figures(SOLUTION_ROOT)
+
     def test_q1_q2_stage_never_calls_task_three_verification(self) -> None:
         with (
             patch("reproduce_all.verify_q1") as verify_q1,

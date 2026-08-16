@@ -3,8 +3,8 @@
 ## 规则入口
 
 - 本文件只规定仓库级操作约束，不重复具体建模、写作或排版流程。
-- 开始数学建模任务时，先读取仓库全局的 `shared/templates/personal-modeling-playbook.md` 与 `shared/templates/personal-paper-profile.yaml`，再读取对应项目已有的复盘、决策日志和项目合同；适用的官方要求与用户当前决定始终优先。
-- AI 应主动读取规则并执行工作流，不得要求协作者复制提示词、记忆 Git 命令或复述本仓库已有规范。
+- 开始数学建模任务时，先读取仓库全局的 `shared/templates/personal-modeling-playbook.md` 与 `shared/templates/personal-paper-profile.yaml`，再读取对应项目已有的分析、决策日志和项目合同；适用的官方要求与用户当前决定始终优先。
+- AI 应主动读取规则并执行工作流，不得要求用户复制提示词、记忆 Git 命令或复述本仓库已有规范。
 
 ## 工作区与版本控制
 
@@ -15,7 +15,6 @@
 
 - 用户在 WPS/Word 中人工修订的 DOCX 视为权威排版输入。后续需要重建时，先把相关修改同步到后处理脚本和测试；未经确认不得用自动生成文件覆盖。
 - 每个项目的 `paper/` 只保留固定命名的当前 Markdown、DOCX 和转换清单；Git Tag 保存仓库快照，GitHub Release 保存带版本号的下载附件，不在 `main` 重复存放版本副本。
-- 处理 A 题论文协作任务前，必须继续读取 `projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/AGENTS.md`；协作者只负责提出内容修改，Git 同步、分支、验证、提交、推送和 PR 由代理按该文件执行。
 
 ## 发布与验证
 

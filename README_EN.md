@@ -4,8 +4,6 @@
 
 Long-lived workspace for mathematical-modeling coursework, practice, and competitions.
 
-> New collaborators or their local AI agents: start with [`GET_STARTED_AI.md`](GET_STARTED_AI.md). It checks and installs VS Code, Git, and GitHub CLI before onboarding the repository workflow.
-
 ## Projects
 
 - [`2026 Summer Assignment`](projects/2026-summer-assignment/README.md)
@@ -21,11 +19,9 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 | [`src/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/src/) | Station planning, dispatch simulation, incident experiments, temporary-support analysis, figure generation, Word postprocessing, and unified reproduction code. |
 | [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | Frozen outputs, replication-level data, parameter-screening results, and the [`reproduction manifest`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json). |
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | Publication figures; `raw_`, `process_`, and `result_` identify data, algorithm-process, and final-result figures. |
-| [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | Problem analysis, terminology, figure contracts, design notes, and historical retrospectives; these are not final paper deliverables. |
+| [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | Problem analysis, terminology, and design notes; these are not final paper deliverables. |
 | [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | Automated checks for model constraints, stochastic experiments, paper formatting, templates, and reproduction. |
 | [`shared/templates/`](shared/templates/) | Repository-wide personalized workflow, machine-readable formatting profile, Word templates, and inspection tools. |
-| [`utils/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/utils/) | Shared helpers for figure fonts, colors, dimensions, and export formats. |
-| [`docs/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/docs/) | Image assets used by repository-onboarding and Git-collaboration documentation. |
 
 ```text
 Problem data -> src models and simulations -> frozen results -> publication figures -> final paper
@@ -124,7 +120,7 @@ This section records generation-pipeline, test, and reusable-template changes th
 
 ### 2026-08-13 13:26 UTC+8 — Repository Agent Guidance
 
-- Added a concise repository-level `AGENTS.md` covering only instruction entry points, dirty-worktree protection, preservation of manual DOCX edits, and release-validation boundaries without duplicating the personalized modeling workflow.
+- Added a concise repository-level `AGENTS.md` covering instruction entry points, dirty-worktree protection, preservation of manual DOCX edits, and release-validation boundaries without duplicating the personalized modeling workflow.
 
 ### 2026-08-13 13:20 UTC+8 — Template Naming Adjustment
 
@@ -159,7 +155,7 @@ This section records generation-pipeline, test, and reusable-template changes th
 
 ```text
 MCM/
-|-- AGENTS.md                      # Repository-level agent operating rules
+|-- AGENTS.md                      # Repository-level AI operating boundaries
 |-- projects/
 |   `-- 2026-summer-assignment/
 |       |-- problem-statements/       # Original assignment statements
@@ -180,7 +176,7 @@ MCM/
 
 - Original prompts use the suffix `-statement` and live under each assignment's `problem-statements/` directory.
 - Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
-- Project retrospectives and decision evidence live under each solution's `analysis/` directory; the global workflow and formatting profile live in `shared/templates/` as the common project entrypoint.
+- Project analysis and decision evidence live under each solution's `analysis/` directory; the global workflow and formatting profile live in `shared/templates/` as the common project entrypoint.
 - `main` retains only the fixed-name current paper artifacts. Every formal release updates both language release notes in the same commit and creates a project-qualified tag and Release; timestamps use `YYYY-MM-DD HH:MM UTC+8`.
 - Use tags to inspect historical source and repository state and Releases to download versioned Word artifacts; do not copy `vX.Y` paper directories on `main`.
 - Update the paper release timestamp only when the formal paper deliverable changes; record preview, generator, test, and template changes in the separate workflow and template changelog.

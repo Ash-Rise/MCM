@@ -289,7 +289,6 @@ def test_task_three_separates_emergency_dispatch_from_external_support():
     assert "3辆方案在长时事故下综合性价比最高" in task_three
     assert "经济最优数量仍由具体调配成本决定" not in task_three
     assert r"c_m(H)" not in task_three
-    assert "零呼叫情景的响应时间保留为未定义值" in task_three
     assert "表13" not in task_three
     assert "第1～6辆外援的$\\Delta P_m$依次为39.01、19.69、8.24、2.48、0.76和0.19万元" in task_three
     assert r"\Delta P_m(H)=P_{m-1}(H)-P_m(H)" in task_three
@@ -396,7 +395,7 @@ def test_postprocessor_removes_duplicate_bookmark_ends_imported_with_locked_tabl
     assert [node.get(qn("w:id")) for node in bookmark_ends].count("25") == 1
 
 
-def test_postprocessor_normalizes_omml_imported_with_locked_table(tmp_path):
+def test_postprocessor_preserves_omml_imported_with_locked_table(tmp_path):
     module = _load_postprocessor()
     source = Document()
     source.add_paragraph("测试题名")
@@ -420,7 +419,7 @@ def test_postprocessor_normalizes_omml_imported_with_locked_table(tmp_path):
     output = Document(output_path)
     output_properties = output.element.body.find(".//" + qn("m:rPr"))
     assert output_properties is not None
-    assert [node.tag for node in output_properties] == [qn("m:scr"), qn("m:sty")]
+    assert [node.tag for node in output_properties] == [qn("m:sty"), qn("m:scr")]
 
 
 def test_complete_docx_postprocessor_removes_heading_numbering_and_fixes_tables(tmp_path):

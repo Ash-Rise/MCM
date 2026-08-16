@@ -868,7 +868,6 @@ def postprocess_docx(
         _format_generated_tables(document)
 
     _remove_duplicate_bookmark_markers(document)
-    _normalize_omml_matrix_properties(document)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_path)
 

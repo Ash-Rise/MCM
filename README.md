@@ -4,8 +4,6 @@
 
 用于长期管理数学建模课程作业、练习与竞赛项目的仓库。
 
-> 新协作者或其本地 AI：从 [`GET_STARTED_AI.md`](GET_STARTED_AI.md) 开始。该入口可检查并安装 VS Code、Git 和 GitHub CLI，然后接入仓库协作流程。
-
 ## 项目
 
 - [`2026 暑期作业`](projects/2026-summer-assignment/README.md)
@@ -21,11 +19,9 @@
 | [`src/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/src/) | 站点配置、车辆调度、事故仿真、临时外援实验、绘图、Word后处理和统一复现代码。 |
 | [`results/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/) | 三项任务的冻结结果、复制级数据、参数筛选结果与[`复现清单`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/results/复现清单.json)。 |
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | 论文正式图表；`raw_`、`process_`、`result_`分别表示数据特征、算法过程和最终结果。 |
-| [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | 题目分析、术语、图表合同、方案设计和历史项目复盘，不作为最终论文交付物。 |
+| [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | 题目分析、术语和方案设计，不作为最终论文交付物。 |
 | [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | 模型约束、随机实验、论文格式、模板和复现流程的自动化检查。 |
 | [`shared/templates/`](shared/templates/) | 仓库全局的个性化工作流、机器可读排版配置、实体Word模板与检查工具。 |
-| [`utils/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/utils/) | 图表字体、配色、尺寸和导出格式等通用辅助代码。 |
-| [`docs/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/docs/) | 仓库接入与Git协作说明使用的图片素材。 |
 
 ```text
 题面数据 -> src模型与仿真 -> results冻结结果 -> figures论文图表 -> paper最终论文
@@ -159,7 +155,7 @@
 
 ```text
 MCM/
-|-- AGENTS.md                      # 仓库级代理操作约定
+|-- AGENTS.md                      # 仓库级AI操作边界
 |-- projects/
 |   `-- 2026-summer-assignment/
 |       |-- problem-statements/       # 作业原题
@@ -180,7 +176,7 @@ MCM/
 
 - 原题文件名使用 `-statement` 后缀，并存放在对应作业的 `problem-statements/` 目录中。
 - 每份解答独立存放在 `solutions/` 下，并分别管理源码、测试、分析、结果、插图和论文。
-- 项目复盘和决策证据保存在对应解答的 `analysis/` 下；全局工作流与排版配置统一保存在 `shared/templates/`，作为后续项目启动入口。
+- 项目分析和决策证据保存在对应解答的 `analysis/` 下；全局工作流与排版配置统一保存在 `shared/templates/`，作为后续项目启动入口。
 - `main`只维护固定命名的当前论文三件套；每次正式发布在同一提交中同步更新中英文发行说明，并创建项目化Tag与Release。发布时间统一使用 `YYYY-MM-DD HH:MM UTC+8` 格式。
 - 历史正文和仓库状态通过Tag查看，版本化Word附件通过Release下载；不得在`main`中复制`vX.Y`论文目录。
 - 论文发行时间只在正式论文交付物发生变更时更新；预览、生成器、测试和模板更新写入独立的工作流与模板更新记录。

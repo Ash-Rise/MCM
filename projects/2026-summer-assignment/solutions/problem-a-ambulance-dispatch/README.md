@@ -23,7 +23,6 @@ The current paper release is **v2.5**. Its Task 3 analysis includes the existing
 - `results/task-2/`: generated Task 2 results after the revised model passes validation.
 - `figures/`: approved publication figures.
 - `paper/`: fixed-name current Markdown, Word deliverable, and conversion manifest; historical repository snapshots are available through Git tags and versioned downloads through Releases.
-- `utils/`: project-specific helpers.
 
 ## Current Status
 

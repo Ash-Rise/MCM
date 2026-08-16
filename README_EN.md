@@ -170,8 +170,7 @@ MCM/
 |               |-- paper/             # Fixed-name current Pandoc source, DOCX, and manifest
 |               |-- results/          # Reproducible result tables and manifest
 |               |-- src/              # Optimization, simulation, and plotting code
-|               |-- tests/            # Model and document regression tests
-|               `-- utils/            # Project-specific helpers
+|               `-- tests/            # Model and document regression tests
 `-- shared/
     |-- references/                    # Reusable modeling references
     `-- templates/                     # Global workflow, format profile, Word templates, and contract tests

@@ -170,8 +170,7 @@ MCM/
 |               |-- paper/             # 固定命名的当前Pandoc源、DOCX与转换清单
 |               |-- results/          # 可复现结果表与清单
 |               |-- src/              # 优化、仿真与绘图代码
-|               |-- tests/            # 模型与文档回归测试
-|               `-- utils/            # 项目专用工具
+|               `-- tests/            # 模型与文档回归测试
 `-- shared/
     |-- references/                    # 通用数学建模参考资料
     `-- templates/                     # 全局工作流、排版配置、Word模板与合同测试

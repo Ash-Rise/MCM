@@ -3,11 +3,18 @@ from pathlib import Path
 import yaml
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-REPOSITORY_ROOT = PROJECT_ROOT.parents[3]
-SOURCE_ROOT = PROJECT_ROOT / "src"
-PROFILE_PATH = PROJECT_ROOT / "templates" / "personal-paper-profile.yaml"
-PLAYBOOK_PATH = PROJECT_ROOT / "templates" / "personal-modeling-playbook.md"
+TEMPLATE_ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_ROOT = TEMPLATE_ROOT.parents[1]
+SOURCE_ROOT = (
+    REPOSITORY_ROOT
+    / "projects"
+    / "2026-summer-assignment"
+    / "solutions"
+    / "problem-a-ambulance-dispatch"
+    / "src"
+)
+PROFILE_PATH = TEMPLATE_ROOT / "personal-paper-profile.yaml"
+PLAYBOOK_PATH = TEMPLATE_ROOT / "personal-modeling-playbook.md"
 
 
 def test_machine_profile_encodes_single_pandoc_markdown_source():
@@ -15,6 +22,16 @@ def test_machine_profile_encodes_single_pandoc_markdown_source():
     markdown = profile["markdown"]
 
     assert profile["profile_version"] == 2.0
+    assert profile["scope"] == "repository_global_default"
+    assert profile["physical_word_templates"] == {
+        "default_reference": "shared/templates/2026-cumcm-paper-template.docx",
+        "location_scope": "repository_global",
+        "official_or_user_template_overrides_default": True,
+    }
+    assert (
+        REPOSITORY_ROOT
+        / profile["physical_word_templates"]["default_reference"]
+    ).is_file()
     assert markdown["source_target"]["dialect"] == "pandoc_markdown"
     assert markdown["source_target"]["editable"] is True
     assert markdown["publish_derived_github_preview"] is False
@@ -254,3 +271,5 @@ def test_paper_release_time_is_separate_from_tooling_changelog():
     assert "### 2026-08-15 14:51 UTC+8 — Source Purpose Headers Added to the Personalized Template" in readme_en
     assert "### 2026-08-16 19:50 UTC+8 — 固定论文入口与Tag历史" in readme_zh
     assert "### 2026-08-16 19:50 UTC+8 — Fixed Paper Entrypoint and Tag-Based History" in readme_en
+    assert "### 2026-08-16 20:28 UTC+8 — 全局模板入口" in readme_zh
+    assert "### 2026-08-16 20:28 UTC+8 — Global Template Entrypoint" in readme_en

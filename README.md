@@ -23,7 +23,7 @@
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | 论文正式图表；`raw_`、`process_`、`result_`分别表示数据特征、算法过程和最终结果。 |
 | [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | 题目分析、术语、图表合同、方案设计和历史项目复盘，不作为最终论文交付物。 |
 | [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | 模型约束、随机实验、论文格式、模板和复现流程的自动化检查。 |
-| [`templates/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/templates/) | 可供后续数模项目复用的个性化工作流和机器可读论文排版配置。 |
+| [`shared/templates/`](shared/templates/) | 仓库全局的个性化工作流、机器可读排版配置、实体Word模板与检查工具。 |
 | [`utils/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/utils/) | 图表字体、配色、尺寸和导出格式等通用辅助代码。 |
 | [`docs/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/docs/) | 仓库接入与Git协作说明使用的图片素材。 |
 
@@ -84,6 +84,13 @@
 ## 工作流与模板更新记录
 
 本节记录不会改变正式论文内容的生成链、测试和复用模板更新；这些变更不修改论文版本的发行时间。
+
+### 2026-08-16 20:28 UTC+8 — 全局模板入口
+
+- 将个性化工作流和机器可读排版配置从A题项目迁移到`shared/templates/`，作为所有后续数模项目共同读取的仓库级唯一入口。
+- 将模板合同测试同步迁到全局模板目录，并修正仓库规则、A题README与历史复盘中的当前入口；A题目录只保留项目专属证据、复盘和实现。
+- 实体Word模板及检查工具继续统一存放在`shared/templates/`；本次不纳入约定由其他工作流独立发布的本地未跟踪Word资料。
+- 本次仅迁移模板及其引用，不改变v2.5论文内容、DOCX、结果、图表或发行时间。
 
 ### 2026-08-16 20:21 UTC+8 — 个性化模板 v2.0
 
@@ -163,19 +170,18 @@ MCM/
 |               |-- paper/             # 固定命名的当前Pandoc源、DOCX与转换清单
 |               |-- results/          # 可复现结果表与清单
 |               |-- src/              # 优化、仿真与绘图代码
-|               |-- templates/        # 个性化工作流、排版配置与复用指令
 |               |-- tests/            # 模型与文档回归测试
 |               `-- utils/            # 项目专用工具
 `-- shared/
     |-- references/                    # 通用数学建模参考资料
-    `-- templates/                     # 保留的 Word 模板与检查工具
+    `-- templates/                     # 全局工作流、排版配置、Word模板与合同测试
 ```
 
 ## 仓库规范
 
 - 原题文件名使用 `-statement` 后缀，并存放在对应作业的 `problem-statements/` 目录中。
 - 每份解答独立存放在 `solutions/` 下，并分别管理源码、测试、分析、结果、插图和论文。
-- 复盘报告和个性化工作流保存在对应解答的 `analysis/` 与 `templates/` 下，作为后续项目启动与上下文恢复依据。
+- 项目复盘和决策证据保存在对应解答的 `analysis/` 下；全局工作流与排版配置统一保存在 `shared/templates/`，作为后续项目启动入口。
 - `main`只维护固定命名的当前论文三件套；每次正式发布在同一提交中同步更新中英文发行说明，并创建项目化Tag与Release。发布时间统一使用 `YYYY-MM-DD HH:MM UTC+8` 格式。
 - 历史正文和仓库状态通过Tag查看，版本化Word附件通过Release下载；不得在`main`中复制`vX.Y`论文目录。
 - 论文发行时间只在正式论文交付物发生变更时更新；预览、生成器、测试和模板更新写入独立的工作流与模板更新记录。

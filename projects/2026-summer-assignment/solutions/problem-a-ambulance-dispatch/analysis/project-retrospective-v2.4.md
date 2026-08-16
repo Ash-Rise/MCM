@@ -231,7 +231,7 @@
 5. 时间与深度：参数扫描、搜索和终审的时间预算；是否接受情景假设、是否需要灵敏度分析。
 6. 排版与发布：指定参考 Word、版本号规则、GitHub 仓库、是否允许直接 push/Release、提交署名。
 
-可直接复制的启动指令见 `templates/personal-modeling-playbook.md`。
+可直接复制的启动指令见仓库全局的 `shared/templates/personal-modeling-playbook.md`。
 
 ### 7.2 助手应如何完成
 
@@ -247,8 +247,8 @@
 
 ## 8. 下一次可直接复用的产物
 
-- 个性化流程与论文模板：`templates/personal-modeling-playbook.md`。
-- 机器可读排版配置：`templates/personal-paper-profile.yaml`。
+- 个性化流程与论文模板：仓库根目录下的 `shared/templates/personal-modeling-playbook.md`。
+- 机器可读排版配置：仓库根目录下的 `shared/templates/personal-paper-profile.yaml`。
 - 最终权威模型合同：`paper/v2.4/A题论文(v2.4).md` 与本复盘的第3节；两者冲突时，以本复盘明确标注的最终口径和版本化结果文件为准。
 - `analysis/modeling-report.md` 仅是历史阶段分析，保留了已废弃的0.75 km/60.714%任务一诊断要求，不得作为下次实现或写作的最终合同。
 - 最终复现入口：`python src/reproduce_all.py --project-root . --mode verify --scope all`。

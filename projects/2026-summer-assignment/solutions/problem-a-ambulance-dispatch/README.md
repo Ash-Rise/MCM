@@ -18,7 +18,7 @@ The current paper release is **v2.5**. Its Task 3 analysis includes the existing
 - `src/`: optimization, simulation, experiments, and figure generation.
 - `tests/`: regression and model-contract tests.
 - `analysis/`: historical modeling materials and project retrospectives.
-- `templates/`: personalized workflow, paper profile, and reusable task prompts.
+- Repository-wide workflow and formatting defaults: [`shared/templates/`](../../../../shared/templates/); this project keeps only project-specific evidence and retrospectives locally.
 - `results/task-1/`: verified compact results for Task 1.
 - `results/task-2/`: generated Task 2 results after the revised model passes validation.
 - `figures/`: approved publication figures.
@@ -31,7 +31,7 @@ Tasks 1--3 have frozen result tables and publication figures. Task 2 uses exactl
 
 The current paper release is v2.5. [`paper/paper.md`](paper/paper.md) is the authoritative Pandoc/DOCX source on `main`; Git tags preserve historical repository snapshots, while Releases provide versioned Word downloads. Derived GitHub-preview Markdown is no longer published. Future tags use a project-qualified name such as `2026-summer-a/v2.6`. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`. The root `README.md` records release notes.
 
-`analysis/project-retrospective-v2.4.md` is a historical checkpoint covering work through v2.4; it does not represent the current paper version. Future projects should start from `templates/personal-modeling-playbook.md`; its exact Word, single-source Pandoc Markdown, table, figure, and verified-rule-promotion defaults are mirrored in `templates/personal-paper-profile.yaml`.
+`analysis/project-retrospective-v2.4.md` is a historical checkpoint covering work through v2.4; it does not represent the current paper version. Future projects should start from the repository-wide [`personal-modeling-playbook.md`](../../../../shared/templates/personal-modeling-playbook.md); its exact Word, single-source Pandoc Markdown, table, figure, and verified-rule-promotion defaults are mirrored in [`personal-paper-profile.yaml`](../../../../shared/templates/personal-paper-profile.yaml).
 
 ## Reproduction
 

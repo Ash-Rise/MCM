@@ -23,7 +23,7 @@ Long-lived workspace for mathematical-modeling coursework, practice, and competi
 | [`figures/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/figures/) | Publication figures; `raw_`, `process_`, and `result_` identify data, algorithm-process, and final-result figures. |
 | [`analysis/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/analysis/) | Problem analysis, terminology, figure contracts, design notes, and historical retrospectives; these are not final paper deliverables. |
 | [`tests/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/tests/) | Automated checks for model constraints, stochastic experiments, paper formatting, templates, and reproduction. |
-| [`templates/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/templates/) | Reusable personalized modeling workflow and machine-readable paper-format profile. |
+| [`shared/templates/`](shared/templates/) | Repository-wide personalized workflow, machine-readable formatting profile, Word templates, and inspection tools. |
 | [`utils/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/utils/) | Shared helpers for figure fonts, colors, dimensions, and export formats. |
 | [`docs/`](projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/docs/) | Image assets used by repository-onboarding and Git-collaboration documentation. |
 
@@ -84,6 +84,13 @@ The first complete paper covering all three tasks, serving as the baseline for l
 ## Workflow and Template Changelog
 
 This section records generation-pipeline, test, and reusable-template changes that do not alter the formal paper. These changes do not modify the paper release timestamp.
+
+### 2026-08-16 20:28 UTC+8 — Global Template Entrypoint
+
+- Moved the personalized workflow and machine-readable formatting profile from Problem A to `shared/templates/`, establishing one repository-wide entrypoint for all future modeling projects.
+- Moved the template contract test with them and updated repository guidance, the Problem A README, and current-entry references in the historical retrospective; the Problem A directory now retains only project-specific evidence, retrospectives, and implementation.
+- Physical Word templates and their inspection tools remain centralized in `shared/templates/`; this change does not include local untracked Word material reserved for a separate publishing workflow.
+- This migration changes no v2.5 paper content, DOCX, results, figures, or release timestamp.
 
 ### 2026-08-16 20:21 UTC+8 — Personalized Template v2.0
 
@@ -163,19 +170,18 @@ MCM/
 |               |-- paper/             # Fixed-name current Pandoc source, DOCX, and manifest
 |               |-- results/          # Reproducible result tables and manifest
 |               |-- src/              # Optimization, simulation, and plotting code
-|               |-- templates/        # Personalized workflow, paper profile, and reusable prompts
 |               |-- tests/            # Model and document regression tests
 |               `-- utils/            # Project-specific helpers
 `-- shared/
     |-- references/                    # Reusable modeling references
-    `-- templates/                     # Retained Word template and inspection tools
+    `-- templates/                     # Global workflow, format profile, Word templates, and contract tests
 ```
 
 ## Repository Conventions
 
 - Original prompts use the suffix `-statement` and live under each assignment's `problem-statements/` directory.
 - Solutions are self-contained under `solutions/` with separate source, tests, analysis, results, figures, and paper directories.
-- Retrospectives and personalized workflows live under each solution's `analysis/` and `templates/` directories for future project kickoff and context recovery.
+- Project retrospectives and decision evidence live under each solution's `analysis/` directory; the global workflow and formatting profile live in `shared/templates/` as the common project entrypoint.
 - `main` retains only the fixed-name current paper artifacts. Every formal release updates both language release notes in the same commit and creates a project-qualified tag and Release; timestamps use `YYYY-MM-DD HH:MM UTC+8`.
 - Use tags to inspect historical source and repository state and Releases to download versioned Word artifacts; do not copy `vX.Y` paper directories on `main`.
 - Update the paper release timestamp only when the formal paper deliverable changes; record preview, generator, test, and template changes in the separate workflow and template changelog.

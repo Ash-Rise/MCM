@@ -1,5 +1,10 @@
 profile_version: 2.0
 name: ash-rise-chinese-modeling-paper
+scope: repository_global_default
+physical_word_templates:
+  default_reference: shared/templates/2026-cumcm-paper-template.docx
+  location_scope: repository_global
+  official_or_user_template_overrides_default: true
 priority:
   - current_official_rules
   - user_provided_current_template

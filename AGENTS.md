@@ -1,23 +1,53 @@
-# MCM 仓库工作约定
+# MCM Agent Entry
 
-## 规则入口
+This repository is operated primarily by AI agents under human supervision. Keep this file short: it is a router and boundary list, not a workflow manual.
 
-- 本文件只规定仓库级操作约束，不重复具体建模、写作或排版流程。
-- 开始数学建模任务时，先读取仓库全局的 `shared/templates/personal-modeling-playbook.md` 与 `shared/templates/personal-paper-profile.yaml`，再读取对应项目已有的分析、决策日志和项目合同；适用的官方要求与用户当前决定始终优先。
-- AI 应主动读取规则并执行工作流，不得要求用户复制提示词、记忆 Git 命令或复述本仓库已有规范。
+## 1. Read the right authority
 
-## 工作区与版本控制
+Before substantive work, locate the active project and use the source that owns the question:
 
-- 默认工作区可能包含其他任务的未提交或未跟踪文件。保留这些内容，只显式暂存本次任务文件；不得使用 `git clean -X -e`、`git reset --hard` 或批量回退命令处理它们。
-- 删除、覆盖或移动重要产物前，先核对绝对路径和影响范围；Git 历史足以回退的常规改动不做重复备份或反复哈希。
+- problem facts / requirements → original problem statement;
+- accepted model meaning / assumptions / objectives / constraints → project `decisions.md` if present;
+- current long-task frontier → project `state.md` if present;
+- implementation → source code;
+- formal numerical claims → accepted/frozen results;
+- paper content → current `paper.md`;
+- approved manual Word layout → approved `paper.docx`;
+- modeling / analysis / writing methods → relevant section of `shared/templates/personal-modeling-playbook.md`;
+- exact formatting parameters → `shared/templates/personal-paper-profile.yaml`;
+- governance boundaries → `MCM_AI_Governance.md`;
+- history / rollback → Git.
 
-## 论文交付物
+Do not infer project semantics from code, tests, results, README, generated files, or modification time when an authoritative problem statement or Accepted Decision exists.
 
-- 用户在 WPS/Word 中人工修订的 DOCX 视为权威排版输入。后续需要重建时，先把相关修改同步到后处理脚本和测试；未经确认不得用自动生成文件覆盖。
-- 每个项目的 `paper/` 只保留固定命名的当前 Markdown、DOCX 和转换清单；Git Tag 保存仓库快照，GitHub Release 保存带版本号的下载附件，不在 `main` 重复存放版本副本。
+## 2. Human decisions vs AI autonomy
 
-## 发布与验证
+Handle ordinary implementation and reversible technical choices autonomously.
 
-- 正式论文内容或 DOCX 发生变化时才更新论文版本及发行时间；生成器、测试和模板改动记录在独立的工作流与模板更新日志中。
-- 发布前运行与改动风险相称的验证；完整哈希和独立终审只在内容冻结或正式发布时进行一次。
-- 涉及版本、发行或工作流/模板记录时，同步维护中英文 README，并使用 `YYYY-MM-DD HH:MM UTC+8`。只提交本次任务的明确路径，不夹带 `shared/` 中其他任务资料。
+Before changing problem interpretation, model semantics, important assumptions, objectives, hard constraints, evaluation metrics, allowed resources, substantive scope, or final conclusion interpretation, follow the Question Gate in `MCM_AI_Governance.md`. If the choice is human-owned and significant, investigate first and present a Decision Proposal rather than silently changing project meaning.
+
+Consequential AI-owned technical decisions may proceed without approval, but surface them in the next meaningful Uncertainty & Decision Report.
+
+## 3. State and decisions
+
+Use a short project-local `decisions.md` only for Accepted significant decisions. Never turn it into a diary or experiment log; supersede old decisions explicitly rather than silently rewriting their meaning.
+
+Create or maintain one project-local current `state.md` only when long-running or multi-phase work needs durable recovery. Keep it current and compact; do not accumulate session history. Update it at meaningful checkpoints, especially before a session ends, a costly run starts/stops, or a human decision handoff occurs.
+
+## 4. Method routing
+
+For substantive modeling, experiment design, analysis, paper drafting, or document production, read only the relevant playbook section before doing that work. The playbook is a method reference, not a governance authority; `MCM_AI_Governance.md`, the problem statement, and Accepted Decisions take precedence on process boundaries and project semantics.
+
+Do not load the whole playbook merely because it exists.
+
+## 5. Evidence and completion
+
+Validate the affected failure/risk surface rather than running every historical gate by default. Where downstream artifacts encode accepted semantics, verify against the relevant upstream authority, not only against each other.
+
+Before materially increasing research, simulation, validation, or agent complexity, identify what consequential uncertainty the extra evidence could change and use the smallest credible test first.
+
+At a meaningful modeling/design phase boundary, provide a concise Uncertainty & Decision Report covering substantive uncertainties, Accepted Decisions, consequential AI-owned decisions, superseded decisions, and unresolved items. Do not report trivial implementation details.
+
+## 6. Repository hygiene
+
+Do not modify unrelated user work. Keep generated/process artifacts only when they have a current consumer or authority role. Git preserves history; do not duplicate history through version-copy clutter or permanent incident archives.

@@ -1,6 +1,6 @@
 # MCM AI Governance
 
-> Status: implementation-ready specification pending cold-resume validation.
+> Status: implementation-ready specification; cold-resume validated, adversarial decision-conflict validation pending.
 > Purpose: protect consequential semantics, decisions, evidence, and recovery while keeping routine AI work autonomous and lightweight.
 > Scope: governance boundaries only. Modeling methods, writing craft, DOCX techniques, repository conventions, and exact formatting belong in playbooks, profiles, tools, code, tests, or project-local artifacts.
 
@@ -46,6 +46,8 @@ Otherwise decide, investigate further, defer, or continue safely.
 
 Operationally: routine technical choices are autonomous; consequential AI-owned choices are autonomous but surfaced later when material; human-owned significant choices require a Decision Proposal before accepted project meaning changes.
 
+**Accepted-Decision conflict rule:** if a new instruction conflicts with an Accepted Decision, stop before editing files or executing downstream work. Identify the conflicting Decision, explain the semantic and material downstream effects, and perform a Decision Review. The conflicting instruction by itself is not sufficient authorization to supersede the Accepted Decision. Execute only after the user explicitly confirms the supersession with that conflict and impact made clear.
+
 The Question Gate is not the sole protection against drift. Stable, consequential, mechanically checkable Accepted Decisions should also receive appropriate tests or structural checks when practical.
 
 ## 2.4 Decision Proposal
@@ -53,6 +55,8 @@ The Question Gate is not the sole protection against drift. Stable, consequentia
 Present all materially reasonable alternatives; there is no fixed option count. Alternatives must be genuinely distinct, feasible, at the same abstraction level, and supported by a real reason someone might choose them. Never manufacture options for ceremony.
 
 Compare genuine trade-offs symmetrically. If evidence clearly favors one option, present the recommendation directly together with its strongest real drawback and the evidence or condition that would change the recommendation. Before recommending, consider the strongest plausible reason it could be wrong. State uncertainty/confidence only when useful to the decision.
+
+When the user has already proposed one concrete change that conflicts with an Accepted Decision, do not manufacture alternatives merely to satisfy this format. The required interaction is a concise Decision Review and explicit supersession confirmation.
 
 ## 2.5 Decision Ledger
 
@@ -250,15 +254,21 @@ When governance changes, prefer replacement, generalization, or deletion over ac
 Read AGENTS + problem + Accepted Decisions + relevant current evidence
 → recover state if needed
 → investigate uncertainty autonomously
-→ significant decision?
-   ├─ no → AI handles
-   └─ yes → human-owned?
-      ├─ no → AI decides; report later if consequential
-      └─ yes → complete safe analysis
-               → checkpoint state if needed
-               → Decision Proposal
-               → user approval
-               → Decision Review / Ledger update
+→ requested/considered change conflicts with an Accepted Decision?
+   ├─ yes → STOP before edits
+   │        → identify conflict + downstream impact
+   │        → Decision Review
+   │        → explicit supersession confirmation
+   │        → new Decision supersedes old Decision
+   └─ no → significant decision?
+      ├─ no → AI handles
+      └─ yes → human-owned?
+         ├─ no → AI decides; report later if consequential
+         └─ yes → complete safe analysis
+                  → checkpoint state if needed
+                  → Decision Proposal
+                  → user approval
+                  → Decision Review / Ledger update
 → implement
 → impact-scoped validation against relevant authorities
 → meaningful phase end: Uncertainty & Decision Report

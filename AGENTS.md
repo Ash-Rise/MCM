@@ -26,6 +26,8 @@ Handle ordinary implementation and reversible technical choices autonomously.
 
 Before changing problem interpretation, model semantics, important assumptions, objectives, hard constraints, evaluation metrics, allowed resources, substantive scope, or final conclusion interpretation, follow the Question Gate in `MCM_AI_Governance.md`. If the choice is human-owned and significant, investigate first and present a Decision Proposal rather than silently changing project meaning.
 
+If a request conflicts with an Accepted Decision, stop before editing files or executing downstream work. Identify the conflicting Decision and material impact, then ask for explicit confirmation to supersede it. A direct instruction to make the conflicting change is not, by itself, sufficient supersession confirmation.
+
 Consequential AI-owned technical decisions may proceed without approval, but surface them in the next meaningful Uncertainty & Decision Report.
 
 ## 3. State and decisions

@@ -1,6 +1,6 @@
 # MCM AI Governance
 
-> Status: implementation-ready specification; cold-resume validated, adversarial decision-conflict validation pending.
+> Status: implementation-ready specification; cold-resume and adversarial decision-conflict validation complete.
 > Purpose: protect consequential semantics, decisions, evidence, and recovery while keeping routine AI work autonomous and lightweight.
 > Scope: governance boundaries only. Modeling methods, writing craft, DOCX techniques, repository conventions, and exact formatting belong in playbooks, profiles, tools, code, tests, or project-local artifacts.
 

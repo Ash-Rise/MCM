@@ -122,3 +122,17 @@ Do not invent a purchase, rental, or deployment price for external ambulances. U
 The problem provides a delay penalty but no external-vehicle price, so a unique monetary optimum would require unsupported data.
 
 **Supersedes:** none
+
+## DEC-011 — Incident start-time scenario
+
+**Status:** Accepted
+
+**Decision:**  
+For each incident duration `H`, place the incident in the duration-dependent daily window with maximum integrated normal call density:
+`t*(H) = argmax_t0 ∫[t0,t0+H] f(t mod 24) dt`.
+This is a worst-case scenario construction, not a probability distribution over incident start times and not one fixed clock-time assumption for every duration.
+
+**Reason:**  
+The user explicitly accepted the duration-dependent worst-window interpretation instead of inventing a fixed incident start time.
+
+**Supersedes:** none

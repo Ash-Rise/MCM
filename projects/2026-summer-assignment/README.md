@@ -6,6 +6,7 @@ This project contains the three supplied problem statements and the solutions de
 
 - `problem-a-ambulance-dispatch-statement.docx`: ambulance station location and dispatch optimization.
 - `problem-b-statement.docx`: Problem B statement.
+- `problem-b-statement.md`: verified machine-readable extraction of the Problem B statement; the DOCX remains authoritative.
 - `problem-c-statement.docx`: Problem C statement.
 - `problem-c-supporting-data.docx`: supporting attachment for Problem C.
 

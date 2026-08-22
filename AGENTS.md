@@ -6,7 +6,7 @@ This repository is operated primarily by AI agents under human supervision. Keep
 
 Before substantive work, locate the active project and use the source that owns the question:
 
-- problem facts / requirements → original problem statement;
+- problem facts / requirements → original problem statement; use a verified adjacent Markdown extraction as the default reading interface when the original is not plain text, but return to the original on any discrepancy;
 - accepted model meaning / assumptions / objectives / constraints → project `decisions.md` if present;
 - current long-task frontier → project `state.md` if present;
 - implementation → source code;
@@ -19,6 +19,8 @@ Before substantive work, locate the active project and use the source that owns 
 - history / rollback → Git.
 
 Do not infer project semantics from code, tests, results, README, generated files, or modification time when an authoritative problem statement or Accepted Decision exists.
+
+When a problem statement arrives as DOCX, PDF, image, or another format that is awkward for reliable machine reading, create a same-stem Markdown extraction beside it before substantive modeling. Preserve the original unchanged, record its path and SHA-256 in the extraction, reproduce all substantive text and tables, note any content that cannot be represented faithfully, and verify the extraction against the original. The Markdown file is a reading derivative, not a replacement authority.
 
 ## 2. Human decisions vs AI autonomy
 
@@ -54,4 +56,4 @@ At a meaningful modeling/design phase boundary, provide a concise Uncertainty & 
 
 Do not modify unrelated user work. Keep generated/process artifacts only when they have a current consumer or authority role. Git preserves history; do not duplicate history through version-copy clutter or permanent incident archives.
 
-Use a dedicated branch and pull request for implementation changes with substantial integration risk, and for final integration or freeze when human review would materially reduce risk. A semantic change requires a Decision Proposal regardless of whether a PR is later used; approving project meaning and reviewing implementation integration are separate responsibilities. Once the change is reviewable, push the branch, open one PR, report its purpose, material impact, validation, and unresolved issues, and leave it unmerged for human review or explicit user merge direction. AI may assist mechanical checks, but an AI reviewer is not a required gate and does not replace human approval.
+Use the stable integration branch for ordinary project work. Use a dedicated temporary branch and pull request only for implementation changes with substantial integration risk, or for final integration or freeze when human review would materially reduce risk. A semantic change requires a Decision Proposal regardless of whether a PR is later used; approving project meaning and reviewing implementation integration are separate responsibilities. Once such a change is reviewable, push the branch, open one PR, report its purpose, material impact, validation, and unresolved issues, and leave it unmerged for human review or explicit user merge direction. AI may assist mechanical checks, but an AI reviewer is not a required gate and does not replace human approval.

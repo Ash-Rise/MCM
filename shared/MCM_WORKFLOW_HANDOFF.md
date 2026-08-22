@@ -25,6 +25,8 @@ Important project meaning should exist in:
 
 Conversation history is temporary context, not project authority.
 
+Long-lived branches are not project boundaries. Different problems are separated by project directories on the stable integration branch. A temporary branch is useful only when a change has substantial implementation integration risk or when a final freeze needs an isolated review boundary; it should not become a permanent per-problem work line.
+
 ---
 
 # Agent Roles

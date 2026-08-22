@@ -1,0 +1,141 @@
+{
+  "normal": {
+    "scenario": "normal",
+    "routes": {
+      "A": [
+        0,
+        1,
+        4,
+        6,
+        0
+      ],
+      "B": [
+        0,
+        2,
+        5,
+        8,
+        0
+      ],
+      "C": [
+        0,
+        3,
+        9,
+        7,
+        0
+      ]
+    },
+    "route_labels": {
+      "A": "0→1→4→6→0",
+      "B": "0→2→5→8→0",
+      "C": "0→3→9→7→0"
+    },
+    "distance_km": 103.87130557672644,
+    "early_count": 0,
+    "late_count": 0,
+    "travel_cost_yuan": 415.48522230690577,
+    "penalty_cost_yuan": 0.0,
+    "total_cost_yuan": 415.48522230690577
+  },
+  "disrupted": {
+    "scenario": "disrupted",
+    "routes": {
+      "A": [
+        0,
+        1,
+        4,
+        6,
+        0
+      ],
+      "B": [
+        0,
+        2,
+        5,
+        8,
+        0
+      ],
+      "C": [
+        0,
+        3,
+        9,
+        7,
+        0
+      ]
+    },
+    "route_labels": {
+      "A": "0→1→4→6→0",
+      "B": "0→2→5→8→0",
+      "C": "0→3→9→7→0"
+    },
+    "distance_km": 103.87130557672644,
+    "early_count": 0,
+    "late_count": 0,
+    "travel_cost_yuan": 415.48522230690577,
+    "penalty_cost_yuan": 0.0,
+    "total_cost_yuan": 415.48522230690577
+  },
+  "change": {
+    "distance_km": 0.0,
+    "early_count": 0,
+    "late_count": 0,
+    "travel_cost_yuan": 0.0,
+    "penalty_cost_yuan": 0.0,
+    "total_cost_yuan": 0.0
+  },
+  "enumeration": {
+    "normal_total_candidates": 8,
+    "normal_feasible_candidates": 8,
+    "disrupted_total_candidates": 8,
+    "disrupted_feasible_candidates": 4
+  },
+  "service_time_sensitivity": {
+    "definition": "maximum uniform service minutes per store with a zero-late solution",
+    "normal_threshold_minutes": 21.420539687862657,
+    "disrupted_threshold_minutes": 21.420539687862657,
+    "normal_routes_at_threshold": {
+      "A": [
+        0,
+        1,
+        4,
+        6,
+        0
+      ],
+      "B": [
+        0,
+        2,
+        5,
+        8,
+        0
+      ],
+      "C": [
+        0,
+        3,
+        9,
+        7,
+        0
+      ]
+    },
+    "disrupted_routes_at_threshold": {
+      "A": [
+        0,
+        1,
+        4,
+        6,
+        0
+      ],
+      "B": [
+        0,
+        2,
+        5,
+        8,
+        0
+      ],
+      "C": [
+        0,
+        3,
+        9,
+        7,
+        0
+      ]
+    }
+  }
+}

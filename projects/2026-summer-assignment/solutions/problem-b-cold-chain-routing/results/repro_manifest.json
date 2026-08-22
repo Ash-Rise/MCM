@@ -1,0 +1,36 @@
+{
+  "command": "python src/solve_problem_b.py --output-dir results",
+  "python": "3.13.14",
+  "random_seed": null,
+  "deterministic": true,
+  "runtime_seconds": 0.028889499997603707,
+  "inputs": {
+    "data\\problem_b_data.json": "9A7E5EA1968133F2F219FD76FC10EA042FDAD4DCFB489BC1FE72D8CF22B26648",
+    "../../problem-statements/problem-b-statement.docx": "361C9F1CB9169C8DE739B2766D0BC7E09A390622525182AC0F939EC88D97085B",
+    "decisions.md": "3411A054207979EFA09BA6249848C4FEE4EA17F68B2EB4EF6434DAC05D6F0E0C"
+  },
+  "parameters": {
+    "departure_minute": 270,
+    "speed_kmph": 35.0,
+    "travel_cost_per_km": 4.0,
+    "early_penalty_per_event": 30.0,
+    "late_penalty_per_event": 80.0,
+    "vehicle_capacity_boxes": 60,
+    "max_route_km": 180.0,
+    "service_minutes": 0.0,
+    "closed_arc": [
+      2,
+      8
+    ]
+  },
+  "outputs": {
+    "candidate_solutions_disrupted.csv": "FC91CF413578CA55ECB04AF79421071632F17DD3C910D2313A689A450C136FAC",
+    "candidate_solutions_normal.csv": "D04B999FEF645F369CAB5A5938B05024531DCECB44882B95A12368AE5882FC65",
+    "result_summary.md": "99A5600A68B626582AF36953DE6E1C502E10DEB4ECD946C8EE0C27C1DE4F0B7F",
+    "route_schedule_disrupted.csv": "997BF63E775307594932D484B028C4595BDFDDF56B229D132E08AFFB38810D7E",
+    "route_schedule_normal.csv": "7B4D2E280F198AD9847BB662D7262226B47D9AA65B9F699B063BD3E382FB2EBB",
+    "route_summary_disrupted.csv": "0846793F1B901513EA837C0976B37E68ACA02C075D02F52F4D5F62111BF31AE7",
+    "route_summary_normal.csv": "B13CCB39378ABB7A13EA16B8CD9337418EDD00120AF2016C5D972B9190667327",
+    "summary.json": "7F4671CD569ED9EE6E5DEA613DC3EC5A0674B380E6F265415804B3D40447B328"
+  }
+}

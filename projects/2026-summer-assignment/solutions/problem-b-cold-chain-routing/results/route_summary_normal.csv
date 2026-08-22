@@ -1,0 +1,4 @@
+﻿scenario,vehicle,route,demand_boxes,distance_km,return_clock,early_count,late_count,travel_cost_yuan,penalty_cost_yuan,total_cost_yuan
+normal,A,0→1→4→6→0,27,29.949674,05:21:21,0,0,119.798695,0.00,119.798695
+normal,B,0→2→5→8→0,32,41.254685,05:40:43,0,0,165.018741,0.00,165.018741
+normal,C,0→3→9→7→0,36,32.666947,05:26:00,0,0,130.667787,0.00,130.667787

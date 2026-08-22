@@ -46,17 +46,9 @@ For substantive modeling, experiment design, analysis, paper drafting, or docume
 
 External skills and helper tools are also execution aids, not project authority. Skip any fixed gate, mandatory artifact set, validation ceremony, or stage vocabulary they prescribe when the current repository authority does not require it.
 
+Codex bundled/Skill Python is a tool runtime, never the repository interpreter. Resolve repository Python from explicit project commands, `.venv`, project configuration, then user PATH; verify imports and run or install with that same `sys.executable` (`<python> -m pip`), and never infer project dependencies or change algorithms from a tool runtime.
+
 Do not load the whole playbook merely because it exists.
-
-### Project Python environments
-
-Codex bundled Python, `CODEX_PRIMARY_RUNTIME_PYTHON`, Skill runtimes, and Skill-private environments are tool runtimes, not project interpreters. Use them only for their own helper scripts.
-
-Never use a tool runtime to run repository source, tests, experiments, or plotting code; to determine whether project dependencies such as NumPy, SciPy, Pandas, or Matplotlib are installed; or to change an algorithm because a tool runtime lacks a package.
-
-Resolve the project interpreter once, in this order: repository authority or an explicit project command; a project-local `.venv`; `pyproject.toml`, `uv.lock`, or Conda configuration; only then the first Python on the user PATH. Before reporting a missing dependency, print `sys.executable` once and import the required package with that same explicit interpreter. Reuse it for project execution, tests, plotting, and installation; invoke installation as `<python> -m pip`, never bare `pip`.
-
-Re-resolve only when the project environment changes or an import/execution error gives a concrete reason. Package availability in a tool runtime says nothing about package availability in the project environment.
 
 ## 5. Evidence and completion
 

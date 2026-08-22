@@ -52,7 +52,7 @@ The Question Gate is not the sole protection against drift. Stable, consequentia
 
 ## 2.4 Decision Proposal
 
-Present all materially reasonable alternatives; there is no fixed option count. Alternatives must be genuinely distinct, feasible, at the same abstraction level, and supported by a real reason someone might choose them. Never manufacture options for ceremony.
+Present all materially reasonable alternatives; there is no fixed option count. Alternatives must be genuinely distinct, feasible, at the same abstraction level, compatible with higher authority, and supported by a real reason someone might choose them. Never manufacture options for ceremony. A choice that contradicts the original problem or another controlling authority is a rejected/conflicting path, not a selectable proposal option, unless the user has explicitly asked to consider superseding that authority.
 
 Compare genuine trade-offs symmetrically. If evidence clearly favors one option, present the recommendation directly together with its strongest real drawback and the evidence or condition that would change the recommendation. Before recommending, consider the strongest plausible reason it could be wrong. State uncertainty/confidence only when useful to the decision.
 

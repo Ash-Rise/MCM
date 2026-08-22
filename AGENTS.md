@@ -18,6 +18,8 @@ Before substantive work, locate the active project and use the source that owns 
 - governance boundaries → `MCM_AI_Governance.md`;
 - history / rollback → Git.
 
+At the start of a major repository task or before creating a branch, inspect the working tree and refresh available upstream refs. Do not assume a local integration branch contains the latest authority; if local and upstream state differ, reconcile or explicitly isolate user work before continuing.
+
 Do not infer project semantics from code, tests, results, README, generated files, or modification time when an authoritative problem statement or Accepted Decision exists.
 
 When a problem statement arrives as DOCX, PDF, image, or another format that is awkward for reliable machine reading, create a same-stem Markdown extraction beside it before substantive modeling. Preserve the original unchanged, record its path and SHA-256 in the extraction, reproduce all substantive text and tables, note any content that cannot be represented faithfully, and verify the extraction against the original. The Markdown file is a reading derivative, not a replacement authority.
@@ -41,6 +43,8 @@ Create or maintain one project-local current `state.md` only when long-running o
 ## 4. Method routing
 
 For substantive modeling, experiment design, analysis, paper drafting, or document production, read only the relevant playbook section before doing that work. The playbook is a method reference, not a governance authority; `MCM_AI_Governance.md`, the problem statement, and Accepted Decisions take precedence on process boundaries and project semantics.
+
+External skills and helper tools are also execution aids, not project authority. Skip any fixed gate, mandatory artifact set, validation ceremony, or stage vocabulary they prescribe when the current repository authority does not require it.
 
 Do not load the whole playbook merely because it exists.
 

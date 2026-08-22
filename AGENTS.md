@@ -53,3 +53,5 @@ At a meaningful modeling/design phase boundary, provide a concise Uncertainty & 
 ## 6. Repository hygiene
 
 Do not modify unrelated user work. Keep generated/process artifacts only when they have a current consumer or authority role. Git preserves history; do not duplicate history through version-copy clutter or permanent incident archives.
+
+For a high-impact change as defined in `MCM_AI_Governance.md`, use a dedicated branch and open a pull request after impact-scoped validation. Do not create a PR for every commit or push, and do not treat PR review as a substitute for a required Decision Proposal. Leave a high-impact PR unmerged for independent review or explicit user merge direction rather than merging it solely on the authoring agent's own checks.

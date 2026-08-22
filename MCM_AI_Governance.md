@@ -88,7 +88,7 @@ The routine **semantic decision** interface contains only:
 
 The report contains substantive uncertainties and how they were resolved/escalated/deferred, user-approved decisions, consequential AI-owned technical decisions, superseded decisions, and unresolved items that may matter later. Exclude trivial implementation details.
 
-High-impact pull-request review under §3.1 is an integration/review boundary, not a third semantic decision mechanism. It checks whether implementation and evidence faithfully realize accepted upstream meaning; it does not authorize a human-owned semantic change that should have gone through a Decision Proposal first.
+Pull-request review under §3.1 is an implementation integration boundary, not a third semantic decision mechanism. It checks whether implementation and evidence faithfully realize accepted upstream meaning; it does not authorize a human-owned semantic change that should have gone through a Decision Proposal first.
 
 ---
 
@@ -113,31 +113,39 @@ An artifact may establish facts only within its authority category. Code, tests,
 
 Downstream work should consume accepted upstream state rather than recreate, bypass, or redefine it. A downstream stage may rely on an upstream artifact only after the acceptance condition appropriate to that artifact has been satisfied. Governance does not require fixed G0/G1/G2/G3 stage names.
 
-## 3.1 High-impact integration boundary
+## 3.1 Implementation integration boundary
 
-A change is **high-impact** when a plausible defect in it could silently alter Accepted Decisions in implementation, formal numerical evidence, final paper conclusions, authority/reproducibility across stages, or governance itself, or when the change is broad enough that independent review materially reduces integration risk.
+A pull request is required when an implementation change has **substantial integration risk**: a plausible defect could silently propagate across multiple authoritative or downstream artifacts, or reviewing the exact proposed state would materially reduce the risk of integrating it. A PR is an engineering integration boundary, not a label for every consequential choice.
 
-Typical triggers include:
+Semantic significance and implementation integration risk are separate:
 
-- implementing or superseding an Accepted Decision across downstream artifacts;
-- changing core modeling, optimization, simulation, or experiment logic in a way intended or reasonably able to change formal results;
-- regenerating formal evidence and paper conclusions after such a core change;
-- changing governance or authority boundaries;
-- final integration/freeze of a substantial project result before release or submission.
+- a human-owned semantic change always requires a Decision Proposal before accepted project meaning changes;
+- after approval, implementing that decision requires a PR only when the implementation has substantial integration risk;
+- a semantics-preserving change may still require a PR when it is broad, difficult to verify, or risky to integrate;
+- touching results, paper, governance, or another important file does not by itself trigger a PR.
 
-Routine wording/formatting edits, ordinary local refactors, small tooling/test changes, and semantics-preserving performance work do not require a PR merely because they touch important files; use the impact criterion above rather than file names or commit count.
+Typical PR triggers include:
+
+- a broad rewrite of core modeling, optimization, simulation, or experiment infrastructure where a defect could silently change results;
+- a migration of a cross-stage schema, contract, or data pipeline with multiple downstream consumers;
+- replacing a major computational engine while intending to preserve accepted semantics;
+- regenerating formal evidence and conclusions through a broad implementation change;
+- final integration or freeze of a substantial project result before release or submission.
+
+A small implementation of an already approved decision, routine wording or formatting edits, ordinary local refactors, localized tooling or test changes, and localized semantics-preserving performance work do not require a PR merely because the surrounding project is important.
 
 When this boundary applies:
 
-1. create or use a dedicated branch for the coherent high-impact change rather than integrating it directly into the normal base branch;
-2. make the change and perform only the impact-scoped validation justified by §5;
-3. push the branch and open one pull request against the normal integration branch when the change set is reviewable; do not create a PR per commit or push;
-4. make the PR description identify the purpose/material impact, relevant Accepted Decisions, authoritative artifacts affected, validation/evidence performed, and any unresolved review question;
-5. leave the PR unmerged for independent review or explicit user merge direction rather than merging it solely because the authoring agent's own checks pass.
+1. create or use a dedicated branch for one coherent integration change;
+2. implement the change and perform only the impact-scoped validation justified by §5;
+3. when the exact change set is reviewable, push the branch and open one pull request against the normal integration branch;
+4. make the PR description and the accompanying report identify the purpose, material impact, relevant Accepted Decisions, authoritative artifacts affected, validation/evidence performed, and unresolved review questions;
+5. stop before merge, report the change in detail to the user, and wait for human review and explicit merge direction;
+6. use AI review only as optional assistance for diff inspection, consistency checks, or evidence lookup; it is not a required gate and does not replace human approval.
 
-Independent review should come from a human or a separate agent context that did not author the change. Its purpose is to inspect the material semantic, implementation, evidence, and cross-artifact risks of the proposed integration, not to repeat every validation gate or redesign the project from scratch. Review findings should change action: approve/merge, request a targeted correction, or escalate a genuine unresolved decision.
+The human review asks whether the implementation faithfully realizes accepted decisions, whether affected evidence and conclusions remain valid, and whether the integration introduces unintended scope or semantic drift. Its outcome should be merge, targeted correction, or defer/escalate.
 
-PR review never substitutes for the Question Gate. If a high-impact change requires a human-owned significant decision, obtain that decision before implementation; the later PR checks faithful implementation and integration.
+PR review never substitutes for the Question Gate. If a change requires a human-owned significant decision, obtain that decision before implementation. Conversely, an approved Decision Proposal does not by itself require a PR when the resulting implementation has low integration risk.
 
 ---
 
@@ -297,13 +305,14 @@ Read AGENTS + problem + Accepted Decisions + relevant current evidence
                   → Decision Proposal
                   → user approval
                   → Decision Review / Ledger update
-→ high-impact integration boundary applies?
+→ substantial implementation integration risk or final freeze?
    ├─ yes → create/use dedicated branch
    └─ no → continue normally
 → implement
 → impact-scoped validation against relevant authorities
-→ high-impact change?
-   ├─ yes → push branch → open one PR → independent review → merge only after review / explicit user direction
+→ PR boundary applies?
+   ├─ yes → push branch → open one PR → detailed report → STOP before merge
+   │        → human review → merge only on explicit user direction
    └─ no → normal Git integration
 → meaningful phase end: Uncertainty & Decision Report
 ```

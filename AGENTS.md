@@ -46,6 +46,8 @@ For substantive modeling, experiment design, analysis, paper drafting, or docume
 
 External skills and helper tools are also execution aids, not project authority. Skip any fixed gate, mandatory artifact set, validation ceremony, or stage vocabulary they prescribe when the current repository authority does not require it.
 
+Codex bundled/Skill Python is a tool runtime, never the repository interpreter. Resolve repository Python from explicit project commands, `.venv`, project configuration, then user PATH; verify imports and run or install with that same `sys.executable` (`<python> -m pip`), and never infer project dependencies or change algorithms from a tool runtime.
+
 Do not load the whole playbook merely because it exists.
 
 ## 5. Evidence and completion

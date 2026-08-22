@@ -12,9 +12,7 @@ import hashlib
 import itertools
 import json
 import math
-import platform
-import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -341,14 +339,16 @@ def write_candidates(path: Path, candidates: Iterable[SolutionResult]) -> None:
         "violations",
     ]
     with path.open("w", encoding="utf-8-sig", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
-        for index, candidate in enumerate(candidates, start=1):
+        scenario_counts: dict[str, int] = {}
+        for candidate in candidates:
+            scenario_counts[candidate.scenario] = scenario_counts.get(candidate.scenario, 0) + 1
             route_map = {route.vehicle: route_label(route.route) for route in candidate.routes}
             writer.writerow(
                 {
                     "scenario": candidate.scenario,
-                    "solution_id": index,
+                    "solution_id": scenario_counts[candidate.scenario],
                     "route_A": route_map["A"],
                     "route_B": route_map["B"],
                     "route_C": route_map["C"],
@@ -364,7 +364,7 @@ def write_candidates(path: Path, candidates: Iterable[SolutionResult]) -> None:
             )
 
 
-def write_schedule(path: Path, solution: SolutionResult) -> None:
+def write_schedule(path: Path, solutions: Iterable[SolutionResult]) -> None:
     fieldnames = [
         "scenario",
         "vehicle",
@@ -383,32 +383,33 @@ def write_schedule(path: Path, solution: SolutionResult) -> None:
         "delivered_boxes",
     ]
     with path.open("w", encoding="utf-8-sig", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
-        for route in solution.routes:
-            for stop in route.stops:
-                writer.writerow(
-                    {
-                        "scenario": solution.scenario,
-                        "vehicle": route.vehicle,
-                        "route": route_label(route.route),
-                        "sequence": stop.sequence,
-                        "node": stop.node,
-                        "node_name": stop.node_name,
-                        "node_type": stop.node_type,
-                        "arrival_minute": f"{stop.arrival_minute:.6f}",
-                        "arrival_clock": format_clock(stop.arrival_minute),
-                        "service_start_minute": f"{stop.service_start_minute:.6f}",
-                        "service_start_clock": format_clock(stop.service_start_minute),
-                        "waiting_minutes": f"{stop.waiting_minutes:.6f}",
-                        "early": stop.early,
-                        "late": stop.late,
-                        "delivered_boxes": stop.delivered_boxes,
-                    }
-                )
+        for solution in solutions:
+            for route in solution.routes:
+                for stop in route.stops:
+                    writer.writerow(
+                        {
+                            "scenario": solution.scenario,
+                            "vehicle": route.vehicle,
+                            "route": route_label(route.route),
+                            "sequence": stop.sequence,
+                            "node": stop.node,
+                            "node_name": stop.node_name,
+                            "node_type": stop.node_type,
+                            "arrival_minute": f"{stop.arrival_minute:.6f}",
+                            "arrival_clock": format_clock(stop.arrival_minute),
+                            "service_start_minute": f"{stop.service_start_minute:.6f}",
+                            "service_start_clock": format_clock(stop.service_start_minute),
+                            "waiting_minutes": f"{stop.waiting_minutes:.6f}",
+                            "early": stop.early,
+                            "late": stop.late,
+                            "delivered_boxes": stop.delivered_boxes,
+                        }
+                    )
 
 
-def write_route_summary(path: Path, solution: SolutionResult) -> None:
+def write_route_summary(path: Path, solutions: Iterable[SolutionResult]) -> None:
     fieldnames = [
         "scenario",
         "vehicle",
@@ -423,24 +424,25 @@ def write_route_summary(path: Path, solution: SolutionResult) -> None:
         "total_cost_yuan",
     ]
     with path.open("w", encoding="utf-8-sig", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
-        for route in solution.routes:
-            writer.writerow(
-                {
-                    "scenario": solution.scenario,
-                    "vehicle": route.vehicle,
-                    "route": route_label(route.route),
-                    "demand_boxes": route.demand_boxes,
-                    "distance_km": f"{route.distance_km:.6f}",
-                    "return_clock": format_clock(route.stops[-1].arrival_minute),
-                    "early_count": route.early_count,
-                    "late_count": route.late_count,
-                    "travel_cost_yuan": f"{route.travel_cost_yuan:.6f}",
-                    "penalty_cost_yuan": f"{route.penalty_cost_yuan:.2f}",
-                    "total_cost_yuan": f"{route.total_cost_yuan:.6f}",
-                }
-            )
+        for solution in solutions:
+            for route in solution.routes:
+                writer.writerow(
+                    {
+                        "scenario": solution.scenario,
+                        "vehicle": route.vehicle,
+                        "route": route_label(route.route),
+                        "demand_boxes": route.demand_boxes,
+                        "distance_km": f"{route.distance_km:.6f}",
+                        "return_clock": format_clock(route.stops[-1].arrival_minute),
+                        "early_count": route.early_count,
+                        "late_count": route.late_count,
+                        "travel_cost_yuan": f"{route.travel_cost_yuan:.6f}",
+                        "penalty_cost_yuan": f"{route.penalty_cost_yuan:.2f}",
+                        "total_cost_yuan": f"{route.total_cost_yuan:.6f}",
+                    }
+                )
 
 
 def write_markdown_summary(
@@ -517,7 +519,6 @@ def write_markdown_summary(
 
 
 def run(project_root: Path, data_path: Path, output_dir: Path) -> dict[str, Any]:
-    started = time.perf_counter()
     data = load_data(data_path)
     source_docx = (project_root / data["source_docx"]).resolve()
     actual_source_hash = sha256_file(source_docx)
@@ -537,12 +538,12 @@ def run(project_root: Path, data_path: Path, output_dir: Path) -> dict[str, Any]
     )
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    write_candidates(output_dir / "candidate_solutions_normal.csv", normal_candidates)
-    write_candidates(output_dir / "candidate_solutions_disrupted.csv", disrupted_candidates)
-    write_schedule(output_dir / "route_schedule_normal.csv", normal)
-    write_schedule(output_dir / "route_schedule_disrupted.csv", disrupted)
-    write_route_summary(output_dir / "route_summary_normal.csv", normal)
-    write_route_summary(output_dir / "route_summary_disrupted.csv", disrupted)
+    write_candidates(
+        output_dir / "candidate_solutions.csv",
+        (*normal_candidates, *disrupted_candidates),
+    )
+    write_schedule(output_dir / "route_schedule.csv", (normal, disrupted))
+    write_route_summary(output_dir / "route_summary.csv", (normal, disrupted))
 
     comparison = {
         "normal": solution_summary(normal),
@@ -586,40 +587,6 @@ def run(project_root: Path, data_path: Path, output_dir: Path) -> dict[str, Any]
         disrupted_threshold,
     )
 
-    manifest = {
-        "command": "python src/solve_problem_b.py --output-dir results",
-        "python": platform.python_version(),
-        "random_seed": None,
-        "deterministic": True,
-        "runtime_seconds": time.perf_counter() - started,
-        "inputs": {
-            str(data_path.relative_to(project_root)): sha256_file(data_path),
-            data["source_docx"]: actual_source_hash,
-            "decisions.md": sha256_file(project_root / "decisions.md"),
-        },
-        "parameters": {
-            key: data[key]
-            for key in (
-                "departure_minute",
-                "speed_kmph",
-                "travel_cost_per_km",
-                "early_penalty_per_event",
-                "late_penalty_per_event",
-                "vehicle_capacity_boxes",
-                "max_route_km",
-                "service_minutes",
-                "closed_arc",
-            )
-        },
-        "outputs": {
-            path.name: sha256_file(path)
-            for path in sorted(output_dir.iterdir())
-            if path.is_file() and path.name != "repro_manifest.json"
-        },
-    }
-    with (output_dir / "repro_manifest.json").open("w", encoding="utf-8") as file:
-        json.dump(manifest, file, ensure_ascii=False, indent=2)
-        file.write("\n")
     return comparison
 
 

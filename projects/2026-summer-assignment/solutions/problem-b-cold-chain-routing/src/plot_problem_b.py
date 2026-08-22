@@ -9,12 +9,11 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as font_manager
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch
-from PIL import Image
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = PROJECT_ROOT / "data" / "problem_b_data.json"
-SCHEDULE_PATH = PROJECT_ROOT / "results" / "route_schedule_normal.csv"
+SCHEDULE_PATH = PROJECT_ROOT / "results" / "route_schedule.csv"
 SUMMARY_PATH = PROJECT_ROOT / "results" / "summary.json"
 FIGURE_DIR = PROJECT_ROOT / "figures"
 
@@ -203,7 +202,11 @@ def figure_optimal_routes(data: dict, summary: dict) -> plt.Figure:
 
 def figure_time_windows(data: dict, schedule: list[dict[str, str]]) -> plt.Figure:
     """Contract: directly compare every store arrival with its hard time window."""
-    store_rows = [row for row in schedule if row["node_type"] == "store"]
+    store_rows = [
+        row
+        for row in schedule
+        if row["scenario"] == "normal" and row["node_type"] == "store"
+    ]
     order = [("A", 4), ("A", 6), ("B", 5), ("B", 8), ("C", 9), ("C", 7)]
     lookup = {(row["vehicle"], int(row["node"])): row for row in store_rows}
 
@@ -240,19 +243,11 @@ def figure_time_windows(data: dict, schedule: list[dict[str, str]]) -> plt.Figur
     return fig
 
 
-def validate_figure(fig: plt.Figure, basename: str, size: tuple[float, float]) -> None:
-    preview = FIGURE_DIR / f"{basename}_preview.png"
+def save_figure(fig: plt.Figure, basename: str, size: tuple[float, float]) -> None:
     fig.set_size_inches(*size)
-    fig.savefig(preview, dpi=150)
-    svg_path = FIGURE_DIR / f"{basename}.svg"
     png_path = FIGURE_DIR / f"{basename}.png"
-    fig.savefig(svg_path)
     fig.savefig(png_path, dpi=300)
-    gray_path = FIGURE_DIR / f"{basename}_grayscale.png"
-    with Image.open(png_path) as image:
-        image.convert("L").save(gray_path, dpi=(300, 300))
-    preview.unlink(missing_ok=True)
-    print(f"wrote {svg_path.name}, {png_path.name}, {gray_path.name}")
+    print(f"wrote {png_path.name}")
     plt.close(fig)
 
 
@@ -261,9 +256,9 @@ def main() -> None:
     cjk_font = configure_style()
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     data, summary, schedule = load_inputs()
-    validate_figure(figure_assignment_network(data), "fig1_assignment_network", (7.2, 5.0))
-    validate_figure(figure_optimal_routes(data, summary), "fig2_optimal_routes", (7.2, 5.0))
-    validate_figure(figure_time_windows(data, schedule), "fig3_time_windows", (7.2, 4.3))
+    save_figure(figure_assignment_network(data), "fig1_assignment_network", (7.2, 5.0))
+    save_figure(figure_optimal_routes(data, summary), "fig2_optimal_routes", (7.2, 5.0))
+    save_figure(figure_time_windows(data, schedule), "fig3_time_windows", (7.2, 4.3))
     print(f"CJK font: {cjk_font}")
 
 

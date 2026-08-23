@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
 import os
 import re
 import tempfile
@@ -24,14 +22,6 @@ TABLE_WIDTH_WEIGHTS = (
     (0.09, 0.10, 0.25, 0.18, 0.20, 0.18),
     (0.40, 0.20, 0.20, 0.20),
 )
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as file:
-        for chunk in iter(lambda: file.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def set_run_font(run, *, east_asia: str, size: float, bold: bool | None = None) -> None:
@@ -64,8 +54,23 @@ def set_cell_margins(cell, *, top: int = 55, bottom: int = 55, side: int = 70) -
     tc_mar = tc_pr.find(qn("w:tcMar"))
     if tc_mar is None:
         tc_mar = OxmlElement("w:tcMar")
-        tc_pr.append(tc_mar)
-    for name, value in (("top", top), ("left", side), ("bottom", bottom), ("right", side)):
+        following_tags = {
+            qn("w:textDirection"),
+            qn("w:tcFitText"),
+            qn("w:vAlign"),
+            qn("w:hideMark"),
+            qn("w:headers"),
+            qn("w:cellIns"),
+            qn("w:cellDel"),
+            qn("w:cellMerge"),
+            qn("w:tcPrChange"),
+        }
+        insertion_index = next(
+            (index for index, child in enumerate(tc_pr) if child.tag in following_tags),
+            len(tc_pr),
+        )
+        tc_pr.insert(insertion_index, tc_mar)
+    for name, value in (("top", top), ("start", side), ("bottom", bottom), ("end", side)):
         node = tc_mar.find(qn(f"w:{name}"))
         if node is None:
             node = OxmlElement(f"w:{name}")
@@ -110,7 +115,25 @@ def set_edge(cell, name: str, *, value: str, size: int = 0) -> None:
     borders = tc_pr.find(qn("w:tcBorders"))
     if borders is None:
         borders = OxmlElement("w:tcBorders")
-        tc_pr.append(borders)
+        following_tags = {
+            qn("w:shd"),
+            qn("w:noWrap"),
+            qn("w:tcMar"),
+            qn("w:textDirection"),
+            qn("w:tcFitText"),
+            qn("w:vAlign"),
+            qn("w:hideMark"),
+            qn("w:headers"),
+            qn("w:cellIns"),
+            qn("w:cellDel"),
+            qn("w:cellMerge"),
+            qn("w:tcPrChange"),
+        }
+        insertion_index = next(
+            (index for index, child in enumerate(tc_pr) if child.tag in following_tags),
+            len(tc_pr),
+        )
+        tc_pr.insert(insertion_index, borders)
     edge = borders.find(qn(f"w:{name}"))
     if edge is None:
         edge = OxmlElement(f"w:{name}")
@@ -138,7 +161,7 @@ def format_tables(document) -> None:
             for cell in row.cells:
                 cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
                 set_cell_margins(cell)
-                for edge_name in ("top", "bottom", "left", "right", "insideH", "insideV"):
+                for edge_name in ("top", "start", "bottom", "end", "insideH", "insideV"):
                     set_edge(cell, edge_name, value="nil")
                 if row_index == 0:
                     set_edge(cell, "top", value="single", size=10)
@@ -279,21 +302,10 @@ def format_document(document) -> None:
         set_page_field(section.first_page_footer)
 
 
-def update_manifest(manifest_path: Path, output_path: Path) -> None:
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    manifest["output_sha256"] = sha256_file(output_path)
-    manifest["postprocess"] = {
-        "tool": "src/postprocess_paper_docx.py",
-        "reason": "Removed template numbering and applied the repository typography, table, caption, and page-number profile.",
-    }
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--manifest", type=Path)
     args = parser.parse_args()
 
     document = Document(args.input)
@@ -308,9 +320,5 @@ def main() -> None:
         os.replace(temporary_path, args.output)
     finally:
         temporary_path.unlink(missing_ok=True)
-    if args.manifest:
-        update_manifest(args.manifest, args.output)
-
-
 if __name__ == "__main__":
     main()

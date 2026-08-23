@@ -182,8 +182,17 @@ def figure_optimal_routes(data: dict, summary: dict) -> plt.Figure:
     draw_arc(ax, data, 2, 8, color="#CC3311", linestyle=":", linewidth=2.2,
              rad=0.12, alpha=0.75, zorder=1)
     scatter_nodes(ax, data, colored_assignments=True)
-    ax.text(-5.0, 5.8, "封闭但未被最优路线使用", color="#AA2211", fontsize=8,
-            rotation=-11, ha="center")
+    ax.annotate(
+        "封闭有向弧 2→8\n未被最优路线使用",
+        xy=(2.0, 6.0),
+        xytext=(-7.1, 10.0),
+        ha="left",
+        va="center",
+        fontsize=8,
+        color="#AA2211",
+        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.9, "pad": 1.8},
+        arrowprops={"arrowstyle": "->", "color": "#AA2211", "lw": 0.8},
+    )
     handles = [
         Line2D([0], [0], color=COLORS[v], linestyle=LINESTYLES[v], lw=2.0,
                marker=MARKERS[v], label=f"{v}: {summary['normal']['route_labels'][v]}")

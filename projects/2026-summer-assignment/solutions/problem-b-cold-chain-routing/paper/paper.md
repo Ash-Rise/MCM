@@ -353,4 +353,4 @@ python -m unittest discover -s tests -p 'test_solver.py' -v
 python src\build_paper.py
 ```
 
-求解器生成 `results/candidate_solutions.csv`、`results/route_schedule.csv`、`results/route_summary.csv`、`results/summary.json` 和 `results/result_summary.md`；绘图脚本生成正文所用 3 张 PNG。论文构建脚本要求 Pandoc 3.x 已加入 `PATH`，默认读取仓库模板 `shared/templates/2026-cumcm-paper-template.docx`，把 `paper/paper.md` 转为 Word 后调用 `src/postprocess_paper_docx.py` 完成字体、三线表、题注绑定和页码处理，最终覆盖 `paper/paper.docx`。生成过程不保存包含本机路径的转换清单；DOCX 的视觉一致性仍依赖本机 Pandoc、字体与 LibreOffice/Word 渲染环境。
+求解器把正式结果写入 `results/`，绘图脚本生成正文所用 3 张 PNG。`build_paper.py` 要求 Pandoc 3.x 已加入 `PATH`：先从 `paper.md` 生成默认 Word 文档，再由 `shared/paper_format.py` 读取 profile YAML 应用通用排版，最后由本题 postprocess 设置表格列宽和局部分页。构建不生成含本机路径的转换清单；实际分页仍依赖本机字体与 Word/LibreOffice 渲染环境。

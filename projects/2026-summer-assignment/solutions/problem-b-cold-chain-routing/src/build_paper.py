@@ -6,12 +6,13 @@ import argparse
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 from docx import Document
 
-from postprocess_paper_docx import format_document
+from postprocess_paper_docx import apply_project_layout
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -37,11 +38,16 @@ def resolve_executable(command: str) -> str:
     return resolved
 
 
-def build_document(*, pandoc: str, template: Path, output: Path) -> None:
+def build_document(*, pandoc: str, profile_path: Path, output: Path) -> None:
     if not SOURCE_PATH.is_file():
         raise FileNotFoundError(SOURCE_PATH)
-    if not template.is_file():
-        raise FileNotFoundError(template)
+    if not profile_path.is_file():
+        raise FileNotFoundError(profile_path)
+
+    shared_path = repository_root() / "shared"
+    if str(shared_path) not in sys.path:
+        sys.path.insert(0, str(shared_path))
+    from paper_format import apply_profile, load_profile
 
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -56,8 +62,6 @@ def build_document(*, pandoc: str, template: Path, output: Path) -> None:
             "--standalone",
             "--fail-if-warnings",
             "--resource-path=.",
-            "--reference-doc",
-            str(template.resolve()),
             SOURCE_PATH.name,
             "--output",
             str(raw_docx),
@@ -76,19 +80,22 @@ def build_document(*, pandoc: str, template: Path, output: Path) -> None:
             raise RuntimeError(f"Pandoc failed with exit code {completed.returncode}: {details}")
 
         document = Document(raw_docx)
-        format_document(document)
+        apply_profile(document, load_profile(profile_path))
+        apply_project_layout(document)
         document.save(formatted_docx)
         os.replace(formatted_docx, output)
 
 
 def main() -> None:
-    default_template = repository_root() / "shared" / "templates" / "2026-cumcm-paper-template.docx"
+    default_profile = (
+        repository_root() / "shared" / "templates" / "personal-paper-profile.yaml"
+    )
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pandoc", default="pandoc", help="Pandoc executable or command on PATH")
-    parser.add_argument("--template", type=Path, default=default_template)
+    parser.add_argument("--profile", type=Path, default=default_profile)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
-    build_document(pandoc=args.pandoc, template=args.template, output=args.output)
+    build_document(pandoc=args.pandoc, profile_path=args.profile, output=args.output)
     print(f"wrote {args.output.resolve()}")
 
 

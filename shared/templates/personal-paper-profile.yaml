@@ -1,10 +1,6 @@
-profile_version: 2.1
+profile_version: 3.0
 name: ash-rise-chinese-modeling-paper
 scope: repository_global_paper_formatting_default
-physical_word_templates:
-  default_reference: shared/templates/2026-cumcm-paper-template.docx
-  location_scope: repository_global
-  official_or_user_template_overrides_default: true
 priority:
   - current_official_rules
   - user_provided_current_template
@@ -20,10 +16,14 @@ page:
     bottom: 2.5
     left: 2.5
     right: 2.5
+  header_distance_cm: 1.5
+  footer_distance_cm: 1.8
+  different_first_page: true
   document_grid_line_pitch_twips: 360
 
 typography:
   latin_font: Times New Roman
+  font_color_hex: '000000'
   title:
     east_asia_font: 宋体
     size_pt: 15
@@ -70,12 +70,18 @@ typography:
   reference_and_short_appendix:
     east_asia_font: 宋体
     size_pt: 10.5
+    alignment: left
     line_spacing_multiple: 1.25
+    space_before_pt: 0
+    space_after_pt: 0
     hanging_indent_pt: 21
   table_text:
     east_asia_font: 宋体
     size_pt: 10
+    alignment: center
     line_spacing_multiple: 1.15
+    space_before_pt: 0
+    space_after_pt: 0
     vertical_alignment: center
 
 equations:
@@ -90,35 +96,13 @@ equations:
 
 tables:
   style: three_line
-  manual_word_baseline:
-    precedence: higher_than_generic_table_rules
-    baseline_requires_structural_and_render_approval: true
-    inherit_when_content_unchanged: complete_table_ooxml
-    final_release_lock_mode: complete_table_ooxml_only
-    layout_only_mode: transitional_draft_only
-    exact_table_replacement_must_be_last_table_operation: true
-    preserved_properties:
-      - column_widths
-      - paragraph_alignment
-      - font_size
-      - wrapping
-      - borders
-      - cell_margins
-      - row_properties
-      - table_style
-    fail_on_content_drift: true
-    hash_is_identity_check_not_layout_proof: true
-    require_save_close_reload_before_comparison: true
-    require_complete_table_xml_regression: true
-    require_semantic_alignment_assertions: true
-    require_render_checks:
-      - one_character_lines
-      - mixed_alignment
-      - unexpected_wrapping
-    reject_baseline_with_known_visual_defects: true
-    patch_scope_for_manual_corrections: affected_ooxml_parts_only
-    wrapped_text_inherits_paragraph_alignment: true
-    narrative_columns_default_alignment: left
+  cell_margins_twips:
+    top: 55
+    bottom: 55
+    start: 70
+    end: 70
+  repeat_header_row: true
+  prevent_row_split: true
   top_border_ooxml_size: 10
   header_bottom_border_ooxml_size: 4
   bottom_border_ooxml_size: 10

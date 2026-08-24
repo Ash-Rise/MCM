@@ -29,7 +29,7 @@ Tasks 1--3 have frozen result tables and publication figures. Task 2 uses exactl
 
 The current paper release is v2.5. [`paper/paper.md`](paper/paper.md) is the authoritative Pandoc/DOCX source on `main`; Git tags preserve historical repository snapshots, while Releases provide versioned Word downloads. Derived GitHub-preview Markdown is no longer published. Future tags use a project-qualified name such as `2026-summer-a/v2.6`. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`.
 
-Future projects should start from the repository-wide [`personal-modeling-playbook.md`](../../../../shared/templates/personal-modeling-playbook.md); its exact Word, single-source Pandoc Markdown, table, figure, and verified-rule-promotion defaults are mirrored in [`personal-paper-profile.yaml`](../../../../shared/templates/personal-paper-profile.yaml).
+Problem A's approved `paper.docx` and manually locked table baseline remain a legacy paper build; they have not been migrated to the shared YAML-driven formatter. Future paper work should use the repository-wide [`personal-modeling-playbook.md`](../../../../shared/templates/personal-modeling-playbook.md) for method and [`personal-paper-profile.yaml`](../../../../shared/templates/personal-paper-profile.yaml) for exact cross-project machine formatting defaults. Migrate A only when its paper next requires substantive revision.
 
 ## Reproduction
 

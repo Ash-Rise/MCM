@@ -170,6 +170,8 @@ Rejected / Do Not Repeat   # only while operationally relevant
 
 Do not duplicate the Decision Ledger, full design documents, permanent rules, large historical TODO lists, or raw reasoning history.
 
+`state.md` is not a project summary. If information can be recovered directly from `decisions.md`, accepted/frozen results, `paper.md`, or Git and is not needed to determine the next action, omit it from `state.md`.
+
 Update state only at meaningful checkpoints such as phase transitions, major conclusions/rejections, before or after costly runs, true blockers, before a human decision handoff, and session stop/switch.
 
 When active work ends, `state.md` stops being an authority for future project meaning. Promote durable decisions to the Ledger, genuinely reusable methods to the playbook, and leave ordinary execution history to Git.

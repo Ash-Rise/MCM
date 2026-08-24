@@ -6,7 +6,7 @@ This repository is operated primarily by AI agents under human supervision. Keep
 
 Before substantive work, locate the active project and use the source that owns the question:
 
-- problem facts / requirements → original problem statement; use a verified adjacent Markdown extraction as the default reading interface when the original is not plain text, but return to the original on any discrepancy;
+- problem facts / requirements → original problem statement; for DOCX, PDF, image, or another format unsuitable for repeated machine reading, create a Markdown reading derivative as the default machine-reading interface before substantive modeling, while the original remains authoritative and controls every discrepancy;
 - accepted model meaning / assumptions / objectives / constraints → project `decisions.md` if present;
 - current long-task frontier → project `state.md` if present;
 - implementation → source code;
@@ -22,7 +22,7 @@ At the start of a major repository task or before creating a branch, inspect the
 
 Do not infer project semantics from code, tests, results, README, generated files, or modification time when an authoritative problem statement or Accepted Decision exists.
 
-When a problem statement arrives as DOCX, PDF, image, or another format that is awkward for reliable machine reading, create a same-stem Markdown extraction beside it before substantive modeling. Preserve the original unchanged, record its path and SHA-256 in the extraction, reproduce all substantive text and tables, note any content that cannot be represented faithfully, and verify the extraction against the original. The Markdown file is a reading derivative, not a replacement authority.
+For such a derivative, preserve all text, tables, formulas, units, numbering, and annotations that can affect problem meaning, and explicitly mark anything that cannot be transcribed reliably. Check high-impact content—especially numerical tables, formulas, key constraints, units, and ambiguous wording—against the original. If the derivative and original differ, the original problem statement always controls. Do not require SHA-256, machine-local absolute paths, full paragraph-by-paragraph mechanical verification, or a conversion manifest with no consumer by default; add hashes or stricter verification only when provenance, version confusion, or extraction correctness is a real project risk. The derivative is never a new problem-fact authority.
 
 ## 2. Human decisions vs AI autonomy
 
@@ -39,6 +39,8 @@ Consequential AI-owned technical decisions may proceed without approval, but sur
 Use a short project-local `decisions.md` only for Accepted significant decisions. Never turn it into a diary or experiment log; supersede old decisions explicitly rather than silently rewriting their meaning.
 
 Create or maintain one project-local current `state.md` only when long-running or multi-phase work needs durable recovery. Keep it current and compact; do not accumulate session history. Update it at meaningful checkpoints, especially before a session ends, a costly run starts/stops, or a human decision handoff occurs.
+
+`state.md` is not a project summary; omit information recoverable from decisions, accepted results, paper, or Git unless it is necessary for the current execution frontier.
 
 ## 4. Method routing
 

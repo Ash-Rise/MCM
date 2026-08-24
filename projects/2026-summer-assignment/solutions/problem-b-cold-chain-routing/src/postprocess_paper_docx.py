@@ -17,6 +17,7 @@ from docx.shared import Pt
 
 
 TABLE_WIDTH_WEIGHTS = (
+    (0.07, 0.13, 0.16, 0.11, 0.19, 0.34),
     (0.13, 0.67, 0.20),
     (0.08, 0.28, 0.10, 0.12, 0.14, 0.09, 0.09, 0.10),
     (0.09, 0.10, 0.25, 0.18, 0.20, 0.18),
@@ -146,10 +147,14 @@ def set_edge(cell, name: str, *, value: str, size: int = 0) -> None:
 
 def format_tables(document) -> None:
     if len(document.tables) != len(TABLE_WIDTH_WEIGHTS):
-        raise ValueError(f"Expected 4 tables, found {len(document.tables)}")
+        raise ValueError(
+            f"Expected {len(TABLE_WIDTH_WEIGHTS)} tables, found {len(document.tables)}"
+        )
     section = document.sections[0]
     content_width = int((section.page_width - section.left_margin - section.right_margin) / 635)
-    for table, weights in zip(document.tables, TABLE_WIDTH_WEIGHTS, strict=True):
+    for table_index, (table, weights) in enumerate(
+        zip(document.tables, TABLE_WIDTH_WEIGHTS, strict=True)
+    ):
         set_table_geometry(table, weights, content_width - 120)
         for row_index, row in enumerate(table.rows):
             tr_pr = row._tr.get_or_add_trPr()
@@ -178,7 +183,9 @@ def format_tables(document) -> None:
                     paragraph.paragraph_format.line_spacing = 1.15
                     paragraph.paragraph_format.space_before = Pt(0)
                     paragraph.paragraph_format.space_after = Pt(0)
-                    paragraph.paragraph_format.keep_with_next = row_index < len(table.rows) - 1
+                    paragraph.paragraph_format.keep_with_next = (
+                        table_index != 1 and row_index < len(table.rows) - 1
+                    )
                     for run in paragraph.runs:
                         set_run_font(run, east_asia="宋体", size=10, bold=(row_index == 0))
 

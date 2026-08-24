@@ -32,12 +32,14 @@ Ordinary implementation choices—function structure, variable names, APIs, loca
 
 **AI-owned:** consequential technical choices affecting numerical quality, reproducibility, efficiency, or implementation without changing model meaning. The AI may proceed autonomously and reports only those important enough to matter in later review.
 
+Missing information does not make the resulting assumption technical by itself. If choosing how to fill the gap changes the modeled problem class, feasible set, objective meaning, substantive scope, evaluation semantics, or interpretation of the final conclusion, it remains a human-owned significant decision. Ordinary missing implementation parameters remain AI-owned when they have no material semantic effect.
+
 ## 2.3 Question Gate
 
 Do not ask merely because asking is safer. Escalate only when all five conditions hold:
 
 1. **Materiality** — the answer can materially change the model, scope, evidence, conclusion, or another consequential downstream decision.
-2. **Irreducibility** — the uncertainty cannot reasonably be resolved from authoritative project material, relevant research, safe reversible assumptions, or later execution.
+2. **Irreducibility** — the uncertainty cannot reasonably be resolved from authoritative project material, relevant research, a genuinely semantics-preserving reversible assumption, or later execution. A convenient placeholder is not “safe” when it pre-empts a human-owned semantic choice.
 3. **Timing** — the answer is needed for the next meaningful step.
 4. **Ownership** — the choice is human-owned.
 5. **Analysis readiness** — enough investigation exists to explain the real decision space.

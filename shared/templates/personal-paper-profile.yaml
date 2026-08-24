@@ -107,7 +107,6 @@ tables:
       - row_properties
       - table_style
     fail_on_content_drift: true
-    record_absolute_path_and_sha256: true
     hash_is_identity_check_not_layout_proof: true
     require_save_close_reload_before_comparison: true
     require_complete_table_xml_regression: true

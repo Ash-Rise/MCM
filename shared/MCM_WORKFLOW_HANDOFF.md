@@ -1,221 +1,23 @@
 # MCM Workflow Handoff
 
-## Purpose
+> **Non-authoritative historical rationale.** Current requirements live in `AGENTS.md` and `MCM_AI_Governance.md`; modeling and writing methods live in the playbook. This file preserves only background that those authorities intentionally do not carry.
 
-This document preserves important workflow context that is not part of formal governance.
+## Why the repository, not chat history, is the recovery surface
 
-`MCM_AI_Governance.md` defines what the workflow requires.
-This document explains why some design choices were made and records lessons learned from previous projects.
+Long modeling conversations repeatedly diluted current assumptions and encouraged reuse of obsolete context. The repository therefore separates problem statements, Accepted Decisions, current evidence, paper content and Git history by authority category. Conversation history remains useful for recovering exact chronology, not for defining current project meaning.
 
-It should remain concise and should not become a second governance specification.
+Projects use directories on the stable integration branch rather than permanent per-problem branches. Temporary branches and pull requests are reserved for changes whose implementation integration risk makes review of the exact diff valuable.
 
----
+## Why semantic approval and integration review are separate
 
-# Repository Philosophy
+Earlier workflow revisions blurred two different failures: choosing the wrong model meaning and implementing an accepted meaning incorrectly. A Decision Proposal controls the former; a pull request can reduce the latter. Keeping them separate prevents routine edits from acquiring approval ceremony while still stopping silent semantic drift.
 
-The repository is the durable source of truth.
+## Failures that shaped the current boundaries
 
-Important project meaning should exist in:
+- Validation machinery once accumulated hashes, manifests and repeated checks without a downstream action. This led to the present failure-driven rule: provenance checks are retained only where identity is itself consequential; Git carries ordinary history.
+- Problem B exposed that an absent event time can be filled by a convenient assumption that silently changes a static routing problem into, or away from, a dynamic one. The lesson was not to require another artifact, but to judge ownership by semantic effect rather than by whether the source datum is missing.
+- Passing code and internally consistent results have previously been mistaken for proof that the model contract was correct. This is why implementation evidence is checked against the problem statement and Accepted Decisions, not only against other downstream artifacts.
 
-- problem statements;
-- Accepted Decisions;
-- evidence/results;
-- paper artifacts;
-- governance documents.
+## Cold-resume intent
 
-Conversation history is temporary context, not project authority.
-
-Long-lived branches are not project boundaries. Different problems are separated by project directories on the stable integration branch. A temporary branch is useful only when a change has substantial implementation integration risk or when a final freeze needs an isolated review boundary; it should not become a permanent per-problem work line.
-
----
-
-# Agent Roles
-
-## Codex
-
-Primary execution agent.
-
-Responsible for:
-
-- repository operations;
-- code implementation;
-- experiments;
-- tests;
-- results generation;
-- Git operations.
-
-Codex should autonomously handle ordinary implementation choices.
-
----
-
-## ChatGPT / Human Review
-
-Used for:
-
-- consequential semantic decisions;
-- evaluating modeling assumptions;
-- reviewing high-impact changes;
-- resolving uncertainty where human judgment is valuable.
-
-Human involvement should focus on decisions that materially affect conclusions.
-
----
-
-## ChatGPT Work
-
-Used mainly for external information gathering.
-
-Typical use cases:
-
-- missing real-world parameters;
-- literature search;
-- external datasets;
-- domain background;
-- comparison of existing methods.
-
-Work should not become a parallel project authority.
-
----
-
-# Reasoning Effort
-
-Default reasoning configuration:
-
-- GPT-5.6 Sol
-- Medium reasoning effort
-
-Higher reasoning effort should be used selectively for difficult independent reviews or unusually complex decisions.
-
-Maximum reasoning is not the default because excessive exploration can increase:
-
-- unnecessary validation;
-- process expansion;
-- scope drift.
-
-The goal is not maximum thinking time, but reliable progress.
-
----
-
-# Lessons From Long Conversations
-
-A single extremely long conversation can cause:
-
-- context dilution;
-- old assumptions being accidentally reused;
-- excessive focus on workflow instead of the actual modeling task.
-
-Preferred approach:
-
-- one main conversation per major modeling problem;
-- repository artifacts preserve long-term state;
-- new conversations should recover context from authority files rather than old chat history.
-
----
-
-# Governance Design Lessons
-
-## Decision Proposal vs PR
-
-These solve different problems.
-
-Decision Proposal:
-
-- controls semantic changes;
-- decides whether project meaning should change.
-
-Pull Request:
-
-- controls risky implementation integration;
-- checks whether a complex implementation should enter the stable branch.
-
-A semantic change does not automatically require a PR.
-A complex implementation change does not automatically require a Decision Proposal.
-
----
-
-# Known Failure Modes
-
-Avoid:
-
-## Over-engineered validation
-
-Validation should detect a concrete failure mode and change an action.
-
-Avoid adding:
-
-- unnecessary hashes;
-- repeated checks;
-- permanent audit artifacts;
-
-unless they provide real value.
-
----
-
-## Confusing implementation correctness with model correctness
-
-Tests can show:
-
-"the code matches the implemented contract."
-
-They cannot prove:
-
-"the contract is the correct model."
-
-Semantic decisions require separate evaluation.
-
----
-
-## Governance expansion
-
-Do not create new mechanisms only because a failure is theoretically possible.
-
-Every new rule should justify:
-
-- what failure it prevents;
-- why existing mechanisms cannot handle it;
-- what action changes when it triggers.
-
----
-
-# Starting a New Modeling Problem
-
-Recommended startup:
-
-1. Read:
-   - AGENTS.md
-   - MCM_AI_Governance.md
-   - relevant methods/templates
-
-2. Read the problem statement.
-
-3. Understand:
-   - what the problem asks;
-   - key modeling difficulties;
-   - important uncertainties.
-
-4. Create decisions.md only when meaningful semantic choices appear.
-
-5. Begin modeling and implementation.
-
-Do not copy previous problem assumptions unless they are independently justified.
-
----
-
-# Current Workflow Summary
-
-The intended workflow is:
-
-Problem statement
-↓
-Model understanding
-↓
-Decision Proposal when semantic uncertainty exists
-↓
-Implementation
-↓
-Experiments and evidence
-↓
-Paper and final artifacts
-
-AI performs most execution.
-Human focuses on consequential judgment.
+Recover current work from the repository authorities named in `AGENTS.md`, using this handoff only when the historical reason for a boundary matters. Do not copy its examples into project decisions or papers.

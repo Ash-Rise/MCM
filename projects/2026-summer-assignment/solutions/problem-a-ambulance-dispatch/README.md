@@ -21,13 +21,13 @@ The current paper release is **v2.5**. Its Task 3 analysis includes the existing
 - `results/task-1/`: verified compact results for Task 1.
 - `results/task-2/`: generated Task 2 results after the revised model passes validation.
 - `figures/`: approved publication figures.
-- `paper/`: fixed-name current Markdown, Word deliverable, and conversion manifest; historical repository snapshots are available through Git tags and versioned downloads through Releases.
+- `paper/`: fixed-name current Markdown and Word deliverable; historical repository snapshots are available through Git tags and versioned downloads through Releases.
 
 ## Current Status
 
 Tasks 1--3 have frozen result tables and publication figures. Task 2 uses exactly 140 calls per day, a fixed 30-day warmup, conditional-NHPP arrival times, a per-vehicle 12-dispatch limit, and continuous cross-midnight vehicle state. Task 3 treats incident duration as continuous on `[0.5, 12]` hours: the six initial durations are expanded adaptively to ten simulation nodes, and replication-level PCHIP surfaces with 95% confidence bands are used only as numerical response approximations. No result is pooled across incident durations.
 
-The current paper release is v2.5. [`paper/paper.md`](paper/paper.md) is the authoritative Pandoc/DOCX source on `main`; Git tags preserve historical repository snapshots, while Releases provide versioned Word downloads. Derived GitHub-preview Markdown is no longer published. Future tags use a project-qualified name such as `2026-summer-a/v2.6`. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`. The root `README.md` records release notes.
+The current paper release is v2.5. [`paper/paper.md`](paper/paper.md) is the authoritative Pandoc/DOCX source on `main`; Git tags preserve historical repository snapshots, while Releases provide versioned Word downloads. Derived GitHub-preview Markdown is no longer published. Future tags use a project-qualified name such as `2026-summer-a/v2.6`. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`.
 
 Future projects should start from the repository-wide [`personal-modeling-playbook.md`](../../../../shared/templates/personal-modeling-playbook.md); its exact Word, single-source Pandoc Markdown, table, figure, and verified-rule-promotion defaults are mirrored in [`personal-paper-profile.yaml`](../../../../shared/templates/personal-paper-profile.yaml).
 

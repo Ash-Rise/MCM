@@ -18,6 +18,8 @@ Before substantive work, locate the active project and use the source that owns 
 - governance boundaries → `MCM_AI_Governance.md`;
 - history / rollback → Git.
 
+When continuing an existing project, first look within that project for `state.md`, a handoff, or a similarly scoped recovery/status document, and read any relevant file that exists before resuming substantive work. Use it only to recover current context and execution boundaries; it does not replace the original problem statement, Governance, Accepted Decisions, or the relevant playbook method. A new project does not require a handoff or state file when none exists.
+
 At the start of a major repository task or before creating a branch, inspect the working tree and refresh available upstream refs. Do not assume a local integration branch contains the latest authority; if local and upstream state differ, reconcile or explicitly isolate user work before continuing.
 
 Do not infer project semantics from code, tests, results, README, generated files, or modification time when an authoritative problem statement or Accepted Decision exists.

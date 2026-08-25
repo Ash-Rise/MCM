@@ -47,7 +47,7 @@ def build_document(*, pandoc: str, profile_path: Path, output: Path) -> None:
     shared_path = repository_root() / "shared"
     if str(shared_path) not in sys.path:
         sys.path.insert(0, str(shared_path))
-    from paper_format import apply_profile, load_profile
+    from paper_format import apply_profile, load_profile # type: ignore
 
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)

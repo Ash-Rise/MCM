@@ -91,7 +91,7 @@ typography:
 
 equations:
   format: native_omml
-  math_font: DejaVu Math TeX Gyre
+  math_font: Cambria Math
   display_alignment: center
   citation_markers_superscript: true
   compound_scripts_single_run: true

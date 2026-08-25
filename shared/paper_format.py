@@ -11,6 +11,7 @@ from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.opc.oxml import parse_xml, serialize_part_xml
 from docx.shared import Cm, Pt, RGBColor
 
 
@@ -152,6 +153,56 @@ def _set_math_run_font(document, font_name: str) -> None:
             fonts.set(qn(f"w:{attribute}"), font_name)
 
 
+def _find_package_part(document, partname: str):
+    return next(
+        (part for part in document.part.package.parts if str(part.partname) == partname),
+        None,
+    )
+
+
+def _sync_theme_fonts(document, *, latin_font: str, east_asia_font: str) -> set[str]:
+    """Replace generator-default theme fonts with profile-owned fallbacks."""
+    part = _find_package_part(document, "/word/theme/theme1.xml")
+    if part is None:
+        return set()
+    root = parse_xml(part.blob)
+    replaced_fonts: set[str] = set()
+    for family_name in ("majorFont", "minorFont"):
+        family = root.find(".//" + qn(f"a:{family_name}"))
+        if family is None:
+            continue
+        for element_name, font_name in (
+            ("latin", latin_font),
+            ("ea", east_asia_font),
+            ("cs", latin_font),
+        ):
+            element = family.find(qn(f"a:{element_name}"))
+            if element is None:
+                continue
+            previous = element.get("typeface")
+            if previous and previous != font_name:
+                replaced_fonts.add(previous)
+            element.set("typeface", font_name)
+    part._blob = serialize_part_xml(root)
+    return replaced_fonts
+
+
+def _sync_font_table(document, *, removed_fonts: set[str], required_fonts: set[str]) -> None:
+    part = _find_package_part(document, "/word/fontTable.xml")
+    if part is None:
+        return
+    root = parse_xml(part.blob)
+    for font in list(root.findall(qn("w:font"))):
+        if font.get(qn("w:name")) in removed_fonts:
+            root.remove(font)
+    existing = {font.get(qn("w:name")) for font in root.findall(qn("w:font"))}
+    for font_name in sorted(required_fonts - existing):
+        font = OxmlElement("w:font")
+        font.set(qn("w:name"), font_name)
+        root.append(font)
+    part._blob = serialize_part_xml(root)
+
+
 def _set_cell_margins(cell, margins: dict[str, int]) -> None:
     properties = cell._tc.get_or_add_tcPr()
     container = properties.find(qn("w:tcMar"))
@@ -275,6 +326,22 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
     profile = profile or load_profile()
     page = profile["page"]
     typography = profile["typography"]
+    math_font = profile["equations"]["math_font"]
+    replaced_theme_fonts = _sync_theme_fonts(
+        document,
+        latin_font=typography["latin_font"],
+        east_asia_font=typography["body"]["east_asia_font"],
+    )
+    _sync_font_table(
+        document,
+        removed_fonts=replaced_theme_fonts,
+        required_fonts={
+            typography["latin_font"],
+            typography["body"]["east_asia_font"],
+            typography["heading_level_1"]["east_asia_font"],
+            math_font,
+        },
+    )
     page_number_typography = dict(
         typography["page_number"],
         latin_font=typography["latin_font"],
@@ -296,8 +363,8 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
         if page["different_first_page"]:
             _set_page_field(section.first_page_footer, page_number_typography)
 
-    _set_math_font(document, profile["equations"]["math_font"])
-    _set_math_run_font(document, typography["latin_font"])
+    _set_math_font(document, math_font)
+    _set_math_run_font(document, math_font)
     common_typography = {
         "latin_font": typography["latin_font"],
         "font_color_hex": typography["font_color_hex"],

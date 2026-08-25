@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from io import BytesIO
 from zipfile import ZipFile
 
 from docx import Document
@@ -47,6 +48,16 @@ class SharedPaperFormatTests(unittest.TestCase):
         table.cell(1, 0).text = "内容"
 
         apply_profile(document, self.profile)
+
+        package = BytesIO()
+        document.save(package)
+        package.seek(0)
+        with ZipFile(package) as archive:
+            theme_xml = archive.read("word/theme/theme1.xml")
+            font_table_xml = archive.read("word/fontTable.xml")
+        self.assertNotIn(b"Aptos", theme_xml)
+        self.assertNotIn(b"Aptos", font_table_xml)
+        self.assertIn(b"Times New Roman", theme_xml)
 
         page = self.profile["page"]
         section = document.sections[0]
@@ -180,8 +191,14 @@ class SharedPaperFormatTests(unittest.TestCase):
         for math_run in math_runs:
             fonts = math_run.find("./" + qn("w:rPr") + "/" + qn("w:rFonts"))
             self.assertIsNotNone(fonts)
-            self.assertEqual(fonts.get(qn("w:ascii")), typography["latin_font"])
-            self.assertEqual(fonts.get(qn("w:hAnsi")), typography["latin_font"])
+            self.assertEqual(
+                fonts.get(qn("w:ascii")),
+                self.profile["equations"]["math_font"],
+            )
+            self.assertEqual(
+                fonts.get(qn("w:hAnsi")),
+                self.profile["equations"]["math_font"],
+            )
         for footer in (section.footer, section.first_page_footer):
             result_run = next(run for run in footer.paragraphs[0].runs if run.text == "1")
             self.assertEqual(result_run.font.name, typography["latin_font"])
@@ -197,8 +214,12 @@ class SharedPaperFormatTests(unittest.TestCase):
                 for name in archive.namelist()
                 if name.startswith("word/footer") and name.endswith(".xml")
             ]
+            theme_xml = archive.read("word/theme/theme1.xml")
+            font_table_xml = archive.read("word/fontTable.xml")
         self.assertEqual(header_parts, [])
         self.assertEqual(len(footer_parts), 2)
+        self.assertNotIn(b"Aptos", theme_xml)
+        self.assertNotIn(b"Aptos", font_table_xml)
 
 
 if __name__ == "__main__":

@@ -75,6 +75,11 @@ typography:
     space_before_pt: 0
     space_after_pt: 0
     hanging_indent_pt: 21
+  page_number:
+    east_asia_font: 宋体
+    size_pt: 10.5
+    bold: false
+    italic: false
   table_text:
     east_asia_font: 宋体
     size_pt: 10
@@ -86,6 +91,7 @@ typography:
 
 equations:
   format: native_omml
+  math_font: DejaVu Math TeX Gyre
   display_alignment: center
   citation_markers_superscript: true
   compound_scripts_single_run: true

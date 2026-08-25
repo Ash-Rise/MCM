@@ -47,6 +47,9 @@ def _set_run_format(run, typography: dict[str, Any], *, bold: bool | None = None
         bold = typography.get("bold")
     if bold is not None:
         run.bold = bool(bold)
+    italic = typography.get("italic")
+    if italic is not None:
+        run.italic = bool(italic)
     fonts = run._r.get_or_add_rPr().get_or_add_rFonts()
     fonts.set(qn("w:ascii"), latin_font)
     fonts.set(qn("w:hAnsi"), latin_font)
@@ -79,22 +82,24 @@ def _set_page_gutter(section) -> None:
     margins.set(qn("w:gutter"), "0")
 
 
-def _set_page_field(footer) -> None:
+def _set_page_field(footer, typography: dict[str, Any]) -> None:
     element = footer._element
     for child in list(element):
         element.remove(child)
-    paragraph = OxmlElement("w:p")
-    properties = OxmlElement("w:pPr")
-    alignment = OxmlElement("w:jc")
-    alignment.set(qn("w:val"), "center")
-    properties.append(alignment)
-    paragraph.append(properties)
+    paragraph = footer.add_paragraph()
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    def add_formatted_run():
+        run = paragraph.add_run()
+        _set_run_format(run, typography)
+        return run._r
+
     for field_type, instruction in (
         ("begin", None),
         (None, " PAGE "),
         ("separate", None),
     ):
-        run = OxmlElement("w:r")
+        run = add_formatted_run()
         if field_type is not None:
             field = OxmlElement("w:fldChar")
             field.set(qn("w:fldCharType"), field_type)
@@ -104,18 +109,47 @@ def _set_page_field(footer) -> None:
             text.set(qn("xml:space"), "preserve")
             text.text = instruction
             run.append(text)
-        paragraph.append(run)
-    result_run = OxmlElement("w:r")
+    result_run = add_formatted_run()
     result = OxmlElement("w:t")
     result.text = "1"
     result_run.append(result)
-    paragraph.append(result_run)
-    end_run = OxmlElement("w:r")
+    end_run = add_formatted_run()
     end = OxmlElement("w:fldChar")
     end.set(qn("w:fldCharType"), "end")
     end_run.append(end)
-    paragraph.append(end_run)
-    element.append(paragraph)
+
+
+def _set_math_font(document, font_name: str) -> None:
+    settings = document.settings._element
+    math_properties = settings.find(qn("m:mathPr"))
+    if math_properties is None:
+        math_properties = OxmlElement("m:mathPr")
+        theme_language = settings.find(qn("w:themeFontLang"))
+        if theme_language is None:
+            settings.append(math_properties)
+        else:
+            settings.insert(settings.index(theme_language), math_properties)
+    math_font = math_properties.find(qn("m:mathFont"))
+    if math_font is None:
+        math_font = OxmlElement("m:mathFont")
+        math_properties.insert(0, math_font)
+    math_font.set(qn("m:val"), font_name)
+
+
+def _set_math_run_font(document, font_name: str) -> None:
+    """Prevent WPS from substituting Segoe Print inside native equations."""
+    for math_run in document.element.findall(".//" + qn("m:r")):
+        run_properties = math_run.find(qn("w:rPr"))
+        if run_properties is None:
+            run_properties = OxmlElement("w:rPr")
+            insertion_index = 1 if math_run.find(qn("m:rPr")) is not None else 0
+            math_run.insert(insertion_index, run_properties)
+        fonts = run_properties.find(qn("w:rFonts"))
+        if fonts is None:
+            fonts = OxmlElement("w:rFonts")
+            run_properties.insert(0, fonts)
+        for attribute in ("ascii", "hAnsi", "eastAsia", "cs"):
+            fonts.set(qn(f"w:{attribute}"), font_name)
 
 
 def _set_cell_margins(cell, margins: dict[str, int]) -> None:
@@ -240,6 +274,12 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
     """Apply generic profile rules in place; project-specific layout comes later."""
     profile = profile or load_profile()
     page = profile["page"]
+    typography = profile["typography"]
+    page_number_typography = dict(
+        typography["page_number"],
+        latin_font=typography["latin_font"],
+        font_color_hex=typography["font_color_hex"],
+    )
     for section in document.sections:
         section.page_width = Cm(page["width_cm"])
         section.page_height = Cm(page["height_cm"])
@@ -252,11 +292,12 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
         section.different_first_page_header_footer = page["different_first_page"]
         _set_page_gutter(section)
         _set_document_grid(section, page["document_grid_line_pitch_twips"])
-        _set_page_field(section.footer)
+        _set_page_field(section.footer, page_number_typography)
         if page["different_first_page"]:
-            _set_page_field(section.first_page_footer)
+            _set_page_field(section.first_page_footer, page_number_typography)
 
-    typography = profile["typography"]
+    _set_math_font(document, profile["equations"]["math_font"])
+    _set_math_run_font(document, typography["latin_font"])
     common_typography = {
         "latin_font": typography["latin_font"],
         "font_color_hex": typography["font_color_hex"],

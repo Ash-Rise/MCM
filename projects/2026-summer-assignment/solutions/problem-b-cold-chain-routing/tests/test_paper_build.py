@@ -67,6 +67,21 @@ class SharedPaperFormatTests(unittest.TestCase):
         self.assertIn("PAGE", section.first_page_footer._element.xml)
 
         typography = self.profile["typography"]
+        page_number = typography["page_number"]
+        for footer in (section.footer, section.first_page_footer):
+            for fonts in footer._element.findall(".//" + qn("w:rFonts")):
+                self.assertEqual(fonts.get(qn("w:ascii")), typography["latin_font"])
+                self.assertEqual(fonts.get(qn("w:eastAsia")), page_number["east_asia_font"])
+            result_run = next(run for run in footer.paragraphs[0].runs if run.text == "1")
+            self.assertEqual(result_run.font.size, Pt(page_number["size_pt"]))
+            self.assertFalse(result_run.italic)
+
+        math_properties = document.settings._element.find(qn("m:mathPr"))
+        self.assertIsNotNone(math_properties)
+        self.assertEqual(
+            math_properties.find(qn("m:mathFont")).get(qn("m:val")),
+            self.profile["equations"]["math_font"],
+        )
         self.assertEqual(title.runs[0].font.size, Pt(typography["title"]["size_pt"]))
         self.assertEqual(
             title.runs[0].font.color.rgb,
@@ -148,6 +163,29 @@ class SharedPaperFormatTests(unittest.TestCase):
         )
         self.assertEqual(len(document.tables), len(TABLE_WIDTH_WEIGHTS))
         self.assertEqual(len(document.inline_shapes), 3)
+        self.assertFalse(
+            any(
+                paragraph._p.get_or_add_pPr().find(qn("w:numPr")) is not None
+                for paragraph in document.paragraphs
+            ),
+            "Tracked paper must not rely on WPS-dependent automatic list-marker fonts",
+        )
+        math_properties = document.settings._element.find(qn("m:mathPr"))
+        self.assertEqual(
+            math_properties.find(qn("m:mathFont")).get(qn("m:val")),
+            self.profile["equations"]["math_font"],
+        )
+        math_runs = document.element.findall(".//" + qn("m:r"))
+        self.assertTrue(math_runs)
+        for math_run in math_runs:
+            fonts = math_run.find("./" + qn("w:rPr") + "/" + qn("w:rFonts"))
+            self.assertIsNotNone(fonts)
+            self.assertEqual(fonts.get(qn("w:ascii")), typography["latin_font"])
+            self.assertEqual(fonts.get(qn("w:hAnsi")), typography["latin_font"])
+        for footer in (section.footer, section.first_page_footer):
+            result_run = next(run for run in footer.paragraphs[0].runs if run.text == "1")
+            self.assertEqual(result_run.font.name, typography["latin_font"])
+            self.assertFalse(result_run.italic)
         with ZipFile(DOCX_PATH) as archive:
             header_parts = [
                 name

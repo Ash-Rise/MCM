@@ -6,7 +6,7 @@
 
 ## Phase
 
-第七阶段正式 `paper.md` 已完成并通过论文自身审查；模型、结果和 evidence artifacts 保持冻结。
+第八阶段正式 `paper.docx` 已生成并完成 A4 渲染审查；模型、结果、evidence artifacts 和论文语义保持冻结。
 
 ## Completed
 
@@ -29,10 +29,11 @@
 - 已从冻结结果生成 `results/evidence/` 下6张论文结果表和 `figures/` 下3张主图；完成数值机械比对、图像布局检查和实际读图检查。
 - 已依据冻结 decisions、results 和 evidence artifacts 完成 `paper.md`；覆盖题目三项任务、模型推导、结果、结论和适用边界。
 - 已审查 `paper.md` 的题目覆盖、模型—结果来源链、证据闭环、术语一致性、摘要质量和工程性内容；无需要改变模型或结论的论文问题。
+- 已由当前 `paper.md` 生成 `paper.docx`，完成 A4 页面、标题层级、图表尺寸、题注、公式编号、参考文献、页码和空白审查；最终渲染为14页，DOCX结构与格式校验通过。
 
 ## Next Actions
 
-- 保持C题模型、结果和 evidence artifacts 冻结；`paper.md` 作为当前论文内容权威，后续如需 DOCX/投稿版式再单独处理。
+- 保持 C 题模型、结果、evidence artifacts、`paper.md` 和 `paper.docx` 冻结；如需提交，仅做外部平台要求的非语义格式适配。
 - DP-C-001 的 B/C 方案和 DP-C-002 的其他时间尺度仅作敏感性分析或讨论，不作为主模型或主排序口径。
 
 ## Blockers

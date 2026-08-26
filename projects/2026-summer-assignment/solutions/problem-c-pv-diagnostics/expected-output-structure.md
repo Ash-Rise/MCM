@@ -1,5 +1,7 @@
 # Problem C Expected Output Structure
 
+> 状态注记：实现已完成，本文保留为设计记录；当前状态以 `state.md`、`src/` 和 `results/` 为准。
+
 > This is a planned interface for later implementation. Directories and result files listed below are not created in the model-design stage.
 
 ```text

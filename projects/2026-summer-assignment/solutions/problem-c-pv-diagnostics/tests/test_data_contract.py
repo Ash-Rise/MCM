@@ -22,7 +22,11 @@ class DataContractTests(unittest.TestCase):
         self.assertEqual(data.deviation_pct.shape, (100,))
         self.assertEqual(len(data.weather), 16)
         self.assertEqual(len(data.reference_labels), 100)
-        self.assertAlmostEqual(data.station_generation[0], data.generation[:, 0].sum())
+        for day_index in range(15):
+            self.assertAlmostEqual(
+                data.station_generation[day_index],
+                data.generation[:, day_index].sum(),
+            )
 
 
 if __name__ == "__main__":

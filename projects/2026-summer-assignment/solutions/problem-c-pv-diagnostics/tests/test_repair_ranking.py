@@ -46,6 +46,33 @@ class RepairRankingTests(unittest.TestCase):
         self.assertIn("historical recoverable losses and their sum", scope["held_fixed"])
         self.assertFalse(supplementary["changes_primary_ranking"])
 
+    def test_day16_supplementary_result_keeps_historical_order_and_common_scale(self) -> None:
+        data = load_problem_data(SUPPORTING_DOCX)
+        diagnosis, _ = diagnose_components(data)
+        historical = rank_repairs(data, diagnosis)
+        forecast = compare_candidates(data)
+        with_supplement = rank_repairs(data, diagnosis, forecast)
+
+        self.assertEqual(
+            historical["summary"]["selected_component_ids"],
+            with_supplement["summary"]["selected_component_ids"],
+        )
+        self.assertEqual(
+            [row["component_id"] for row in historical["ranking"]],
+            [row["component_id"] for row in with_supplement["ranking"]],
+        )
+
+        historical_gain = historical["summary"]["historical_mean_gain_kwh_day"]
+        station_mean = historical["summary"]["current_station_mean_kwh_day"]
+        day16_forecast = forecast["day16_forecast"]
+        supplementary = with_supplement["summary"]["day16_supplementary"]
+        scale = day16_forecast["point_kwh"] / station_mean
+        self.assertAlmostEqual(supplementary["expected_gain_kwh"], historical_gain * scale)
+        for key in ("confidence_95_kwh", "prediction_95_kwh"):
+            expected = [value * historical_gain / station_mean for value in day16_forecast[key]]
+            for actual, target in zip(supplementary[key], expected):
+                self.assertAlmostEqual(actual, target)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,7 @@
 # Problem C Model Design Report
 
+> 状态注记：最小实现、结果复现和接受审查已完成；本文保留为设计记录，当前状态以 `state.md`、`src/` 和 `results/` 为准。
+
 > Status: candidate design; no model family is frozen and no formal solution has been computed.
 > Authority: problem facts come from the original DOCX files; accepted semantics come from `decisions.md`.
 

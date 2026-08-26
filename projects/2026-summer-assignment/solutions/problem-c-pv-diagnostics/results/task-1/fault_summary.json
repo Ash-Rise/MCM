@@ -1,0 +1,15 @@
+{
+  "component_count": 100,
+  "class_counts": {
+    "正常": 70,
+    "隐裂": 15,
+    "热斑": 15,
+    "超出题面定义": 0
+  },
+  "classification_complete_rate": 1.0,
+  "reference_agreement_count": 100,
+  "reference_agreement_rate": 1.0,
+  "shading_suspect_count": 3,
+  "shading_unstable_count": 12,
+  "causal_interpretation_allowed": false
+}

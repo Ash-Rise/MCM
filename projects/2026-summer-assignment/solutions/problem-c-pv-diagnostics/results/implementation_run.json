@@ -1,0 +1,21 @@
+{
+  "supporting_data": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\problem-statements\\problem-c-supporting-data.docx",
+  "component_count": 100,
+  "historical_day_count": 15,
+  "task1_reference_agreement_rate": 1.0,
+  "task2_technical_selection": "M0",
+  "task3_selected_components": [
+    "PV084",
+    "PV044",
+    "PV071",
+    "PV060",
+    "PV076",
+    "PV010",
+    "PV008",
+    "PV051",
+    "PV029",
+    "PV009"
+  ],
+  "paper_generated": false,
+  "figures_generated": false
+}

@@ -1,0 +1,18 @@
+{
+  "selected_candidate": "M0",
+  "selected_family": "M0",
+  "selection_status": "technical selection under frozen validation contract; not an Accepted Decision",
+  "minimum_mae_candidate": "M0",
+  "minimum_mae_kwh": 0.18078663579219903,
+  "mae_standard_error_kwh": 0.04125585562790025,
+  "one_standard_error_threshold_kwh": 0.22204249142009927,
+  "one_standard_error_candidates": [
+    "M0",
+    "M1"
+  ],
+  "temperature_reference_c": 18.8,
+  "wind_reference_m_s": 2.766666666666666,
+  "coefficients": {
+    "beta_H": 51.249390954052345
+  }
+}

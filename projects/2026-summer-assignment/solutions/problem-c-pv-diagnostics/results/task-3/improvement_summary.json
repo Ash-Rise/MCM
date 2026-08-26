@@ -1,0 +1,46 @@
+{
+  "faulty_component_count": 30,
+  "repair_limit": 10,
+  "selected_component_ids": [
+    "PV084",
+    "PV044",
+    "PV071",
+    "PV060",
+    "PV076",
+    "PV010",
+    "PV008",
+    "PV051",
+    "PV029",
+    "PV009"
+  ],
+  "historical_mean_gain_kwh_day": 5.781380114341907,
+  "current_station_mean_kwh_day": 194.73573333333337,
+  "post_repair_station_mean_kwh_day": 200.51711344767529,
+  "historical_relative_improvement": 0.029688337191026946,
+  "cutoff_sorting_invariant": true,
+  "cutoff_rounding_intervals_overlap": false,
+  "rank_10_loss_kwh_day": 0.47041756225425946,
+  "rank_11_loss_kwh_day": 0.45032178005990575,
+  "additivity_conditions": {
+    "equal_unit_budget_per_repair": true,
+    "at_most_ten_repairs_without_other_selection_constraints": true,
+    "nonnegative_independent_component_gains": true,
+    "set_gain_equals_sum_of_component_gains": true,
+    "objective_is_historical_mean_absolute_recoverable_generation": true
+  },
+  "optimality_basis": "exchange argument under equal cost, independent nonnegative additive gains",
+  "optimization_solver_used": false,
+  "day16_supplementary": {
+    "expected_gain_kwh": 7.606658989617027,
+    "confidence_95_kwh": [
+      7.602386626000175,
+      7.610931353233878
+    ],
+    "prediction_95_kwh": [
+      7.589569535149623,
+      7.6237484440844305
+    ],
+    "scaling_basis": "selected Task 2 station forecast divided by historical mean station generation",
+    "changes_primary_ranking": false
+  }
+}

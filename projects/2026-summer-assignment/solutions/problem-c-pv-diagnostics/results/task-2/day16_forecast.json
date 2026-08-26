@@ -1,0 +1,39 @@
+{
+  "candidate": "M0",
+  "weather": {
+    "day": 16,
+    "day_label": "16（预报）",
+    "irradiation_kwh_m2": 5.0,
+    "temperature_c": 22.0,
+    "wind_m_s": 2.0,
+    "weather_type": "晴（预测用）",
+    "is_forecast": true
+  },
+  "point_kwh": 256.217077456129,
+  "confidence_95_kwh": [
+    256.0731703188124,
+    256.3609845934456
+  ],
+  "prediction_95_kwh": [
+    255.6414489068626,
+    256.7927060053955
+  ],
+  "degrees_of_freedom": 14,
+  "interval_method": "small-sample Student-t regression interval on Y/H, transformed to kWh",
+  "interval_scale_coefficients": {
+    "beta_H": 51.243415491225804
+  },
+  "bootstrap_sensitivity": {
+    "samples": 500,
+    "seed": 2026,
+    "confidence_lower": 256.0913535072007,
+    "confidence_upper": 256.34873129058667,
+    "prediction_lower": 255.78156271561696,
+    "prediction_upper": 256.7488492281877
+  },
+  "absolute_residual_irradiation_spearman": {
+    "raw_scale": 0.5249999999999999,
+    "normalized_y_over_h_scale": -0.039285714285714285
+  },
+  "coverage_claim": "diagnostic only; 15 days cannot prove exact 95% calibration"
+}

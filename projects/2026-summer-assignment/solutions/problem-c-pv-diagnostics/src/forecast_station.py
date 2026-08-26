@@ -159,25 +159,86 @@ def _bootstrap_interval_sensitivity(
     }
 
 
-def _multiply_interval(interval: dict[str, float], factor: float) -> dict[str, float]:
-    scaled = dict(interval)
-    for key in (
-        "point",
-        "confidence_lower",
-        "confidence_upper",
-        "prediction_lower",
-        "prediction_upper",
-    ):
-        scaled[key] = float(scaled[key] * factor)
-    scaled["residual_mse"] = float(scaled["residual_mse"] * factor * factor)
-    return scaled
+def _hc3_scaled_residual_interval(
+    x: np.ndarray,
+    y: np.ndarray,
+    fit: dict[str, Any],
+    x0: np.ndarray,
+    residual_scale: np.ndarray,
+    forecast_scale: float,
+    confidence: float = 0.95,
+) -> dict[str, float]:
+    """Keep the selected point model fixed and adjust only its uncertainty estimate."""
+
+    n, p = x.shape
+    dof = n - p
+    if dof <= 0:
+        raise ValueError("not enough residual degrees of freedom")
+    if np.any(residual_scale <= 0) or forecast_scale <= 0:
+        raise ValueError("scaled-residual interval requires positive scale values")
+
+    xtx_inverse = np.linalg.pinv(x.T @ x)
+    leverage = np.einsum("ij,jk,ik->i", x, xtx_inverse, x)
+    leverage_denominator = np.maximum(1.0 - leverage, np.finfo(float).eps)
+    hc3_adjusted = fit["residuals"] / leverage_denominator
+    meat = x.T @ (np.square(hc3_adjusted)[:, None] * x)
+    hc3_covariance = xtx_inverse @ meat @ xtx_inverse
+    mean_variance = float(max(0.0, x0 @ hc3_covariance @ x0))
+
+    normalized_residuals = fit["residuals"] / residual_scale
+    conditional_residual_variance = float(
+        forecast_scale * forecast_scale * np.sum(np.square(normalized_residuals)) / dof
+    )
+    quantile = float(student_t.ppf((1.0 + confidence) / 2.0, dof))
+    point = float(x0 @ fit["coefficients"])
+    mean_se = float(np.sqrt(mean_variance))
+    prediction_se = float(np.sqrt(mean_variance + conditional_residual_variance))
+    return {
+        "point": point,
+        "confidence_lower": point - quantile * mean_se,
+        "confidence_upper": point + quantile * mean_se,
+        "prediction_lower": point - quantile * prediction_se,
+        "prediction_upper": point + quantile * prediction_se,
+        "degrees_of_freedom": dof,
+        "parameter_variance_method": "HC3 sandwich covariance on selected full-data fit",
+        "conditional_residual_variance_kwh2": conditional_residual_variance,
+    }
 
 
-def _multiply_bootstrap_interval(interval: dict[str, float], factor: float) -> dict[str, float]:
-    scaled = dict(interval)
-    for key in ("confidence_lower", "confidence_upper", "prediction_lower", "prediction_upper"):
-        scaled[key] = float(scaled[key] * factor)
-    return scaled
+def _scaled_residual_bootstrap_sensitivity(
+    spec: CandidateSpec,
+    x: np.ndarray,
+    y: np.ndarray,
+    fit: dict[str, Any],
+    x0: np.ndarray,
+    residual_scale: np.ndarray,
+    forecast_scale: float,
+    samples: int = 500,
+    seed: int = 2026,
+) -> dict[str, float]:
+    """Refit the same selected model under irradiation-scaled residual resampling."""
+
+    rng = np.random.default_rng(seed)
+    normalized_residuals = fit["residuals"] / residual_scale
+    normalized_residuals = normalized_residuals - np.mean(normalized_residuals)
+    mean_predictions: list[float] = []
+    realized_predictions: list[float] = []
+    for _ in range(samples):
+        resampled = rng.choice(normalized_residuals, size=len(y), replace=True)
+        synthetic_y = fit["fitted"] + residual_scale * resampled
+        synthetic_fit = _fit(spec, x, synthetic_y)
+        point = float(x0 @ synthetic_fit["coefficients"])
+        mean_predictions.append(point)
+        realized_predictions.append(point + forecast_scale * float(rng.choice(normalized_residuals)))
+    return {
+        "samples": samples,
+        "seed": seed,
+        "confidence_lower": float(np.quantile(mean_predictions, 0.025)),
+        "confidence_upper": float(np.quantile(mean_predictions, 0.975)),
+        "prediction_lower": float(np.quantile(realized_predictions, 0.025)),
+        "prediction_upper": float(np.quantile(realized_predictions, 0.975)),
+        "point_model_refit": "same selected candidate definition on original Y scale",
+    }
 
 
 def _intercept_ci_contains_zero(x: np.ndarray, y: np.ndarray, fit: dict[str, Any]) -> bool:
@@ -387,33 +448,34 @@ def compare_candidates(data: ProblemData) -> dict[str, Any]:
     )
 
     raw_correlation = spearmanr(np.abs(selected["fit"]["residuals"]), irradiation)
-    normalized_x = selected["x"] / irradiation[:, None]
-    normalized_y = y / irradiation
-    normalized_fit = _fit(selected["spec"], normalized_x, normalized_y)
-    normalized_correlation = spearmanr(np.abs(normalized_fit["residuals"]), irradiation)
+    normalized_residuals = selected["fit"]["residuals"] / irradiation
+    normalized_correlation = spearmanr(np.abs(normalized_residuals), irradiation)
     use_normalized_scale = abs(float(normalized_correlation.statistic)) < abs(
         float(raw_correlation.statistic)
     )
     if use_normalized_scale:
         day16_irradiation = day16[0]
-        normalized_day16_x = selected["day16_x"] / day16_irradiation
-        interval = _multiply_interval(
-            _regression_interval(
-                selected["spec"], normalized_x, normalized_y, normalized_fit, normalized_day16_x
-            ),
+        interval = _hc3_scaled_residual_interval(
+            selected["x"],
+            y,
+            selected["fit"],
+            selected["day16_x"],
+            irradiation,
             day16_irradiation,
         )
-        bootstrap = _multiply_bootstrap_interval(
-            _bootstrap_interval_sensitivity(
-                selected["spec"], normalized_x, normalized_y, normalized_fit, normalized_day16_x
-            ),
+        bootstrap = _scaled_residual_bootstrap_sensitivity(
+            selected["spec"],
+            selected["x"],
+            y,
+            selected["fit"],
+            selected["day16_x"],
+            irradiation,
             day16_irradiation,
         )
-        interval_method = "small-sample Student-t regression interval on Y/H, transformed to kWh"
-        interval_scale_coefficients = {
-            name: float(value)
-            for name, value in zip(selected["spec"].parameter_names, normalized_fit["coefficients"])
-        }
+        interval_method = (
+            "selected Y-scale point model with HC3 parameter covariance and "
+            "irradiation-scaled conditional residual variance"
+        )
     else:
         interval = _regression_interval(
             selected["spec"], selected["x"], y, selected["fit"], selected["day16_x"]
@@ -422,10 +484,6 @@ def compare_candidates(data: ProblemData) -> dict[str, Any]:
             selected["spec"], selected["x"], y, selected["fit"], selected["day16_x"]
         )
         interval_method = "small-sample Student-t regression interval on Y"
-        interval_scale_coefficients = {
-            name: float(value)
-            for name, value in zip(selected["spec"].parameter_names, selected["fit"]["coefficients"])
-        }
 
     loo_rows: list[dict[str, Any]] = []
     for evaluation in evaluations:
@@ -470,6 +528,9 @@ def compare_candidates(data: ProblemData) -> dict[str, Any]:
                 name: float(value)
                 for name, value in zip(selected["spec"].parameter_names, selected["fit"]["coefficients"])
             },
+            "day16_point_from_selected_fit_kwh": float(
+                selected["day16_x"] @ selected["fit"]["coefficients"]
+            ),
         },
         "day16_forecast": {
             "candidate": selected["spec"].name,
@@ -479,11 +540,27 @@ def compare_candidates(data: ProblemData) -> dict[str, Any]:
             "prediction_95_kwh": [interval["prediction_lower"], interval["prediction_upper"]],
             "degrees_of_freedom": interval["degrees_of_freedom"],
             "interval_method": interval_method,
-            "interval_scale_coefficients": interval_scale_coefficients,
+            "point_model_coefficients": {
+                name: float(value)
+                for name, value in zip(selected["spec"].parameter_names, selected["fit"]["coefficients"])
+            },
+            "point_model_definition": "selected candidate refit once on all 15 Y-scale observations",
+            "interval_point_locked_to_selected_model": True,
             "bootstrap_sensitivity": bootstrap,
             "absolute_residual_irradiation_spearman": {
                 "raw_scale": float(raw_correlation.statistic),
                 "normalized_y_over_h_scale": float(normalized_correlation.statistic),
+            },
+            "uncertainty_scope": {
+                "propagated": [
+                    "selected-model parameter estimation uncertainty",
+                    "conditional day-level residual variability at fixed day-16 irradiation",
+                ],
+                "not_propagated": [
+                    "day-16 weather forecast input uncertainty",
+                    "candidate-model selection uncertainty",
+                    "future fault-state changes, curtailment, or inverter events",
+                ],
             },
             "coverage_claim": "diagnostic only; 15 days cannot prove exact 95% calibration",
         },

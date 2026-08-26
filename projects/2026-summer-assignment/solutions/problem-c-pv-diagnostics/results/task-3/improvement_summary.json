@@ -31,16 +31,37 @@
   "optimality_basis": "exchange argument under equal cost, independent nonnegative additive gains",
   "optimization_solver_used": false,
   "day16_supplementary": {
-    "expected_gain_kwh": 7.606658989617027,
+    "expected_gain_kwh": 7.607545997393361,
     "confidence_95_kwh": [
-      7.602386626000175,
-      7.610931353233878
+      7.601927757392165,
+      7.613164237394557
     ],
     "prediction_95_kwh": [
-      7.589569535149623,
-      7.6237484440844305
+      7.589960810680966,
+      7.625131184105754
     ],
     "scaling_basis": "selected Task 2 station forecast divided by historical mean station generation",
+    "interval_scope": {
+      "interpretation": "conditional proportional-scaling interval for the selected repair set's day-16 gain",
+      "propagated": [
+        "Task 2 selected-model parameter uncertainty via the station confidence interval",
+        "Task 2 conditional day-level residual variability via the station prediction interval"
+      ],
+      "held_fixed": [
+        "selected top-10 repair list",
+        "historical recoverable losses and their sum",
+        "station historical mean used as scaling denominator",
+        "proportional relation between station generation and repair gain"
+      ],
+      "not_propagated": [
+        "deviation-rate rounding uncertainty",
+        "normal-counterfactual estimation uncertainty",
+        "repair effectiveness uncertainty",
+        "additivity or string-coupling uncertainty",
+        "Task 2 candidate-model selection uncertainty",
+        "day-16 weather forecast input uncertainty"
+      ]
+    },
     "changes_primary_ranking": false
   }
 }

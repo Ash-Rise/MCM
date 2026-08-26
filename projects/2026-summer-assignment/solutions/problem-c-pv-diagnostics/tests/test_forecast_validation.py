@@ -34,7 +34,14 @@ class ForecastValidationTests(unittest.TestCase):
         self.assertEqual(len(selected), 1)
         self.assertTrue(selected[0]["eligible"])
         forecast = self.result["day16_forecast"]
-        self.assertIn("Y/H", forecast["interval_method"])
+        selection = self.result["selection"]
+        self.assertTrue(forecast["interval_point_locked_to_selected_model"])
+        self.assertAlmostEqual(
+            forecast["point_kwh"],
+            selection["day16_point_from_selected_fit_kwh"],
+        )
+        self.assertEqual(forecast["point_model_coefficients"], selection["coefficients"])
+        self.assertIn("HC3", forecast["interval_method"])
         correlations = forecast["absolute_residual_irradiation_spearman"]
         self.assertLess(
             abs(correlations["normalized_y_over_h_scale"]),
@@ -47,6 +54,7 @@ class ForecastValidationTests(unittest.TestCase):
         self.assertLessEqual(ci_low, point)
         self.assertLessEqual(point, ci_high)
         self.assertLessEqual(ci_high, pi_high)
+        self.assertIn("day-16 weather forecast input uncertainty", forecast["uncertainty_scope"]["not_propagated"])
 
 
 if __name__ == "__main__":

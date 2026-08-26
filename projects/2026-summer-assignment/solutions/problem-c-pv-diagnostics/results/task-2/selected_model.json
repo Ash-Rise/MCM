@@ -14,5 +14,6 @@
   "wind_reference_m_s": 2.766666666666666,
   "coefficients": {
     "beta_H": 51.249390954052345
-  }
+  },
+  "day16_point_from_selected_fit_kwh": 256.2469547702617
 }

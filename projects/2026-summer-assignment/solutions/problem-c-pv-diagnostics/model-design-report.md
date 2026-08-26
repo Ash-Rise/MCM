@@ -143,7 +143,7 @@ For the selected model report both:
 - a 95% confidence interval for expected day-16 generation; and
 - a 95% prediction interval for a realized day-16 total, which includes day-level residual variability.
 
-The primary interval method will be the small-sample Student-t regression interval when residual diagnostics are adequate. If variance is more stable after normalizing by irradiation, estimate uncertainty on `Y/H` and transform it back using `H_16`. A day-level residual bootstrap is a sensitivity method, not an automatic replacement. With only 15 days, interval coverage from leave-one-out predictions is reported as a diagnostic rather than claimed as a precise 95% calibration proof.
+The primary interval method will be the small-sample Student-t regression interval when residual diagnostics are adequate. If residual variance is more stable after normalization by irradiation, use `Y/H` only to estimate the irradiation-scaled residual variance around the selected full-data `Y`-scale fit; it must not refit or replace the selected coefficients or formal point forecast. A day-level scaled-residual bootstrap is a sensitivity method and must refit the same selected model definition. With only 15 days, interval coverage from leave-one-out predictions is reported as a diagnostic rather than claimed as a precise 95% calibration proof.
 
 ### 3.5 Candidate, rationale, data, validation, and failure boundary
 

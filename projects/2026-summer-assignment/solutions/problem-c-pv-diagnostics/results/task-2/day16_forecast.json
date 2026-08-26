@@ -9,31 +9,45 @@
     "weather_type": "晴（预测用）",
     "is_forecast": true
   },
-  "point_kwh": 256.217077456129,
+  "point_kwh": 256.2469547702617,
   "confidence_95_kwh": [
-    256.0731703188124,
-    256.3609845934456
+    256.05771412788266,
+    256.43619541264076
   ],
   "prediction_95_kwh": [
-    255.6414489068626,
-    256.7927060053955
+    255.65462834257247,
+    256.8392811979509
   ],
   "degrees_of_freedom": 14,
-  "interval_method": "small-sample Student-t regression interval on Y/H, transformed to kWh",
-  "interval_scale_coefficients": {
-    "beta_H": 51.243415491225804
+  "interval_method": "selected Y-scale point model with HC3 parameter covariance and irradiation-scaled conditional residual variance",
+  "point_model_coefficients": {
+    "beta_H": 51.249390954052345
   },
+  "point_model_definition": "selected candidate refit once on all 15 Y-scale observations",
+  "interval_point_locked_to_selected_model": true,
   "bootstrap_sensitivity": {
     "samples": 500,
     "seed": 2026,
-    "confidence_lower": 256.0913535072007,
-    "confidence_upper": 256.34873129058667,
-    "prediction_lower": 255.78156271561696,
-    "prediction_upper": 256.7488492281877
+    "confidence_lower": 256.086727915959,
+    "confidence_upper": 256.4051482079368,
+    "prediction_lower": 255.8011923039636,
+    "prediction_upper": 256.7820740647261,
+    "point_model_refit": "same selected candidate definition on original Y scale"
   },
   "absolute_residual_irradiation_spearman": {
     "raw_scale": 0.5249999999999999,
-    "normalized_y_over_h_scale": -0.039285714285714285
+    "normalized_y_over_h_scale": 0.014285714285714282
+  },
+  "uncertainty_scope": {
+    "propagated": [
+      "selected-model parameter estimation uncertainty",
+      "conditional day-level residual variability at fixed day-16 irradiation"
+    ],
+    "not_propagated": [
+      "day-16 weather forecast input uncertainty",
+      "candidate-model selection uncertainty",
+      "future fault-state changes, curtailment, or inverter events"
+    ]
   },
   "coverage_claim": "diagnostic only; 15 days cannot prove exact 95% calibration"
 }

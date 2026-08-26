@@ -75,7 +75,7 @@ MAPE is not a primary criterion because low-irradiation days receive disproporti
 ### 4.4 Residual and interval checks
 
 - Plot or tabulate residuals against fitted generation, irradiation, temperature, wind, and day order.
-- Check whether residual scale is more stable for `Y` or for normalized output `Y/H`; choose the interval scale accordingly.
+- Check whether residual variance is more stable on `Y` or after scaling residuals by `H`. Use the more stable representation only for covariance/conditional-residual estimation; the formal point forecast must remain the prediction from the selected candidate refit once on all 15 original `Y` observations.
 - Compare the Student-t interval with a modest day-level residual bootstrap sensitivity calculation if residual assumptions are doubtful.
 - Report both the expected-value confidence interval and the realized-day prediction interval.
 - Do not claim exact 95% calibration from 15 observations. If interval results are highly method-sensitive, report the range and limitation rather than selecting the narrowest interval.

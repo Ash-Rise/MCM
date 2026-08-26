@@ -122,6 +122,29 @@ def rank_repairs(
             "confidence_95_kwh": (selected_gain * confidence).tolist(),
             "prediction_95_kwh": (selected_gain * prediction).tolist(),
             "scaling_basis": "selected Task 2 station forecast divided by historical mean station generation",
+            "interval_scope": {
+                "interpretation": (
+                    "conditional proportional-scaling interval for the selected repair set's day-16 gain"
+                ),
+                "propagated": [
+                    "Task 2 selected-model parameter uncertainty via the station confidence interval",
+                    "Task 2 conditional day-level residual variability via the station prediction interval",
+                ],
+                "held_fixed": [
+                    "selected top-10 repair list",
+                    "historical recoverable losses and their sum",
+                    "station historical mean used as scaling denominator",
+                    "proportional relation between station generation and repair gain",
+                ],
+                "not_propagated": [
+                    "deviation-rate rounding uncertainty",
+                    "normal-counterfactual estimation uncertainty",
+                    "repair effectiveness uncertainty",
+                    "additivity or string-coupling uncertainty",
+                    "Task 2 candidate-model selection uncertainty",
+                    "day-16 weather forecast input uncertainty",
+                ],
+            },
             "changes_primary_ranking": False,
         }
 

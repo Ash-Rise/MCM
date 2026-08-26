@@ -1,0 +1,22 @@
+{
+  "source": "frozen structured results; no model refit",
+  "tables": [
+    "task1_diagnosis_summary.csv",
+    "task1_shading_screen_cross_tab.csv",
+    "task2_candidate_comparison.csv",
+    "task2_day16_forecast.csv",
+    "task3_top10_repairs.csv",
+    "task3_gain_summary.csv"
+  ],
+  "figures": [
+    "evidence_task1_fault_distribution.png",
+    "evidence_task2_forecast_validation.png",
+    "evidence_task3_repair_ranking.png"
+  ],
+  "paper_generated": false,
+  "claims": {
+    "evidence_task1_fault_distribution.png": "Task 1 formal fault distribution by string; descriptive only",
+    "evidence_task2_forecast_validation.png": "Task 2 M0 held-out historical prediction and day16 conditional intervals",
+    "evidence_task3_repair_ranking.png": "Task 3 historical loss ranking, top-10 cutoff, and rounding sensitivity"
+  }
+}

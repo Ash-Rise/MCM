@@ -1,0 +1,4 @@
+﻿candidate,eligible,eligibility_reasons,loo_mae_kwh,loo_rmse_kwh,max_absolute_error_kwh,cv_r2,full_r2,in_one_standard_error_set,selected_by_contract
+M0,是,无,0.180787,0.237723,0.571382,0.99999055,0.99999221,是,是
+M1,是,无,0.188131,0.240464,0.563589,0.99999033,0.99999238,是,否
+M2,否,beta_T: unsupported near-zero full estimate；beta_W: changes by more than 100% under deletion；beta_T is at the zero boundary in more than 5 folds；beta_W is at the zero boundary in more than 5 folds,0.186859,0.244338,0.593485,0.99999002,0.99999221,否,否

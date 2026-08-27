@@ -89,6 +89,11 @@ typography:
     space_after_pt: 0
     vertical_alignment: center
 
+docx:
+  theme_font_policy: profile_owned
+  text_color_policy: literal_profile_color
+  prune_unreferenced_font_table_entries: true
+
 equations:
   format: native_omml
   math_font: Cambria Math

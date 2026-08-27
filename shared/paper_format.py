@@ -1,12 +1,18 @@
-"""Apply the repository-wide paper formatting profile to a DOCX document."""
+"""Apply and validate the repository-wide paper formatting profile."""
 
 from __future__ import annotations
 
+import argparse
+import hashlib
+import json
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
 import yaml
+from docx import Document
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
@@ -187,13 +193,135 @@ def _sync_theme_fonts(document, *, latin_font: str, east_asia_font: str) -> set[
     return replaced_fonts
 
 
-def _sync_font_table(document, *, removed_fonts: set[str], required_fonts: set[str]) -> None:
+def _set_explicit_rfonts(element, *, latin_font: str, east_asia_font: str) -> None:
+    rfonts = element.find(qn("w:rFonts"))
+    if rfonts is None:
+        rfonts = OxmlElement("w:rFonts")
+        element.insert(0, rfonts)
+    for attribute in ("asciiTheme", "hAnsiTheme", "eastAsiaTheme", "csTheme"):
+        rfonts.attrib.pop(qn(f"w:{attribute}"), None)
+    for attribute, font_name in (
+        ("ascii", latin_font),
+        ("hAnsi", latin_font),
+        ("eastAsia", east_asia_font),
+        ("cs", latin_font),
+    ):
+        rfonts.set(qn(f"w:{attribute}"), font_name)
+
+
+def _set_literal_text_color(element, color_hex: str) -> None:
+    color = element.find(qn("w:color"))
+    if color is None:
+        color = OxmlElement("w:color")
+        element.append(color)
+    for attribute in ("themeColor", "themeShade", "themeTint"):
+        color.attrib.pop(qn(f"w:{attribute}"), None)
+    color.set(qn("w:val"), color_hex)
+
+
+def _sync_style_resources(document, profile: dict[str, Any]) -> None:
+    """Make inherited text styles use profile-owned fonts and literal colors."""
+    typography = profile["typography"]
+    common = {
+        "latin_font": typography["latin_font"],
+        "font_color_hex": typography["font_color_hex"],
+    }
+    style_profiles = {
+        "Normal": dict(typography["body"], **common),
+        "Title": dict(typography["title"], **common),
+        # Pandoc uses Heading 2 for the paper's top-level sections.
+        "Heading 1": dict(typography["heading_level_1"], **common),
+        "Heading 2": dict(typography["heading_level_1"], **common),
+        "Heading 3": dict(typography["heading_level_2_and_3"], **common),
+        "Heading 4": dict(typography["heading_level_2_and_3"], **common),
+    }
+    for style_name, style_profile in style_profiles.items():
+        try:
+            style = document.styles[style_name]
+        except KeyError:
+            continue
+        style_element = style.element
+        rpr = style_element.find(qn("w:rPr"))
+        if rpr is None:
+            rpr = OxmlElement("w:rPr")
+            style_element.append(rpr)
+        _set_explicit_rfonts(
+            rpr,
+            latin_font=style_profile["latin_font"],
+            east_asia_font=style_profile["east_asia_font"],
+        )
+        _set_literal_text_color(rpr, style_profile["font_color_hex"])
+
+
+def _sync_doc_defaults(document, profile: dict[str, Any]) -> None:
+    """Remove theme-font inheritance from the document default run style."""
+    typography = profile["typography"]
+    settings = document.styles.element
+    defaults = settings.find(qn("w:docDefaults"))
+    if defaults is None:
+        defaults = OxmlElement("w:docDefaults")
+        settings.insert(0, defaults)
+    rpr_default = defaults.find(qn("w:rPrDefault"))
+    if rpr_default is None:
+        rpr_default = OxmlElement("w:rPrDefault")
+        defaults.insert(0, rpr_default)
+    rpr = rpr_default.find(qn("w:rPr"))
+    if rpr is None:
+        rpr = OxmlElement("w:rPr")
+        rpr_default.append(rpr)
+    _set_explicit_rfonts(
+        rpr,
+        latin_font=typography["latin_font"],
+        east_asia_font=typography["body"]["east_asia_font"],
+    )
+    _set_literal_text_color(rpr, typography["font_color_hex"])
+
+
+def _collect_explicit_font_names(document) -> set[str]:
+    """Collect font names that remain explicitly referenced after normalization."""
+    names: set[str] = set()
+    for partname in (
+        "/word/document.xml",
+        "/word/styles.xml",
+        "/word/settings.xml",
+        "/word/theme/theme1.xml",
+    ):
+        part = _find_package_part(document, partname)
+        if part is None:
+            continue
+        root = parse_xml(part.blob)
+        for element in root.iter():
+            for attribute in ("ascii", "hAnsi", "eastAsia", "cs"):
+                value = element.get(qn(f"w:{attribute}"))
+                if value:
+                    names.add(value)
+            if element.tag in {
+                qn("m:mathFont"),
+                qn("a:latin"),
+                qn("a:ea"),
+                qn("a:cs"),
+            }:
+                value = element.get("typeface") or element.get(qn("m:val"))
+                if value:
+                    names.add(value)
+    return names
+
+
+def _sync_font_table(
+    document,
+    *,
+    removed_fonts: set[str],
+    required_fonts: set[str],
+    prune_unreferenced: bool = True,
+) -> None:
     part = _find_package_part(document, "/word/fontTable.xml")
     if part is None:
         return
     root = parse_xml(part.blob)
     for font in list(root.findall(qn("w:font"))):
-        if font.get(qn("w:name")) in removed_fonts:
+        if font.get(qn("w:name")) in removed_fonts or (
+            prune_unreferenced and font.get(qn("w:name")) not in required_fonts
+        ):
             root.remove(font)
     existing = {font.get(qn("w:name")) for font in root.findall(qn("w:font"))}
     for font_name in sorted(required_fonts - existing):
@@ -201,6 +329,179 @@ def _sync_font_table(document, *, removed_fonts: set[str], required_fonts: set[s
         font.set(qn("w:name"), font_name)
         root.append(font)
     part._blob = serialize_part_xml(root)
+
+
+def normalize_docx_resources(document, profile: dict[str, Any] | None = None) -> None:
+    """Normalize theme, inherited styles, defaults, and the DOCX font table."""
+    profile = profile or load_profile()
+    typography = profile["typography"]
+    replaced_theme_fonts = _sync_theme_fonts(
+        document,
+        latin_font=typography["latin_font"],
+        east_asia_font=typography["body"]["east_asia_font"],
+    )
+    _sync_style_resources(document, profile)
+    _sync_doc_defaults(document, profile)
+    required_fonts = _collect_explicit_font_names(document)
+    required_fonts.update(
+        {
+            typography["latin_font"],
+            typography["body"]["east_asia_font"],
+            typography["title"]["east_asia_font"],
+            typography["heading_level_1"]["east_asia_font"],
+            typography["heading_level_2_and_3"]["east_asia_font"],
+            profile["equations"]["math_font"],
+        }
+    )
+    _sync_font_table(
+        document,
+        removed_fonts=replaced_theme_fonts,
+        required_fonts=required_fonts,
+        prune_unreferenced=profile.get("docx", {}).get(
+            "prune_unreferenced_font_table_entries", True
+        ),
+    )
+
+
+def validate_docx_resources(document, profile: dict[str, Any] | None = None) -> list[str]:
+    """Return resource/style violations that can trigger cross-editor substitutions."""
+    profile = profile or load_profile()
+    typography = profile["typography"]
+    errors: list[str] = []
+    theme_part = _find_package_part(document, "/word/theme/theme1.xml")
+    if theme_part is not None:
+        theme = parse_xml(theme_part.blob)
+        expected = {
+            "majorFont": (typography["latin_font"], typography["body"]["east_asia_font"], typography["latin_font"]),
+            "minorFont": (typography["latin_font"], typography["body"]["east_asia_font"], typography["latin_font"]),
+        }
+        for family_name, expected_values in expected.items():
+            family = theme.find(".//" + qn(f"a:{family_name}"))
+            if family is None:
+                errors.append(f"主题缺少 {family_name}")
+                continue
+            actual_values = []
+            for element_name in ("latin", "ea", "cs"):
+                element = family.find(qn(f"a:{element_name}"))
+                actual_values.append(element.get("typeface", "") if element is not None else "")
+            actual = tuple(actual_values)
+            if actual != expected_values:
+                errors.append(f"主题 {family_name} 字体不符合 profile: {actual}")
+
+    styles_part = _find_package_part(document, "/word/styles.xml")
+    if styles_part is not None:
+        styles = parse_xml(styles_part.blob)
+        expected_styles = {"Title", "Heading1", "Heading2", "Heading3", "Heading4"}
+        for style in styles.findall(qn("w:style")):
+            if style.get(qn("w:styleId")) not in expected_styles:
+                continue
+            color = style.find("./" + qn("w:rPr") + "/" + qn("w:color"))
+            if color is None or color.get(qn("w:val")) != typography["font_color_hex"]:
+                errors.append(f"样式 {style.get(qn('w:styleId'))} 未使用 profile 文字颜色")
+            if color is not None and any(
+                color.get(qn(f"w:{attribute}"))
+                for attribute in ("themeColor", "themeShade", "themeTint")
+            ):
+                errors.append(f"样式 {style.get(qn('w:styleId'))} 仍继承主题颜色")
+
+    font_table_part = _find_package_part(document, "/word/fontTable.xml")
+    if font_table_part is not None:
+        font_table = parse_xml(font_table_part.blob)
+        explicit = _collect_explicit_font_names(document)
+        explicit.update(
+            {
+                typography["latin_font"],
+                typography["body"]["east_asia_font"],
+                typography["title"]["east_asia_font"],
+                typography["heading_level_1"]["east_asia_font"],
+                typography["heading_level_2_and_3"]["east_asia_font"],
+                profile["equations"]["math_font"],
+            }
+        )
+        table_names = {
+            font.get(qn("w:name"))
+            for font in font_table.findall(qn("w:font"))
+            if font.get(qn("w:name"))
+        }
+        stale = sorted(table_names - explicit)
+        if stale:
+            errors.append("fontTable.xml 含未被文档引用的字体: " + ", ".join(stale))
+        if any(name.casefold().startswith("aptos") for name in table_names):
+            errors.append("fontTable.xml 仍含 Aptos 字体")
+    return errors
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def normalize_docx_file(
+    input_path: str | Path,
+    output_path: str | Path | None = None,
+    *,
+    manifest_path: str | Path | None = None,
+    overwrite: bool = False,
+) -> Path:
+    """Normalize one DOCX and optionally update its conversion manifest hash."""
+    source = Path(input_path).resolve()
+    target = Path(output_path).resolve() if output_path else source
+    if not source.is_file() or source.suffix.casefold() != ".docx":
+        raise FileNotFoundError(f"输入 DOCX 不存在: {source}")
+    if target.exists() and target != source and not overwrite:
+        raise FileExistsError(f"输出已存在: {target}")
+    document = Document(str(source))
+    profile = load_profile()
+    normalize_docx_resources(document, profile)
+    errors = validate_docx_resources(document, profile)
+    if errors:
+        raise ValueError("DOCX 资源规范化失败: " + "; ".join(errors))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=target.parent, suffix=".docx", delete=False) as handle:
+        temporary = Path(handle.name)
+    try:
+        document.save(str(temporary))
+        os.replace(temporary, target)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+    if manifest_path is not None:
+        manifest_file = Path(manifest_path).resolve()
+        manifest = json.loads(manifest_file.read_text(encoding="utf-8"))
+        manifest["output_sha256"] = _sha256(target)
+        record = {
+            "tool": "shared.paper_format.normalize_docx_resources",
+            "profile": str(PROFILE_PATH),
+        }
+        postprocessing = manifest.setdefault("postprocessing", [])
+        if record not in postprocessing:
+            postprocessing.append(record)
+        manifest_file.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return target
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Normalize repository paper DOCX resources")
+    parser.add_argument("input", help="input DOCX")
+    parser.add_argument("--output", help="output DOCX; omit to normalize in place")
+    parser.add_argument("--manifest", help="optional conversion manifest to update")
+    parser.add_argument("--overwrite", action="store_true", help="allow replacing a different output file")
+    args = parser.parse_args(argv)
+    target = normalize_docx_file(
+        args.input,
+        args.output,
+        manifest_path=args.manifest,
+        overwrite=args.overwrite,
+    )
+    print(target)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 
 def _set_cell_margins(cell, margins: dict[str, int]) -> None:

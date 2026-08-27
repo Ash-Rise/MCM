@@ -181,6 +181,8 @@
 
 精确字体、字号、行距、页边距、页码和普通三线表等跨项目机器配置统一读取 `personal-paper-profile.yaml`，不要在 playbook、项目脚本或测试中复制数值。官方规范、用户提供的当届模板或用户批准的 Word 基线对其所属版式范围具有更高优先级。
 
+每次 Markdown → DOCX 转换后，若转换器未直接调用共享格式模块，必须先执行 `python shared/paper_format.py <input.docx> --output <output.docx> --manifest <output.conversion.json> --overwrite`，再进行渲染审查。该步骤固定主题字体、标题样式的文字颜色和文档默认字体，并清理未被文档引用的字体表项，避免 WPS 因残留的 Aptos 等默认资源提示缺失字体。排版检查还应确认标题不继承主题强调色；图表内部颜色不受此规则限制。
+
 ### 7.1 Markdown → DOCX
 
 优先保持单一可编辑 Markdown 正文源。公式使用稳定的 Pandoc 数学语法，输出后检查 OMML 结构；图片路径、题注、交叉引用和表格应以最终 DOCX 的实际结果为准，而不是只看 Markdown 预览。

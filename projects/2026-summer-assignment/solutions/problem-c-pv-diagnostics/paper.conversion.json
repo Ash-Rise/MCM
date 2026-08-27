@@ -12,7 +12,7 @@
   ],
   "project_sha256": "316ac6b9095d5eec94ab92cde92afd7bf2f3285dfc95dfc43f2836f9da60dd67",
   "output": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.docx",
-  "output_sha256": "104558df6ca35539167808a88352bc368b6084c67b97b46bfadeb2fa8b0d24e3",
+  "output_sha256": "eea31ba24bba2a89470de7b1fcb0fd30531676eb5bcb37696e1c05c15801bfe5",
   "template": null,
   "template_sha256": null,
   "pandoc": {
@@ -40,5 +40,11 @@
     "patterns": [],
     "reason": null
   },
-  "reproduce": "C:\\Users\\AA\\AppData\\Local\\Programs\\Python\\Python313\\python.exe C:\\Users\\AA\\.codex\\skills\\math-modeling\\tools\\docx\\scripts\\equations.py generate D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.md --output D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.docx --timeout 120 --overwrite"
+  "reproduce": "C:\\Users\\AA\\AppData\\Local\\Programs\\Python\\Python313\\python.exe C:\\Users\\AA\\.codex\\skills\\math-modeling\\tools\\docx\\scripts\\equations.py generate D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.md --output D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.docx --timeout 120 --overwrite",
+  "postprocessing": [
+    {
+      "tool": "shared.paper_format.normalize_docx_resources",
+      "profile": "D:\\大二上学习资料\\数模国赛\\shared\\templates\\personal-paper-profile.yaml"
+    }
+  ]
 }

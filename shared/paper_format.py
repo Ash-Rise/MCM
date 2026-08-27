@@ -18,7 +18,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.opc.oxml import parse_xml, serialize_part_xml
-from docx.shared import Cm, Pt, RGBColor
+from docx.shared import Pt, RGBColor, Twips
 
 
 PROFILE_PATH = Path(__file__).resolve().parent / "templates" / "personal-paper-profile.yaml"
@@ -68,18 +68,48 @@ def _apply_paragraph_format(paragraph, typography: dict[str, Any]) -> None:
     paragraph.paragraph_format.line_spacing = typography["line_spacing_multiple"]
     paragraph.paragraph_format.space_before = Pt(typography.get("space_before_pt", 0))
     paragraph.paragraph_format.space_after = Pt(typography.get("space_after_pt", 0))
+    if "snap_to_grid" in typography:
+        _set_paragraph_snap_to_grid(paragraph, typography["snap_to_grid"])
     if "first_line_indent_pt" in typography:
         paragraph.paragraph_format.first_line_indent = Pt(typography["first_line_indent_pt"])
     for run in paragraph.runs:
         _set_run_format(run, typography)
 
 
-def _set_document_grid(section, line_pitch: int) -> None:
+def _set_paragraph_snap_to_grid(paragraph, enabled: bool) -> None:
+    properties = paragraph._p.get_or_add_pPr()
+    snap = properties.find(qn("w:snapToGrid"))
+    if snap is None:
+        snap = OxmlElement("w:snapToGrid")
+        properties.insert_element_before(
+            snap,
+            "w:spacing",
+            "w:ind",
+            "w:contextualSpacing",
+            "w:mirrorIndents",
+            "w:suppressOverlap",
+            "w:jc",
+            "w:textDirection",
+            "w:textAlignment",
+            "w:textboxTightWrap",
+            "w:outlineLvl",
+            "w:divId",
+            "w:cnfStyle",
+            "w:rPr",
+            "w:sectPr",
+            "w:pPrChange",
+        )
+    snap.set(qn("w:val"), "1" if enabled else "0")
+
+
+def _set_document_grid(section, grid_profile: dict[str, Any]) -> None:
     grid = section._sectPr.find(qn("w:docGrid"))
     if grid is None:
         grid = OxmlElement("w:docGrid")
         section._sectPr.append(grid)
-    grid.set(qn("w:linePitch"), str(line_pitch))
+    grid.set(qn("w:type"), str(grid_profile["type"]))
+    grid.set(qn("w:linePitch"), str(grid_profile["line_pitch_twips"]))
+    grid.set(qn("w:charSpace"), str(grid_profile["char_space_twips"]))
 
 
 def _set_page_gutter(section) -> None:
@@ -455,6 +485,7 @@ def normalize_docx_file(
         raise FileExistsError(f"输出已存在: {target}")
     document = Document(str(source))
     profile = load_profile()
+    apply_profile(document, profile)
     normalize_docx_resources(document, profile)
     errors = validate_docx_resources(document, profile)
     if errors:
@@ -498,10 +529,6 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(target)
     return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
 
 
 def _set_cell_margins(cell, margins: dict[str, int]) -> None:
@@ -573,6 +600,7 @@ def _format_tables(document, profile: dict[str, Any]) -> None:
     text_profile = dict(profile["typography"]["table_text"])
     text_profile["latin_font"] = profile["typography"]["latin_font"]
     text_profile["font_color_hex"] = profile["typography"]["font_color_hex"]
+    text_profile["snap_to_grid"] = profile["paragraphs"]["snap_to_document_grid"]
     for table in document.tables:
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         table.autofit = False
@@ -649,17 +677,17 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
         font_color_hex=typography["font_color_hex"],
     )
     for section in document.sections:
-        section.page_width = Cm(page["width_cm"])
-        section.page_height = Cm(page["height_cm"])
-        section.top_margin = Cm(page["margins_cm"]["top"])
-        section.bottom_margin = Cm(page["margins_cm"]["bottom"])
-        section.left_margin = Cm(page["margins_cm"]["left"])
-        section.right_margin = Cm(page["margins_cm"]["right"])
-        section.header_distance = Cm(page["header_distance_cm"])
-        section.footer_distance = Cm(page["footer_distance_cm"])
+        section.page_width = Twips(page["width_twips"])
+        section.page_height = Twips(page["height_twips"])
+        section.top_margin = Twips(page["margins_twips"]["top"])
+        section.bottom_margin = Twips(page["margins_twips"]["bottom"])
+        section.left_margin = Twips(page["margins_twips"]["left"])
+        section.right_margin = Twips(page["margins_twips"]["right"])
+        section.header_distance = Twips(page["header_distance_twips"])
+        section.footer_distance = Twips(page["footer_distance_twips"])
         section.different_first_page_header_footer = page["different_first_page"]
         _set_page_gutter(section)
-        _set_document_grid(section, page["document_grid_line_pitch_twips"])
+        _set_document_grid(section, page["document_grid"])
         _set_page_field(section.footer, page_number_typography)
         if page["different_first_page"]:
             _set_page_field(section.first_page_footer, page_number_typography)
@@ -669,6 +697,7 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
     common_typography = {
         "latin_font": typography["latin_font"],
         "font_color_hex": typography["font_color_hex"],
+        "snap_to_grid": profile["paragraphs"]["snap_to_document_grid"],
     }
     for style_name in ("Title", "Heading 1", "Heading 2", "Heading 3", "Heading 4"):
         try:
@@ -677,6 +706,9 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
             pass
 
     in_short_appendix = False
+    abstract_heading_seen = False
+    first_body_heading_started = False
+    body_profile = dict(typography["body"], **common_typography)
     for index, paragraph in enumerate(document.paragraphs):
         text = paragraph.text.strip()
         style_name = paragraph.style.name if paragraph.style else ""
@@ -692,10 +724,26 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
             key = "heading_level_1" if style_name in {"Heading 1", "Heading 2"} else "heading_level_2_and_3"
             heading_profile = dict(typography[key], **common_typography)
             _apply_paragraph_format(paragraph, heading_profile)
+            compact_text = re.sub(r"\s+", "", text)
+            if compact_text == "摘要":
+                abstract_heading_seen = True
+            elif (
+                abstract_heading_seen
+                and not first_body_heading_started
+                and key == "heading_level_1"
+            ):
+                paragraph.paragraph_format.page_break_before = bool(
+                    profile["pagination"]["first_body_heading_starts_new_page"]
+                )
+                first_body_heading_started = True
             if text.startswith("附录"):
                 in_short_appendix = True
             continue
         if paragraph._p.findall(".//" + qn("w:drawing")):
+            _set_paragraph_snap_to_grid(
+                paragraph,
+                profile["paragraphs"]["snap_to_document_grid"],
+            )
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
             paragraph.paragraph_format.first_line_indent = Pt(0)
             paragraph.paragraph_format.space_before = Pt(0)
@@ -705,7 +753,9 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
         if re.match(r"^[图表]\s*\d+\s", text):
             caption_profile = dict(typography["caption"], **common_typography)
             paragraph.paragraph_format.first_line_indent = Pt(0)
-            paragraph.paragraph_format.keep_with_next = text.startswith("表 ")
+            paragraph.paragraph_format.keep_with_next = bool(
+                re.match(r"^表\s*\d+\s", text)
+            )
             _apply_paragraph_format(paragraph, caption_profile)
             continue
         if re.match(r"^\[\d+\]", text):
@@ -718,6 +768,7 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
             _apply_paragraph_format(paragraph, reference_profile)
             continue
         if not text and paragraph._p.findall(".//" + qn("m:oMath")):
+            _apply_paragraph_format(paragraph, body_profile)
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
             paragraph.paragraph_format.first_line_indent = Pt(0)
             continue
@@ -729,7 +780,6 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
             paragraph.paragraph_format.first_line_indent = Pt(0)
             _apply_paragraph_format(paragraph, appendix_profile)
             continue
-        body_profile = dict(typography["body"], **common_typography)
         _apply_paragraph_format(paragraph, body_profile)
         if paragraph._p.get_or_add_pPr().find(qn("w:numPr")) is not None:
             paragraph.paragraph_format.first_line_indent = None
@@ -737,3 +787,7 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
             paragraph.paragraph_format.first_line_indent = Pt(0)
 
     _format_tables(document, profile)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

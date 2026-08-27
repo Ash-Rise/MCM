@@ -1,4 +1,4 @@
-profile_version: 3.0
+profile_version: 3.1
 name: ash-rise-chinese-modeling-paper
 scope: repository_global_paper_formatting_default
 priority:
@@ -9,17 +9,26 @@ priority:
 
 page:
   size: A4
-  width_cm: 21.0
-  height_cm: 29.7
-  margins_cm:
-    top: 2.5
-    bottom: 2.5
-    left: 2.5
-    right: 2.5
-  header_distance_cm: 1.5
-  footer_distance_cm: 1.8
+  width_twips: 11906
+  height_twips: 16838
+  margins_twips:
+    top: 1418
+    bottom: 1418
+    left: 1418
+    right: 1418
+  header_distance_twips: 851
+  footer_distance_twips: 1020
   different_first_page: true
-  document_grid_line_pitch_twips: 360
+  document_grid:
+    type: lines
+    line_pitch_twips: 360
+    char_space_twips: 0
+
+paragraphs:
+  snap_to_document_grid: false
+
+pagination:
+  first_body_heading_starts_new_page: true
 
 typography:
   latin_font: Times New Roman

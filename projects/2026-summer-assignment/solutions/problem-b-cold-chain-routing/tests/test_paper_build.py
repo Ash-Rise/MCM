@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from io import BytesIO
@@ -19,7 +20,7 @@ REPOSITORY_ROOT = PROJECT_ROOT.parents[3]
 sys.path.insert(0, str(REPOSITORY_ROOT / "shared"))
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from paper_format import apply_profile, load_profile  # noqa: E402
+from paper_format import apply_profile, load_profile, normalize_docx_file  # noqa: E402
 from postprocess_paper_docx import (  # noqa: E402
     TABLE_WIDTH_WEIGHTS,
     apply_project_layout,
@@ -61,14 +62,14 @@ class SharedPaperFormatTests(unittest.TestCase):
 
         page = self.profile["page"]
         section = document.sections[0]
-        self.assertAlmostEqual(section.page_width.cm, page["width_cm"], places=2)
-        self.assertAlmostEqual(section.page_height.cm, page["height_cm"], places=2)
-        self.assertAlmostEqual(section.left_margin.cm, page["margins_cm"]["left"], places=2)
-        self.assertAlmostEqual(section.header_distance.cm, page["header_distance_cm"], places=2)
-        self.assertAlmostEqual(section.footer_distance.cm, page["footer_distance_cm"], places=2)
+        self.assertEqual(section.page_width.twips, page["width_twips"])
+        self.assertEqual(section.page_height.twips, page["height_twips"])
+        self.assertEqual(section.left_margin.twips, page["margins_twips"]["left"])
+        self.assertEqual(section.header_distance.twips, page["header_distance_twips"])
+        self.assertEqual(section.footer_distance.twips, page["footer_distance_twips"])
         self.assertEqual(
             section._sectPr.find(qn("w:docGrid")).get(qn("w:linePitch")),
-            str(page["document_grid_line_pitch_twips"]),
+            str(page["document_grid"]["line_pitch_twips"]),
         )
         self.assertEqual(
             section.different_first_page_header_footer,
@@ -132,6 +133,34 @@ class SharedPaperFormatTests(unittest.TestCase):
             Pt(typography["table_text"]["size_pt"]),
         )
 
+    def test_file_cli_path_applies_the_full_profile_not_only_font_resources(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            input_path = Path(temporary_directory) / "input.docx"
+            output_path = Path(temporary_directory) / "output.docx"
+            source = Document()
+            source.add_paragraph("测试题名", style="Heading 1")
+            source.add_paragraph("摘 要", style="Heading 2")
+            source.add_paragraph("摘要正文")
+            source.add_paragraph("一、问题分析", style="Heading 2")
+            source.add_paragraph("正文")
+            source.save(input_path)
+
+            normalize_docx_file(input_path, output_path)
+            result = Document(output_path)
+            page = self.profile["page"]
+            self.assertEqual(result.sections[0].page_width.twips, page["width_twips"])
+            self.assertEqual(
+                result.paragraphs[2].paragraph_format.line_spacing,
+                self.profile["typography"]["body"]["line_spacing_multiple"],
+            )
+            self.assertEqual(
+                result.paragraphs[2]._p.get_or_add_pPr()
+                .find(qn("w:snapToGrid"))
+                .get(qn("w:val")),
+                "0",
+            )
+            self.assertTrue(result.paragraphs[3].paragraph_format.page_break_before)
+
     def test_problem_b_layer_keeps_only_local_width_and_pagination_choices(self) -> None:
         document = Document()
         document.add_paragraph("测试题名", style="Heading 1")
@@ -162,11 +191,11 @@ class SharedPaperFormatTests(unittest.TestCase):
         typography = self.profile["typography"]
         section = document.sections[0]
 
-        self.assertAlmostEqual(section.page_width.cm, page["width_cm"], places=2)
-        self.assertAlmostEqual(section.page_height.cm, page["height_cm"], places=2)
+        self.assertEqual(section.page_width.twips, page["width_twips"])
+        self.assertEqual(section.page_height.twips, page["height_twips"])
         self.assertEqual(
             section._sectPr.find(qn("w:docGrid")).get(qn("w:linePitch")),
-            str(page["document_grid_line_pitch_twips"]),
+            str(page["document_grid"]["line_pitch_twips"]),
         )
         self.assertEqual(
             document.paragraphs[0].runs[0].font.size,

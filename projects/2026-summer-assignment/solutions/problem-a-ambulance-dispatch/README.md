@@ -1,34 +1,27 @@
 # Problem A: Ambulance Dispatch
 
-Summer-assignment modeling solution for ambulance station location, vehicle allocation, routine dispatch, reserve configuration, and emergency response. The 2026 national-contest template is used only as a layout reference; this project does not claim to be a 2026 national-contest entry.
+暑期作业 A 题的终态解答，覆盖急救站服务分配、日常调度策略、事故情景和临时外援分析。2026 国赛模板只用于版式参考，本项目不声明为 2026 国赛参赛论文。
 
-## Latest Paper: v2.5
+## 当前交付
 
-- Current Pandoc source: [`paper.md`](paper/paper.md)
-- Current Word deliverable: [`paper.docx`](paper/paper.docx)
-- Source code: [`src/`](src/)
-- Frozen results and replication data: [`results/`](results/)
-- Publication figures: [`figures/`](figures/)
+- 正文内容权威：[paper/paper.md](paper/paper.md)
+- 用户批准的 Word 版式基线：[paper/paper.docx](paper/paper.docx)
+- Accepted Decisions：[decisions.md](decisions.md)
+- 正式实现：[src/](src/)
+- 冻结结果与复制级证据：[results/](results/)
+- 正式图表：[figures/](figures/)
+- 回归与模型合同测试：[tests/](tests/)
 
-The current paper release is **v2.5**. Its Task 3 analysis includes the existing 12-vehicle incident-aware dispatch process and the 0--6 vehicle temporary-support experiment used to derive the 1/3/5-vehicle aid tiers.
+Git Tag [`v2.5`](https://github.com/Ash-Rise/MCM/releases/tag/v2.5) 对应用户批准的 A 题论文 V2.5 发布版。`main` 上的固定文件名表示当前仓库接口；历史版本由 Git Tag、Release 和提交历史保存。
 
-## Layout
+## 结果与展示边界
 
-- `src/`: optimization, simulation, experiments, and figure generation.
-- `tests/`: regression and model-contract tests.
-- Repository-wide workflow and formatting defaults: [`shared/templates/`](../../../../shared/templates/).
-- `results/task-1/`: verified compact results for Task 1.
-- `results/task-2/`: generated Task 2 results after the revised model passes validation.
-- `figures/`: approved publication figures.
-- `paper/`: fixed-name current Markdown and Word deliverable; historical repository snapshots are available through Git tags and versioned downloads through Releases.
+- `results/task-1/`：任务一确定性正式结果。
+- `results/task-2/`：调参、选中策略、复制级评价及聚合结果。
+- `results/task-3/`：事故情景、复制级结果、响应面和临时外援结果。
+- `src/generate_figures.py` 只读取上述冻结结果生成图表，不重新求解或覆盖正式结果。
 
-## Current Status
-
-Tasks 1--3 have frozen result tables and publication figures. Task 2 uses exactly 140 calls per day, a fixed 30-day warmup, conditional-NHPP arrival times, a per-vehicle 12-dispatch limit, and continuous cross-midnight vehicle state. Task 3 treats incident duration as continuous on `[0.5, 12]` hours: the six initial durations are expanded adaptively to ten simulation nodes, and replication-level PCHIP surfaces with 95% confidence bands are used only as numerical response approximations. No result is pooled across incident durations.
-
-The current paper release is v2.5. [`paper/paper.md`](paper/paper.md) is the authoritative Pandoc/DOCX source on `main`; Git tags preserve historical repository snapshots, while Releases provide versioned Word downloads. Derived GitHub-preview Markdown is no longer published. Future tags use a project-qualified name such as `2026-summer-a/v2.6`. Small revisions increment the minor version; a substantial model or paper rewrite advances to `v3`.
-
-Problem A's approved `paper.docx` and manually locked table baseline remain a legacy paper build; they have not been migrated to the shared YAML-driven formatter. Future paper work should use the repository-wide [`personal-modeling-playbook.md`](../../../../shared/templates/personal-modeling-playbook.md) for method and [`personal-paper-profile.yaml`](../../../../shared/templates/personal-paper-profile.yaml) for exact cross-project machine formatting defaults. Migrate A only when its paper next requires substantive revision.
+批准的 `paper.docx` 保留 V2.5 的人工锁定表格与分页，尚未迁移到共享 YAML formatter。以后只有在论文需要实质修订时才迁移；跨项目方法和机器排版参数分别以[建模与论文方法手册](../../../../shared/templates/personal-modeling-playbook.md)和[共享 paper profile](../../../../shared/templates/personal-paper-profile.yaml)为准。
 
 ## Reproduction
 
@@ -44,7 +37,6 @@ python src/reproduce_all.py --project-root . --mode rebuild --scope all
 
 # Optional full rerun, including the expensive stochastic experiments.
 python src/reproduce_all.py --project-root . --mode full --scope all
-
 ```
 
-The versioned replication-level CSV files are intentional scientific evidence, not disposable caches. The verification command does not rerun the long simulation; it recomputes deterministic checks and validates every frozen table, paired scenario, hard constraint, and required figure.
+`verify` 不运行长仿真，只重新计算确定性检查并核验冻结表、配对情景、硬约束和所需图表。`rebuild` 从版本化复制级结果重建聚合表与响应面并重新生成图；`full` 才会重新运行昂贵的随机实验。复制级 CSV 是正式科学证据，不是可随意删除的缓存。

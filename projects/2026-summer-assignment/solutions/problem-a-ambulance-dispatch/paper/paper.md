@@ -588,4 +588,4 @@ R6、R2和R1分别表示低、中、高压力区域，其中R1的新增呼叫压
 
 ## 附录A 复现与证据文件
 
-三问结果文件分别位于`results/task-1/`、`results/task-2/`和`results/task-3/`，任务三临时外援的复制级结果、成对收益和三级汇总位于`results/task-3/external-support/`。`results/复现清单.json`以SHA-256绑定原题及关键证据。复核命令为`python src/reproduce_all.py --project-root . --mode verify --scope all`。该命令重新计算任务一可行性与运输分配校验，复核任务二汇总，并从任务三复制级结果重建逐时长表、连续响应面和外援结果。图1至图11均由`src/generate_figures.py`基于上述结果生成。
+三问结果文件分别位于`results/task-1/`、`results/task-2/`和`results/task-3/`，任务三临时外援的复制级结果、成对收益和三级汇总位于`results/task-3/external-support/`。复核命令为`python src/reproduce_all.py --project-root . --mode verify --scope all`。该命令重新计算任务一可行性与运输分配校验，复核任务二汇总，并从任务三复制级结果重建逐时长表、连续响应面和外援结果。图1至图11均由`src/generate_figures.py`基于上述结果生成。

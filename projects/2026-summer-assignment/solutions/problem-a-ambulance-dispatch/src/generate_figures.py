@@ -5,6 +5,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,12 +15,7 @@ from matplotlib.lines import Line2D
 from PIL import Image
 from scipy.interpolate import PchipInterpolator
 
-from ambulance_model import (
-    intraday_density,
-    problem_statement_path,
-    read_problem,
-    solve_q1,
-)
+from ambulance_model import intraday_density
 
 
 SKILL_ROOT = Path(r"C:\Users\AA\.codex\skills\math-modeling")
@@ -89,15 +85,17 @@ def q3_evidence_sources() -> dict[str, str]:
 
 
 def save(fig: plt.Figure, figures: Path, name: str, size: tuple[float, float]) -> None:
-    paths = export_figure(
-        fig,
-        str(figures / name),
-        formats=["svg", "png"],
-        size_inches=size,
-        dpi=300,
-        grayscale_preview=False,
-        tight=False,
-    )
+    paths: list[str] = []
+    for extension in ("svg", "png"):
+        paths.extend(
+            export_figure(
+                fig,
+                str(figures / f"{name}.{extension}"),
+                size_inches=size,
+                dpi=300,
+                tight=False,
+            )
+        )
     png_path = figures / f"{name}.png"
     grayscale_path = figures / f"{name}_grayscale.png"
     with Image.open(png_path) as image:
@@ -120,46 +118,28 @@ def save(fig: plt.Figure, figures: Path, name: str, size: tuple[float, float]) -
 
 
 def q1_tables(project_root: Path) -> tuple[object, dict[str, object]]:
-    data = read_problem(problem_statement_path(project_root))
-    result = solve_q1(data)
     out = project_root / "results" / "task-1"
-    out.mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(
-        {
-            "zone_id": data.zone_ids,
-            "zone_name": data.zone_names,
-            "x_km": data.zone_xy[:, 0],
-            "y_km": data.zone_xy[:, 1],
-            "area_km2": data.area,
-            "population_10k": data.population,
-            "daily_calls": data.demand,
-            "daily_calls_per_km2": data.demand_density,
-            "nearest_hospital_km": data.hospital_distance,
-            "nearest_site_distance_km": data.distance.min(axis=1),
-        }
-    ).to_csv(out / "zone_input.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame(
-        {
-            "site": data.site_ids,
-            "x_km": data.site_xy[:, 0],
-            "y_km": data.site_xy[:, 1],
-            "max_vehicles": data.site_caps,
-            "vehicles": result["vehicles"],
-            "daily_capacity": 12 * result["vehicles"],
-            "assigned_load": result["loads"],
-        }
-    ).to_csv(out / "site_solution.csv", index=False, encoding="utf-8-sig")
-    assignment = pd.DataFrame(result["assignment"], index=data.zone_ids, columns=data.site_ids)
-    assignment.index.name = "zone_id"
-    assignment.to_csv(out / "assignment.csv", encoding="utf-8-sig")
-    summary = {
-        key: value.tolist() if isinstance(value, np.ndarray) else value
-        for key, value in result.items()
-        if key != "assignment"
-    }
-    (out / "summary.json").write_text(
-        json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+    zones = pd.read_csv(out / "zone_input.csv")
+    sites = pd.read_csv(out / "site_solution.csv")
+    assignment = pd.read_csv(out / "assignment.csv", index_col="zone_id")
+    summary = json.loads((out / "summary.json").read_text(encoding="utf-8"))
+
+    zone_ids = zones["zone_id"].to_numpy()
+    site_ids = sites["site"].astype(str).to_numpy()
+    if assignment.index.to_numpy().tolist() != zone_ids.tolist():
+        raise ValueError("Task 1 assignment rows do not match frozen zone_input.csv")
+    if assignment.columns.astype(str).tolist() != site_ids.tolist():
+        raise ValueError("Task 1 assignment columns do not match frozen site_solution.csv")
+
+    data = SimpleNamespace(
+        zone_ids=zone_ids,
+        zone_names=zones["zone_name"].astype(str).to_numpy(),
+        zone_xy=zones[["x_km", "y_km"]].to_numpy(dtype=float),
+        demand=zones["daily_calls"].to_numpy(dtype=float),
+        site_ids=site_ids,
+        site_xy=sites[["x_km", "y_km"]].to_numpy(dtype=float),
     )
+    result = {**summary, "assignment": assignment.to_numpy(dtype=float)}
     return data, result
 
 

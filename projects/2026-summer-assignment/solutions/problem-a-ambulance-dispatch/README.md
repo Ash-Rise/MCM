@@ -8,7 +8,6 @@ Summer-assignment modeling solution for ambulance station location, vehicle allo
 - Current Word deliverable: [`paper.docx`](paper/paper.docx)
 - Source code: [`src/`](src/)
 - Frozen results and replication data: [`results/`](results/)
-- Reproduction manifest: [`results/复现清单.json`](results/复现清单.json)
 - Publication figures: [`figures/`](figures/)
 
 The current paper release is **v2.5**. Its Task 3 analysis includes the existing 12-vehicle incident-aware dispatch process and the 0--6 vehicle temporary-support experiment used to derive the 1/3/5-vehicle aid tiers.
@@ -36,7 +35,7 @@ Problem A's approved `paper.docx` and manually locked table baseline remain a le
 Run commands from this directory:
 
 ```powershell
-# Read-only validation of all frozen evidence. This is the manifest command.
+# Read-only validation of all frozen evidence.
 python src/reproduce_all.py --project-root . --mode verify --scope all
 
 # Rebuild aggregate tables and response surfaces from versioned replication data,
@@ -48,4 +47,4 @@ python src/reproduce_all.py --project-root . --mode full --scope all
 
 ```
 
-The versioned replication-level CSV files are intentional scientific evidence, not disposable caches. `results/复现清单.json` binds the statement and the frozen results for all three tasks. The verification command does not rerun the long simulation; it recomputes deterministic checks and validates every frozen table, paired scenario, hard constraint, and required figure.
+The versioned replication-level CSV files are intentional scientific evidence, not disposable caches. The verification command does not rerun the long simulation; it recomputes deterministic checks and validates every frozen table, paired scenario, hard constraint, and required figure.

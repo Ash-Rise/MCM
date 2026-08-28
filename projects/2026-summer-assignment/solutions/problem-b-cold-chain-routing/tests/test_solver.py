@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import math
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -113,6 +114,30 @@ class ProblemBSolverTests(unittest.TestCase):
         self.assertTrue(math.isclose(disrupted_threshold, normal_threshold, abs_tol=1e-9))
         self.assertEqual(normal.late_count, 0)
         self.assertEqual(disrupted.late_count, 0)
+
+    def test_frozen_results_match_fresh_reproduction(self) -> None:
+        result_names = {
+            "candidate_solutions.csv",
+            "route_schedule.csv",
+            "summary.json",
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = Path(temp_dir)
+            solver.run(
+                PROJECT_ROOT,
+                PROJECT_ROOT / "data" / "problem_b_data.json",
+                output_dir,
+            )
+            self.assertEqual(
+                {path.name for path in output_dir.iterdir()},
+                result_names,
+            )
+            for name in result_names:
+                self.assertEqual(
+                    (output_dir / name).read_bytes(),
+                    (PROJECT_ROOT / "results" / name).read_bytes(),
+                    f"Frozen result is out of sync: {name}",
+                )
 
 
 if __name__ == "__main__":

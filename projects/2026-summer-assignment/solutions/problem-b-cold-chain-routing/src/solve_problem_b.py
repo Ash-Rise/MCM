@@ -409,115 +409,6 @@ def write_schedule(path: Path, solutions: Iterable[SolutionResult]) -> None:
                     )
 
 
-def write_route_summary(path: Path, solutions: Iterable[SolutionResult]) -> None:
-    fieldnames = [
-        "scenario",
-        "vehicle",
-        "route",
-        "demand_boxes",
-        "distance_km",
-        "return_clock",
-        "early_count",
-        "late_count",
-        "travel_cost_yuan",
-        "penalty_cost_yuan",
-        "total_cost_yuan",
-    ]
-    with path.open("w", encoding="utf-8-sig", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames, lineterminator="\n")
-        writer.writeheader()
-        for solution in solutions:
-            for route in solution.routes:
-                writer.writerow(
-                    {
-                        "scenario": solution.scenario,
-                        "vehicle": route.vehicle,
-                        "route": route_label(route.route),
-                        "demand_boxes": route.demand_boxes,
-                        "distance_km": f"{route.distance_km:.6f}",
-                        "return_clock": format_clock(route.stops[-1].arrival_minute),
-                        "early_count": route.early_count,
-                        "late_count": route.late_count,
-                        "travel_cost_yuan": f"{route.travel_cost_yuan:.6f}",
-                        "penalty_cost_yuan": f"{route.penalty_cost_yuan:.2f}",
-                        "total_cost_yuan": f"{route.total_cost_yuan:.6f}",
-                    }
-                )
-
-
-def write_markdown_summary(
-    path: Path,
-    normal: SolutionResult,
-    disrupted: SolutionResult,
-    normal_candidates: tuple[SolutionResult, ...],
-    disrupted_candidates: tuple[SolutionResult, ...],
-    normal_service_threshold: float,
-    disrupted_service_threshold: float,
-) -> None:
-    lines = [
-        "# B 题精确求解结果摘要",
-        "",
-        "> 本文件由 `src/solve_problem_b.py` 根据 DEC-B-001 至 DEC-B-003 自动生成。",
-        "",
-        "## 正常场景",
-        "",
-        "| 车辆 | 最优路线 | 配送量/箱 | 门店到达时刻 | 里程/km | 早到 | 迟到 | 成本/元 | 返回时刻 |",
-        "|---|---|---:|---|---:|---:|---:|---:|---|",
-    ]
-    for route in normal.routes:
-        arrivals = "；".join(
-            f"{stop.node_name} {format_clock(stop.arrival_minute)[:5]}"
-            for stop in route.stops
-            if stop.node_type == "store"
-        )
-        lines.append(
-            "| {vehicle} | {route} | {demand} | {arrivals} | {distance:.3f} | "
-            "{early} | {late} | {cost:.2f} | {return_time} |".format(
-                vehicle=route.vehicle,
-                route=route_label(route.route),
-                demand=route.demand_boxes,
-                arrivals=arrivals,
-                distance=route.distance_km,
-                early=route.early_count,
-                late=route.late_count,
-                cost=route.total_cost_yuan,
-                return_time=format_clock(route.stops[-1].arrival_minute)[:5],
-            )
-        )
-    lines.extend(
-        [
-            "",
-            f"正常场景共枚举 {len(normal_candidates)} 个完整组合，"
-            f"其中 {sum(value.feasible for value in normal_candidates)} 个可行。"
-            f"最优方案总里程为 {normal.distance_km:.3f} km，运输成本为 "
-            f"{normal.travel_cost_yuan:.2f} 元，时间窗惩罚为 {normal.penalty_cost_yuan:.2f} 元，"
-            f"综合成本为 {normal.total_cost_yuan:.2f} 元；早到和迟到门店数均为 0。",
-            "",
-            "## 任务三：封闭有向弧 2→8",
-            "",
-            f"封路场景仍枚举 {len(disrupted_candidates)} 个组合，其中 "
-            f"{sum(value.feasible for value in disrupted_candidates)} 个不使用封闭弧并满足其他约束。"
-            "正常最优 B 线为 `0→2→5→8→0`，本身不包含 `2→8`，因此封闭该弧后最优路线不变。",
-            "",
-            f"应急方案总里程仍为 {disrupted.distance_km:.3f} km，综合成本仍为 "
-            f"{disrupted.total_cost_yuan:.2f} 元；里程、迟到数和总成本增量均为 0。"
-            "这说明题面指定封路在 Accepted 模型下不是有效扰动，不能人为制造非零绕路代价。",
-            "",
-            "## 结果边界",
-            "",
-            "距离为坐标欧氏距离代理，速度固定为 35 km/h，门店服务时长基线为 0 分钟；"
-            "任务三按 4:30 发车前已知封路的静态重优化解释。",
-            "",
-            "对所有门店采用相同服务时长并在连续区间上做单调二分后，正常场景仍可保持零迟到的"
-            f"最大服务时长为 {normal_service_threshold:.3f} 分钟/店；封路场景阈值为 "
-            f"{disrupted_service_threshold:.3f} 分钟/店。因两者相同，服务时长缺失不会改变任务三"
-            "成本增量为 0 的结论。",
-            "",
-        ]
-    )
-    path.write_text("\n".join(lines), encoding="utf-8")
-
-
 def run(project_root: Path, data_path: Path, output_dir: Path) -> dict[str, Any]:
     data = load_data(data_path)
     source_docx = (project_root / data["source_docx"]).resolve()
@@ -543,7 +434,6 @@ def run(project_root: Path, data_path: Path, output_dir: Path) -> dict[str, Any]
         (*normal_candidates, *disrupted_candidates),
     )
     write_schedule(output_dir / "route_schedule.csv", (normal, disrupted))
-    write_route_summary(output_dir / "route_summary.csv", (normal, disrupted))
 
     comparison = {
         "normal": solution_summary(normal),
@@ -577,16 +467,6 @@ def run(project_root: Path, data_path: Path, output_dir: Path) -> dict[str, Any]
     with (output_dir / "summary.json").open("w", encoding="utf-8") as file:
         json.dump(comparison, file, ensure_ascii=False, indent=2)
         file.write("\n")
-    write_markdown_summary(
-        output_dir / "result_summary.md",
-        normal,
-        disrupted,
-        normal_candidates,
-        disrupted_candidates,
-        normal_threshold,
-        disrupted_threshold,
-    )
-
     return comparison
 
 

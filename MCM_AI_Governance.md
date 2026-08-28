@@ -113,7 +113,7 @@ Authority is category-specific; no artifact is globally authoritative because it
 
 An artifact may establish facts only within its authority category. Code, tests, results, README, generated artifacts, and modification time cannot silently redefine an Accepted Decision. A passing test proves consistency with the tested contract, not correctness of the contract itself. Layout authority is not model/content authority. Git records history but does not define current semantic truth.
 
-Downstream work should consume accepted upstream state rather than recreate, bypass, or redefine it. A downstream stage may rely on an upstream artifact only after the acceptance condition appropriate to that artifact has been satisfied. Governance does not require fixed G0/G1/G2/G3 stage names.
+Downstream work should consume accepted upstream state rather than recreate, bypass, or redefine it. A downstream stage may rely on an upstream artifact only after the acceptance condition appropriate to that artifact has been satisfied. When a selected model or fitted result is frozen, downstream point estimates, uncertainty calculations, evidence views, and derived decisions that claim to use it must preserve its canonical identity: the model definition, fitting basis/data, and accepted fitted parameters or result version must remain the same unless the contract explicitly requires a refit. Sharing only a model-family label is not sufficient. Where identity drift could materially change a result, carry enough existing metadata to identify the selected fit and check the invariant mechanically at freeze; do not create a separate stage or identity artifact merely for this purpose. Governance does not require fixed G0/G1/G2/G3 stage names.
 
 ## 3.1 Implementation integration boundary
 
@@ -176,7 +176,7 @@ Do not duplicate the Decision Ledger, full design documents, permanent rules, la
 
 Update state only at meaningful checkpoints such as phase transitions, major conclusions/rejections, before or after costly runs, true blockers, before a human decision handoff, and session stop/switch.
 
-When active work ends, `state.md` stops being an authority for future project meaning. Promote durable decisions to the Ledger, genuinely reusable methods to the playbook, and leave ordinary execution history to Git.
+When active work ends, `state.md` stops being an authority for future project meaning. Before declaring terminal state, close the current artifact set: every artifact still presented as current must be synchronized with its final upstream authority and with the other current deliverables. Superseded derivatives and completed phase scaffolding must leave the current interface by being removed, clearly demoted to history when a real consumer remains, or left to Git history; temporary QA files are removed after their consumer has finished. Do not create a cleanup report, archive stage, or permanent incident record merely to document this closure. Promote durable decisions to the Ledger, genuinely reusable methods to the playbook, and leave ordinary execution history to Git.
 
 Cold resume from durable project state rather than compressed chat memory alone:
 

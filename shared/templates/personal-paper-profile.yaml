@@ -1,4 +1,4 @@
-profile_version: 3.1
+profile_version: 3.2
 name: ash-rise-chinese-modeling-paper
 scope: repository_global_paper_formatting_default
 priority:
@@ -6,6 +6,15 @@ priority:
   - user_provided_current_template
   - user_approved_reference_paper
   - this_profile
+
+visual_calibration:
+  reference_label: A题论文 V2.5
+  source_filename: 5改A题论文(v2.5).docx
+  source_sha256: e8827f194c651883e3deeddb34b5ceb9af8f92667ff190a560e8c30780eaef7a
+  source_size_bytes: 1629335
+  calibrated_on: '2026-08-28'
+  generalized_scope: page_grid_paragraph_typography_and_table_defaults
+  excluded_scope: problem_specific_manual_table_layout
 
 page:
   size: A4

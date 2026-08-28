@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
-  "created_at": "2026-08-27T07:48:16.457819+00:00",
+  "created_at": "2026-08-28T10:05:22.919332+00:00",
   "source_format": "markdown",
   "source": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.md",
   "source_files": [
     "paper.md"
   ],
-  "source_sha256": "c2851634db2db97417767891a56d90b4a70349d89bff4ff3028ae521a0345ba3",
+  "source_sha256": "9b001afafc2570697df1d0c6075283579706caf4e688f5c130cf7d5c34a99c0b",
   "project_files": [
     "paper.md"
   ],
-  "project_sha256": "c2851634db2db97417767891a56d90b4a70349d89bff4ff3028ae521a0345ba3",
+  "project_sha256": "9b001afafc2570697df1d0c6075283579706caf4e688f5c130cf7d5c34a99c0b",
   "output": "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.docx",
-  "output_sha256": "92f41455ded437e5e7e3f7be4b85c1525921a4ffbd2d045b1460382994e0229d",
+  "output_sha256": "71f5065de7f0dc1888628e829c1fd5c3f2e631528daa703586aa29c3869916ef",
   "template": null,
   "template_sha256": null,
   "pandoc": {
@@ -29,18 +29,18 @@
     "--citeproc",
     "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.md",
     "--output",
-    "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\tmpiqhhdtvh.docx",
+    "D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\tmp0hlbnu0h.docx",
     "--resource-path=D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics"
   ],
   "returncode": 0,
-  "duration_seconds": 0.61,
+  "duration_seconds": 1.984,
   "warnings": [],
   "allowed_warnings": [],
   "warning_override": {
     "patterns": [],
     "reason": null
   },
-  "reproduce": "C:\\Users\\AA\\AppData\\Local\\Programs\\Python\\Python313\\python.exe C:\\Users\\AA\\.codex\\skills\\math-modeling\\tools\\docx\\scripts\\equations.py generate D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.md --output D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.docx --timeout 120 --overwrite",
+  "reproduce": "C:\\Users\\AA\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe C:\\Users\\AA\\.codex\\skills\\math-modeling\\tools\\docx\\scripts\\equations.py generate D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.md --output D:\\大二上学习资料\\数模国赛\\projects\\2026-summer-assignment\\solutions\\problem-c-pv-diagnostics\\paper.docx --timeout 120 --overwrite",
   "postprocessing": [
     {
       "tool": "shared.paper_format.normalize_docx_resources",

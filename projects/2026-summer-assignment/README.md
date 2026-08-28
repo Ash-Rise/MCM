@@ -16,4 +16,4 @@ Local index for the supplied A/B/C problem statements and the solution directori
 
 - [`problem-a-ambulance-dispatch`](solutions/problem-a-ambulance-dispatch/README.md): Problem A paper, reproducible results, figures, and source code.
 - [`problem-b-cold-chain-routing`](solutions/problem-b-cold-chain-routing/): Problem B model, exact solver, results, figures, and current paper.
-- [`problem-c-pv-diagnostics`](solutions/problem-c-pv-diagnostics/): active Problem C decision ledger and current modeling frontier.
+- [`problem-c-pv-diagnostics`](solutions/problem-c-pv-diagnostics/): completed Problem C workflow with frozen results and the final paper under [`paper/`](solutions/problem-c-pv-diagnostics/paper/).

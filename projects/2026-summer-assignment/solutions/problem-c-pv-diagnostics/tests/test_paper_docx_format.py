@@ -19,7 +19,7 @@ sys.path.insert(0, str(REPOSITORY_ROOT / "shared"))
 from paper_format import load_profile, validate_docx_resources  # noqa: E402
 
 
-DOCX_PATH = PROJECT_ROOT / "paper.docx"
+DOCX_PATH = PROJECT_ROOT / "paper" / "paper.docx"
 
 
 class ProblemCPaperDocxFormatTests(unittest.TestCase):

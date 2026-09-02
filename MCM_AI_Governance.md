@@ -39,12 +39,12 @@ Missing information does not make the resulting assumption technical by itself. 
 Do not ask merely because asking is safer. Escalate only when all five conditions hold:
 
 1. **Materiality** — the answer can materially change the model, scope, evidence, conclusion, or another consequential downstream decision.
-2. **Irreducibility** — the uncertainty cannot reasonably be resolved from authoritative project material, relevant research, a genuinely semantics-preserving reversible assumption, or later execution. A convenient placeholder is not “safe” when it pre-empts a human-owned semantic choice.
+2. **Irreducibility** — after actively checking the category authority, attachments, Accepted Decisions, and other controlling material, at least two authority-compatible alternatives remain, each with independent substantive support. A computation-driven approximation, an interpretation that discards available authoritative facts, or a merely mathematically definable objective is not an irreducible alternative. A convenient placeholder is not “safe” when it pre-empts a human-owned semantic choice.
 3. **Timing** — the answer is needed for the next meaningful step.
 4. **Ownership** — the choice is human-owned.
-5. **Analysis readiness** — enough investigation exists to explain the real decision space.
+5. **Analysis readiness** — enough investigation exists to explain the real admissible decision space and why weaker candidates were eliminated rather than promoted to options.
 
-Otherwise decide, investigate further, defer, or continue safely.
+Only alternatives that survive this authority-based admissibility test count toward the Gate. If disambiguation leaves one supported alternative, treat the matter as resolved project meaning or technical judgment and continue without a Decision Proposal. Otherwise decide, investigate further, defer, or continue safely.
 
 Operationally: routine technical choices are autonomous; consequential AI-owned choices are autonomous but surfaced later when material; human-owned significant choices require a Decision Proposal before accepted project meaning changes.
 
@@ -54,9 +54,9 @@ The Question Gate is not the sole protection against drift. Stable, consequentia
 
 ## 2.4 Decision Proposal
 
-Present all materially reasonable alternatives; there is no fixed option count. Alternatives must be genuinely distinct, feasible, at the same abstraction level, compatible with higher authority, and supported by a real reason someone might choose them. Never manufacture options for ceremony. A choice that contradicts the original problem or another controlling authority is a rejected/conflicting path, not a selectable proposal option, unless the user has explicitly asked to consider superseding that authority.
+Construct a Decision Proposal only when the Question Gate has passed, and only from alternatives that survived its authority-based admissibility test. Before writing options, eliminate candidates that exist only for computational convenience or approximation, lack independent support in the problem or other controlling authority, conflict with higher authority, or are merely objectives that can be defined mathematically. Easier computation or optimization is not a substantive advantage for a semantic alternative unless computability is itself an actual problem constraint. Remaining alternatives must be genuinely distinct, feasible, at the same abstraction level, and supported by a real reason grounded in the task. There is no fixed option count, and if only one admissible interpretation remains there is no proposal.
 
-Compare genuine trade-offs symmetrically. If evidence clearly favors one option, present the recommendation directly together with its strongest real drawback and the evidence or condition that would change the recommendation. Before recommending, consider the strongest plausible reason it could be wrong. State uncertainty/confidence only when useful to the decision.
+Do not force symmetric treatment. Compare genuine surviving trade-offs in proportion to their evidence. If evidence eliminates a weaker candidate, reject it instead of inventing an advantage for balance. When multiple alternatives genuinely remain, present the recommendation directly together with its strongest real drawback and the evidence or condition that would change the recommendation. Before recommending, consider the strongest plausible reason it could be wrong. State uncertainty/confidence only when useful to the decision.
 
 When the user has already proposed one concrete change that conflicts with an Accepted Decision, do not manufacture alternatives merely to satisfy this format. The required interaction is a concise Decision Review and explicit supersession confirmation.
 
@@ -169,6 +169,8 @@ Blockers
 Pending Decisions
 Rejected / Do Not Repeat   # only while operationally relevant
 ```
+
+`Pending Decisions` and decision-derived `Blockers` are reserved for real Decision Proposals that have already passed the Question Gate. Candidate interpretations and unresolved analysis that have not passed the Gate remain in current analysis or `In Progress`; they do not become pending human decisions or blockers merely because they could change results.
 
 Do not duplicate the Decision Ledger, full design documents, permanent rules, large historical TODO lists, or raw reasoning history.
 
@@ -300,15 +302,13 @@ Read AGENTS + problem + Accepted Decisions + relevant current evidence
    │        → Decision Review
    │        → explicit supersession confirmation
    │        → new Decision supersedes old Decision
-   └─ no → significant decision?
-      ├─ no → AI handles
-      └─ yes → human-owned?
-         ├─ no → AI decides; report later if consequential
-         └─ yes → complete safe analysis
-                  → checkpoint state if needed
-                  → Decision Proposal
-                  → user approval
-                  → Decision Review / Ledger update
+   └─ no → human-owned significant choice survives the Question Gate?
+      ├─ no → AI handles; report later if consequential
+      └─ yes → complete safe analysis
+               → checkpoint state if needed
+               → Decision Proposal
+               → user approval
+               → Decision Review / Ledger update
 → substantial implementation integration risk or final freeze?
    ├─ yes → create/use dedicated branch
    └─ no → continue normally

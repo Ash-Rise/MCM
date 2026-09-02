@@ -2,13 +2,13 @@
 
 本目录是 2025 年全国大学生数学建模竞赛 A 题的独立冷启动项目。
 
-当前阶段：题面读取与问题分析已完成，等待两项重大语义决定。尚未开始求解、生成结果、制图或写作，也未查阅公开题解、优秀论文或赛题讲评。
+当前阶段：题面读取、问题分析和重大语义复审已完成，没有待决的重大语义事项。尚未开始求解、生成结果、制图或写作，也未查阅公开题解、优秀论文或赛题讲评。
 
 ## 当前入口
 
 - 原始题面：[problem-statements/A题.pdf](problem-statements/A题.pdf)
 - 机器阅读副本：[problem-statements/A题.md](problem-statements/A题.md)
-- 问题分析与 Decision Proposal：[analysis/problem-analysis.md](analysis/problem-analysis.md)
+- 问题分析与模型口径：[analysis/problem-analysis.md](analysis/problem-analysis.md)
 - 当前执行前沿：[state.md](state.md)
 - 官方结果模板：`problem-statements/attachments/result1.xlsx`、`result2.xlsx`、`result3.xlsx`
 

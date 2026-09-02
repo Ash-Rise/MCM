@@ -1,0 +1,45 @@
+{
+  "status": "working_baseline",
+  "optimality_claim": "none; geometry-guided global search plus local refinement",
+  "model": "complete-cylinder line-of-sight shielding",
+  "seed": 778,
+  "heading_deg": 5.144284347370719,
+  "speed_m_s": 139.9999998302874,
+  "release_time_s": 0.8054292028352852,
+  "fuse_delay_s": 0.12201525176583047,
+  "explosion_time_s": 0.9274444546011157,
+  "release_point_m": [
+    17912.30589748317,
+    10.11053386120392,
+    1800.0
+  ],
+  "explosion_point_m": [
+    17929.319226907977,
+    11.642188450110151,
+    1799.927050163849
+  ],
+  "shielding_intervals_s": [
+    [
+      0.9275305460765859,
+      5.515585990443834
+    ]
+  ],
+  "effective_shielding_duration_s": 4.5880554443672485,
+  "validation": {
+    "coarse_surface_points": 15480,
+    "fine_surface_points": 159840,
+    "coarse_duration_s": 4.588055444365375,
+    "local_optimizer_success": false,
+    "local_optimizer_message": "Maximum number of iterations has been exceeded.",
+    "local_perturbation_audit": {
+      "seed": 20250902,
+      "trials": 400,
+      "feasible_trials": 400,
+      "best_improvement_s": 0.0
+    },
+    "fine_endpoint_residuals_m": [
+      2.9309887850104133e-13,
+      -6.963318810448982e-13
+    ]
+  }
+}

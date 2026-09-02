@@ -1,0 +1,34 @@
+{
+  "status": "working",
+  "model": "complete-cylinder line-of-sight shielding",
+  "gravity_m_s2": 9.8,
+  "release_time_s": 1.5,
+  "fuse_delay_s": 3.6,
+  "explosion_time_s": 5.1,
+  "release_point_m": [
+    17620.0,
+    0.0,
+    1800.0
+  ],
+  "explosion_point_m": [
+    17188.0,
+    0.0,
+    1736.496
+  ],
+  "shielding_intervals_s": [
+    [
+      8.056445489407103,
+      9.448088158701706
+    ]
+  ],
+  "effective_shielding_duration_s": 1.391642669294603,
+  "validation": {
+    "coarse_surface_points": 43920,
+    "fine_surface_points": 159840,
+    "coarse_duration_s": 1.3916426692948285,
+    "fine_endpoint_residuals_m": [
+      -1.2612133559741778e-13,
+      -2.7426949600339867e-12
+    ]
+  }
+}

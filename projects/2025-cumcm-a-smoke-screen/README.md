@@ -2,7 +2,7 @@
 
 本目录是 2025 年全国大学生数学建模竞赛 A 题的独立冷启动项目。
 
-当前阶段：题面读取和问题分析已完成；DP-03 已接受为 B1，问题 5 按逐弹单一指派正式计分，B2 只作补充评价。问题 1 已完成高分辨率复算，问题 2 已形成未冻结的优化基线；尚未制图或写作，也未查阅公开题解、优秀论文或赛题讲评。
+当前阶段：DP-03 已接受为 B1；问题 1、2 已 accepted，问题 3～5 已形成可信 working lower bounds 和工作版结果模板，尚未统一冻结。B2 始终只作选后补充评价。尚未制图或写作，也未查阅公开题解、优秀论文或赛题讲评。
 
 ## 当前入口
 
@@ -11,7 +11,8 @@
 - 问题分析与模型口径：[analysis/problem-analysis.md](analysis/problem-analysis.md)
 - Accepted Decisions：[decisions.md](decisions.md)
 - 当前执行前沿：[state.md](state.md)
-- 工作结果：[`results/working/q1.json`](results/working/q1.json)、[`results/working/q2.json`](results/working/q2.json)
+- Accepted results：[`results/accepted/q1.json`](results/accepted/q1.json)、[`results/accepted/q2.json`](results/accepted/q2.json)
+- Working results：`results/working/q3.json`～`q5.json` 及同目录 `result1.xlsx`～`result3.xlsx`
 - 官方结果模板：`problem-statements/attachments/result1.xlsx`、`result2.xlsx`、`result3.xlsx`
 
 题目事实由原始 PDF 和官方附件控制；Markdown 只作为机器读取接口。若以后取得的全国组委会直链归档与当前镜像字节不一致，应立即停止下游工作并以全国组委会原件重新核对。

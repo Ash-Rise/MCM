@@ -99,6 +99,31 @@ def required_cloud_radius(
     return float(np.linalg.norm(nearest - cloud, axis=1).max())
 
 
+def required_cloud_radii(
+    observers: np.ndarray,
+    clouds: np.ndarray,
+    target_points: np.ndarray,
+    chunk_size: int = 256,
+) -> np.ndarray:
+    """Vectorized required radii for matching observer/cloud time rows."""
+    observers = np.asarray(observers, dtype=float)
+    clouds = np.asarray(clouds, dtype=float)
+    if observers.shape != clouds.shape or observers.ndim != 2 or observers.shape[1] != 3:
+        raise ValueError("observers and clouds must both have shape (n, 3)")
+    result = np.empty(len(observers), dtype=float)
+    for start in range(0, len(observers), chunk_size):
+        stop = min(start + chunk_size, len(observers))
+        observer = observers[start:stop, None, :]
+        cloud = clouds[start:stop, None, :]
+        segment = target_points[None, :, :] - observer
+        cloud_vector = cloud - observer
+        fraction = np.sum(segment * cloud_vector, axis=2) / np.sum(segment**2, axis=2)
+        fraction = np.clip(fraction, 0.0, 1.0)
+        nearest = observer + fraction[:, :, None] * segment
+        result[start:stop] = np.linalg.norm(nearest - cloud, axis=2).max(axis=1)
+    return result
+
+
 def shielding_intervals(
     required_radius: Callable[[float], float],
     start: float,
@@ -136,3 +161,53 @@ def shielding_intervals(
 
 def interval_measure(intervals: list[tuple[float, float]]) -> float:
     return float(sum(right - left for left, right in intervals))
+
+
+def merge_intervals(intervals: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Return the union of a finite collection of closed time intervals."""
+    if not intervals:
+        return []
+    ordered = sorted(intervals)
+    merged = [ordered[0]]
+    for left, right in ordered[1:]:
+        previous_left, previous_right = merged[-1]
+        if left <= previous_right:
+            merged[-1] = (previous_left, max(previous_right, right))
+        else:
+            merged.append((left, right))
+    return merged
+
+
+def strategy_shielding_intervals(
+    drone_initial: np.ndarray,
+    missile_initial: np.ndarray,
+    strategy: np.ndarray,
+    target_points: np.ndarray,
+    grid_step: float = 0.01,
+) -> list[tuple[float, float]]:
+    """Evaluate one [heading, speed, explosion time, fuse] strategy."""
+    heading, speed, explosion_time, fuse_delay = np.asarray(strategy, dtype=float)
+    arrival = np.linalg.norm(missile_initial) / 300.0
+    maximum_fuse = np.sqrt(2.0 * drone_initial[2] / GRAVITY)
+    if not (
+        0.0 <= heading <= 2.0 * np.pi
+        and 70.0 <= speed <= 140.0
+        and 0.0 <= fuse_delay <= min(explosion_time, maximum_fuse)
+        and explosion_time < arrival
+    ):
+        return []
+    velocity = np.array([speed * np.cos(heading), speed * np.sin(heading), 0.0])
+    explosion = explosion_point(drone_initial, velocity, explosion_time, fuse_delay)
+    if explosion[2] < 0.0:
+        return []
+    end = min(explosion_time + CLOUD_LIFETIME, arrival, explosion_time + explosion[2] / 3.0)
+    return shielding_intervals(
+        lambda time: required_cloud_radius(
+            missile_position(missile_initial, time),
+            cloud_center(explosion, time - explosion_time),
+            target_points,
+        ),
+        explosion_time,
+        end,
+        grid_step=grid_step,
+    )

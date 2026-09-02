@@ -1,0 +1,354 @@
+{
+  "status": "audit",
+  "purpose": "q2 multistart stability and speed-cap boundary evidence",
+  "grid_step_s": 0.1,
+  "surface_points": 168,
+  "multistart": [
+    {
+      "seed": 101,
+      "speed_cap_m_s": 140.0,
+      "guided_parameters": [
+        1.1352994867717252,
+        2.1888912398655376,
+        0.9424086522332082
+      ],
+      "strategy": [
+        0.10156880414805852,
+        100.06067472235615,
+        1.1352994867717252,
+        0.61345981989024
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.5385055450124259
+    },
+    {
+      "seed": 202,
+      "speed_cap_m_s": 140.0,
+      "guided_parameters": [
+        1.0361023353935068,
+        2.6920990054472274,
+        0.9468356075675425
+      ],
+      "strategy": [
+        0.12745913078473492,
+        80.73350276379017,
+        1.0361023353935068,
+        0.828191871948235
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.487939906621289
+    },
+    {
+      "seed": 303,
+      "speed_cap_m_s": 140.0,
+      "guided_parameters": [
+        1.0634,
+        2.4856,
+        0.94568
+      ],
+      "strategy": [
+        0.09692850103557459,
+        105.56546376697591,
+        1.0634,
+        0.4734720658360896
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.5237540045274037
+    },
+    {
+      "seed": 404,
+      "speed_cap_m_s": 140.0,
+      "guided_parameters": [
+        0.889806845504329,
+        3.1097326517652335,
+        0.95082281808389
+      ],
+      "strategy": [
+        0.12044750028899932,
+        91.99213604352443,
+        0.889806845504329,
+        0.6849247385188065
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.4637209511100301
+    },
+    {
+      "seed": 505,
+      "speed_cap_m_s": 140.0,
+      "guided_parameters": [
+        1.1985131706611132,
+        2.252316171625439,
+        0.9431076706711463
+      ],
+      "strategy": [
+        0.12487084563184783,
+        76.22704314736009,
+        1.1985131706611132,
+        0.8914346050131998
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.6787478025369673
+    }
+  ],
+  "speed_cap_sweep": [
+    {
+      "seed": 990,
+      "speed_cap_m_s": 90.0,
+      "guided_parameters": [
+        1.2499754885708017,
+        2.58802960841756,
+        0.9499100591951491
+      ],
+      "strategy": [
+        0.09090322897569207,
+        88.28725146953545,
+        1.2499754885708017,
+        0.45069927442658786
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.4779787914491261
+    },
+    {
+      "seed": 1000,
+      "speed_cap_m_s": 100.0,
+      "guided_parameters": [
+        1.0379835551529857,
+        2.5017260308803184,
+        0.9447653951290375
+      ],
+      "strategy": [
+        0.11336436947223225,
+        94.0816265864974,
+        1.0379835551529857,
+        0.7165413337222142
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.4814059634203515
+    },
+    {
+      "seed": 1010,
+      "speed_cap_m_s": 110.0,
+      "guided_parameters": [
+        1.0634,
+        2.4856,
+        0.94568
+      ],
+      "strategy": [
+        0.09692850103557459,
+        105.56546376697591,
+        1.0634,
+        0.4734720658360896
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.5237540045274037
+    },
+    {
+      "seed": 1020,
+      "speed_cap_m_s": 120.0,
+      "guided_parameters": [
+        1.27123793416741,
+        2.4485247082950865,
+        0.9481529862706829
+      ],
+      "strategy": [
+        0.09378653539400308,
+        87.10102432194756,
+        1.27123793416741,
+        0.5290035638157178
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.6517505852203389
+    },
+    {
+      "seed": 1030,
+      "speed_cap_m_s": 130.0,
+      "guided_parameters": [
+        1.0841467491083452,
+        2.745290997440146,
+        0.9486097962611273
+      ],
+      "strategy": [
+        0.1165162012116683,
+        81.54907832093093,
+        1.0841467491083452,
+        0.7458736721883555
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.6346207039817188
+    },
+    {
+      "seed": 1035,
+      "speed_cap_m_s": 135.0,
+      "guided_parameters": [
+        0.909622073807978,
+        2.713092623293,
+        0.9461683706193245
+      ],
+      "strategy": [
+        0.10707874438026987,
+        110.74739104288231,
+        0.909622073807978,
+        0.5670248536476594
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.5176961350873549
+    },
+    {
+      "seed": 1040,
+      "speed_cap_m_s": 140.0,
+      "guided_parameters": [
+        1.0588022866565518,
+        2.385469007463031,
+        0.9442201223694242
+      ],
+      "strategy": [
+        0.09789072132466213,
+        107.80650989535465,
+        1.0588022866565518,
+        0.4958527266413805
+      ],
+      "sampled_duration_s": 4.6000000000000005,
+      "minimum_required_radius_m": 0.5367041396659047
+    }
+  ],
+  "refinement_screen": {
+    "grid_step_s": 0.01,
+    "surface_points": 3780,
+    "candidates": [
+      {
+        "seed": 101,
+        "speed_cap_m_s": 140.0,
+        "speed_m_s": 100.06067472235615,
+        "sampled_duration_s": 4.51,
+        "minimum_required_radius_m": 0.49980444569833204
+      },
+      {
+        "seed": 202,
+        "speed_cap_m_s": 140.0,
+        "speed_m_s": 80.73350276379017,
+        "sampled_duration_s": 4.57,
+        "minimum_required_radius_m": 0.466247293455544
+      },
+      {
+        "seed": 303,
+        "speed_cap_m_s": 140.0,
+        "speed_m_s": 105.56546376697591,
+        "sampled_duration_s": 4.58,
+        "minimum_required_radius_m": 0.48481877653584904
+      },
+      {
+        "seed": 404,
+        "speed_cap_m_s": 140.0,
+        "speed_m_s": 91.99213604352443,
+        "sampled_duration_s": 4.57,
+        "minimum_required_radius_m": 0.4240937852991672
+      },
+      {
+        "seed": 505,
+        "speed_cap_m_s": 140.0,
+        "speed_m_s": 76.22704314736009,
+        "sampled_duration_s": 4.58,
+        "minimum_required_radius_m": 0.49919095634755156
+      },
+      {
+        "seed": 990,
+        "speed_cap_m_s": 90.0,
+        "speed_m_s": 88.28725146953545,
+        "sampled_duration_s": 4.58,
+        "minimum_required_radius_m": 0.4387733219808222
+      },
+      {
+        "seed": 1000,
+        "speed_cap_m_s": 100.0,
+        "speed_m_s": 94.0816265864974,
+        "sampled_duration_s": 4.59,
+        "minimum_required_radius_m": 0.4824451110695695
+      },
+      {
+        "seed": 1010,
+        "speed_cap_m_s": 110.0,
+        "speed_m_s": 105.56546376697591,
+        "sampled_duration_s": 4.58,
+        "minimum_required_radius_m": 0.48481877653584904
+      },
+      {
+        "seed": 1020,
+        "speed_cap_m_s": 120.0,
+        "speed_m_s": 87.10102432194756,
+        "sampled_duration_s": 4.58,
+        "minimum_required_radius_m": 0.4518893283346884
+      },
+      {
+        "seed": 1030,
+        "speed_cap_m_s": 130.0,
+        "speed_m_s": 81.54907832093093,
+        "sampled_duration_s": 4.58,
+        "minimum_required_radius_m": 0.46093048829525307
+      },
+      {
+        "seed": 1035,
+        "speed_cap_m_s": 135.0,
+        "speed_m_s": 110.74739104288231,
+        "sampled_duration_s": 4.58,
+        "minimum_required_radius_m": 0.4761985621602084
+      },
+      {
+        "seed": 1040,
+        "speed_cap_m_s": 140.0,
+        "speed_m_s": 107.80650989535465,
+        "sampled_duration_s": 4.58,
+        "minimum_required_radius_m": 0.4978671557529908
+      }
+    ]
+  },
+  "local_speed_boundary": [
+    {
+      "speed_m_s": 130.0,
+      "duration_s": 4.583689112586434
+    },
+    {
+      "speed_m_s": 134.0,
+      "duration_s": 4.585455756429015
+    },
+    {
+      "speed_m_s": 136.0,
+      "duration_s": 4.586328980569965
+    },
+    {
+      "speed_m_s": 138.0,
+      "duration_s": 4.5871955317829025
+    },
+    {
+      "speed_m_s": 139.0,
+      "duration_s": 4.587626316090025
+    },
+    {
+      "speed_m_s": 139.5,
+      "duration_s": 4.587841087056702
+    },
+    {
+      "speed_m_s": 139.9,
+      "duration_s": 4.588012606032014
+    },
+    {
+      "speed_m_s": 140.0,
+      "duration_s": 4.588055444438083
+    }
+  ],
+  "strongest_independent_challenger": {
+    "seed": 1000,
+    "strategy": [
+      0.11336436947223225,
+      94.0816265864974,
+      1.0379835551529857,
+      0.7165413337222142
+    ],
+    "duration_s": 4.580870029442191,
+    "intervals_s": [
+      [
+        1.2774959277628053,
+        5.858365957204996
+      ]
+    ]
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "status": "working",
+  "optimality_claim": "none; three seeded differential-evolution runs and high-resolution validation",
+  "model": "complete-cylinder line-of-sight shielding",
+  "heading_deg": 6.346036509322293,
+  "speed_m_s": 120.52645621748812,
+  "bombs": [
+    {
+      "bomb": 1,
+      "release_time_s": 0.004715939500424593,
+      "fuse_delay_s": 0.06833961469631866,
+      "explosion_time_s": 0.07305555419674326,
+      "release_point_m": [
+        17800.564912612175,
+        0.06282640706690545,
+        1800.0
+      ],
+      "explosion_point_m": [
+        17808.75117332434,
+        0.9732563333456093,
+        1799.9771155156095
+      ],
+      "shielding_intervals_s": [
+        [
+          4.552930665960021,
+          7.373370760304231
+        ]
+      ],
+      "individual_duration_s": 2.8204400943442094
+    },
+    {
+      "bomb": 2,
+      "release_time_s": 1.009769576687149,
+      "fuse_delay_s": 0.0031627065227155526,
+      "explosion_time_s": 1.0129322832098646,
+      "release_point_m": [
+        17920.95820338912,
+        13.452291841956809,
+        1800.0
+      ],
+      "explosion_point_m": [
+        17921.337057444212,
+        13.494425861575042,
+        1799.9999509867084
+      ],
+      "shielding_intervals_s": [
+        [
+          1.0129322832098646,
+          5.34825519159215
+        ]
+      ],
+      "individual_duration_s": 4.3353229083822855
+    },
+    {
+      "bomb": 3,
+      "release_time_s": 3.4956171110442806,
+      "fuse_delay_s": 9.15402389513332,
+      "explosion_time_s": 12.649641006177601,
+      "release_point_m": [
+        18218.732724029363,
+        46.56910114066032,
+        1800.0
+      ],
+      "explosion_point_m": [
+        19315.274261524573,
+        168.52029060864348,
+        1389.3988479839081
+      ],
+      "shielding_intervals_s": [],
+      "individual_duration_s": 0.0
+    }
+  ],
+  "union_intervals_s": [
+    [
+      1.0129322832098646,
+      7.373370760304231
+    ]
+  ],
+  "effective_shielding_duration_s": 6.360438477094366,
+  "validation": {
+    "search_grid_step_s": 0.1,
+    "search_surface_points": 168,
+    "validation_surface_points": 15480,
+    "multistart_sampled_durations_s": [
+      6.5,
+      6.5,
+      6.5,
+      6.5
+    ],
+    "validated_candidate_union_durations_s": [
+      6.360438477094366,
+      6.359116866850224,
+      6.3596542068753275,
+      6.342441377163253
+    ],
+    "release_gaps_s": [
+      1.0050536371867245,
+      2.4858475343571316
+    ],
+    "search_parameters": [
+      0.11075923153944182,
+      120.52645621748812,
+      0.004715939500424593,
+      0.005053637186724469,
+      1.4858475343571313,
+      0.06833961469631866,
+      0.0031627065227155526,
+      9.15402389513332
+    ]
+  }
+}

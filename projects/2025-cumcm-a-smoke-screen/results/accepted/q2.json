@@ -1,0 +1,25 @@
+{
+  "status": "accepted_best_found",
+  "optimality_claim": "credible best-found under recorded multistart and boundary evidence; not a global-optimality proof",
+  "model": "complete-cylinder line-of-sight shielding",
+  "seed": 778,
+  "heading_deg": 5.144284347370719,
+  "speed_m_s": 139.9999998302874,
+  "release_time_s": 0.8054292028352852,
+  "fuse_delay_s": 0.12201525176583047,
+  "explosion_time_s": 0.9274444546011157,
+  "release_point_m": [17912.30589748317, 10.11053386120392, 1800.0],
+  "explosion_point_m": [17929.319226907977, 11.642188450110151, 1799.927050163849],
+  "shielding_intervals_s": [[0.9275305460765859, 5.515585990443834]],
+  "effective_shielding_duration_s": 4.5880554443672485,
+  "evidence": {
+    "audit": "results/audits/q2_optimality.json",
+    "multistart_runs": 5,
+    "speed_cap_slices": 7,
+    "strongest_independent_challenger_duration_s": 4.580870029442191,
+    "local_speed_boundary": "duration increased monotonically from 130 to 140 m/s for the accepted geometry",
+    "local_feasible_perturbations": 400,
+    "fine_surface_points": 159840,
+    "fine_endpoint_residual_max_abs_m": 6.963318810448982e-13
+  }
+}

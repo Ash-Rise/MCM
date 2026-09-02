@@ -15,6 +15,8 @@ from smoke_screen.model import (  # noqa: E402
     explosion_point,
     interval_measure,
     missile_position,
+    required_cloud_radii,
+    required_cloud_radius,
     shielding_intervals,
 )
 
@@ -46,6 +48,16 @@ class ModelTests(unittest.TestCase):
         self.assertAlmostEqual(intervals[0][0], 1.0, places=9)
         self.assertAlmostEqual(intervals[0][1], 3.0, places=9)
         self.assertAlmostEqual(interval_measure(intervals), 2.0, places=9)
+
+    def test_vectorized_required_radius_matches_scalar(self) -> None:
+        points = cylinder_surface_points(36, 5, 4)
+        observers = np.array([[20000.0, 0.0, 2000.0], [19000.0, 600.0, 2100.0]])
+        clouds = np.array([[17000.0, 0.0, 1700.0], [16500.0, 100.0, 1700.0]])
+        vectorized = required_cloud_radii(observers, clouds, points, chunk_size=1)
+        scalar = np.array(
+            [required_cloud_radius(observer, cloud, points) for observer, cloud in zip(observers, clouds)]
+        )
+        np.testing.assert_allclose(vectorized, scalar, atol=1e-12)
 
 
 if __name__ == "__main__":

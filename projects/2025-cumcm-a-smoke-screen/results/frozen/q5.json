@@ -1,7 +1,5 @@
 {
   "status": "frozen",
-  "frozen_from": "results/accepted/q5.json",
-  "acceptance_evidence": ["results/audits/q5_joint.json","results/audits/q5_broad.json","results/audits/q5_assignments.json"],
   "formal_semantics": "DP-03/B1 assigned-target accounting",
   "optimality_claim": "none; coordinate-wise joint trajectory and three-bomb refinement",
   "records": [
@@ -56,27 +54,6 @@
           9.37200672948343
         ]
       ]
-    },
-    {
-      "drone": "FY1",
-      "bomb": 3,
-      "assigned_missile": "M3",
-      "heading_deg": 179.05253519049154,
-      "speed_m_s": 105.29186375121283,
-      "release_time_s": 10.070029615496413,
-      "fuse_delay_s": 2.601940783005686,
-      "explosion_time_s": 12.671970398502099,
-      "release_point_m": [
-        16739.852779896373,
-        17.532595924947678,
-        1800.0
-      ],
-      "explosion_point_m": [
-        16465.927042505005,
-        22.06274907354215,
-        1766.8265303924857
-      ],
-      "assigned_target_intervals_s": []
     },
     {
       "drone": "FY2",
@@ -311,48 +288,6 @@
           18.998120869782536
         ]
       ]
-    },
-    {
-      "drone": "FY5",
-      "bomb": 2,
-      "assigned_missile": "M1",
-      "heading_deg": 92.97298263785056,
-      "speed_m_s": 134.52977632338622,
-      "release_time_s": 15.479776549746214,
-      "fuse_delay_s": 8.145763221124996,
-      "explosion_time_s": 23.62553977087121,
-      "release_point_m": [
-        12891.991496661843,
-        79.6880571496581,
-        1300.0
-      ],
-      "explosion_point_m": [
-        12835.155295491024,
-        1174.060862396664,
-        974.8680535722999
-      ],
-      "assigned_target_intervals_s": []
-    },
-    {
-      "drone": "FY5",
-      "bomb": 3,
-      "assigned_missile": "M1",
-      "heading_deg": 92.97298263785056,
-      "speed_m_s": 134.52977632338622,
-      "release_time_s": 26.888358084628713,
-      "fuse_delay_s": 1.553448432186932,
-      "explosion_time_s": 28.441806516815646,
-      "release_point_m": [
-        12812.389325866026,
-        1612.4163036373138,
-        1300.0
-      ],
-      "explosion_point_m": [
-        12801.550303762942,
-        1821.1201012299211,
-        1288.175310045826
-      ],
-      "assigned_target_intervals_s": []
     }
   ],
   "formal_b1": {
@@ -455,7 +390,7 @@
   },
   "validation": {
     "surface_points": 3780,
-    "selected_bombs": 14
+    "selected_bombs": 11
   },
   "audit": {
     "incumbent_b1_s": 30.921158351390623,
@@ -512,5 +447,36 @@
         ]
       }
     ]
-  }
+  },
+  "cleanup": {
+    "removed_actions": [
+      {
+        "drone": "FY1",
+        "bomb": 3,
+        "assigned_missile": "M3",
+        "reason": "zero B1 contribution and zero physical shielding for all three missiles"
+      },
+      {
+        "drone": "FY5",
+        "bomb": 2,
+        "assigned_missile": "M1",
+        "reason": "zero B1 contribution and zero physical shielding for all three missiles"
+      },
+      {
+        "drone": "FY5",
+        "bomb": 3,
+        "assigned_missile": "M1",
+        "reason": "zero B1 contribution and zero physical shielding for all three missiles"
+      }
+    ],
+    "criterion": "remove only actions with zero B1 and zero B2 contribution",
+    "b1_before_s": 31.059626073444953,
+    "b1_after_s": 31.059626073444953
+  },
+  "acceptance_evidence": [
+    "results/audits/q5_joint.json",
+    "results/audits/q5_broad.json",
+    "results/audits/q5_assignments.json"
+  ],
+  "frozen_from": "results/accepted/q5.json"
 }

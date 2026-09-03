@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-09-03T07:56:12.880211+00:00",
+  "source_format": "markdown",
+  "source": "D:\\大二上学习资料\\数模国赛\\projects\\2025-cumcm-a-smoke-screen\\paper\\paper.md",
+  "source_files": [
+    "paper.md"
+  ],
+  "source_sha256": "c043cc9597a42e96e845b9fb4aafbb7705144dadd165121de7f7c5e989aaa54f",
+  "project_files": [
+    "paper.md"
+  ],
+  "project_sha256": "c043cc9597a42e96e845b9fb4aafbb7705144dadd165121de7f7c5e989aaa54f",
+  "output": "D:\\大二上学习资料\\数模国赛\\projects\\2025-cumcm-a-smoke-screen\\paper\\paper.docx",
+  "output_sha256": "9a438f7eea9ce8440cdfd575097554a8056046747a024b6a682579693c464709",
+  "template": "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-word-enhanced-template.docx",
+  "template_sha256": "a697c776c2a9cfe86f3f8a1e8e18bc7a1a8d3b49891a81984bd560d7bfc8b2d6",
+  "pandoc": {
+    "path": "C:\\Users\\AA\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\pandoc.CMD",
+    "version": "pandoc 3.9"
+  },
+  "command": [
+    "C:\\Users\\AA\\AppData\\Local\\Programs\\Python\\Python313\\Scripts\\pandoc.CMD",
+    "--from",
+    "markdown",
+    "--to",
+    "docx",
+    "--standalone",
+    "--citeproc",
+    "D:\\大二上学习资料\\数模国赛\\projects\\2025-cumcm-a-smoke-screen\\paper\\paper.md",
+    "--output",
+    "D:\\大二上学习资料\\数模国赛\\projects\\2025-cumcm-a-smoke-screen\\paper\\tmp7td1ogc8.docx",
+    "--resource-path=D:\\大二上学习资料\\数模国赛\\projects\\2025-cumcm-a-smoke-screen\\paper",
+    "--reference-doc",
+    "D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-word-enhanced-template.docx"
+  ],
+  "returncode": 0,
+  "duration_seconds": 0.562,
+  "warnings": [],
+  "allowed_warnings": [],
+  "warning_override": {
+    "patterns": [],
+    "reason": null
+  },
+  "reproduce": "C:\\Users\\AA\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\python.exe C:\\Users\\AA\\.codex\\skills\\math-modeling\\tools\\docx\\scripts\\equations.py generate D:\\大二上学习资料\\数模国赛\\projects\\2025-cumcm-a-smoke-screen\\paper\\paper.md --output D:\\大二上学习资料\\数模国赛\\projects\\2025-cumcm-a-smoke-screen\\paper\\paper.docx --template D:\\大二上学习资料\\数模国赛\\shared\\templates\\2026-cumcm-word-enhanced-template.docx --timeout 120 --overwrite",
+  "postprocessing": [
+    {
+      "tool": "scripts/format_paper_docx.py",
+      "reason": "Applied the repository formatting profile, semantic table widths, pagination keep rules, figure alt text, and anonymous metadata."
+    }
+  ]
+}

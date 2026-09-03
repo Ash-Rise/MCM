@@ -2,7 +2,7 @@
 
 本目录是 2025 年全国大学生数学建模竞赛 A 题的独立冷启动项目。
 
-当前阶段：DP-03 已接受为 B1；问题 1～5 的 best-found 结果已 accepted 并统一冻结。Q5 清理后保留 11 枚有效动作，B1 仍为 31.059626073 s；B2 始终只作选后补充评价。第一版 figures 与正式论文源 `paper/paper.md` 已完成，尚未生成 DOCX；未查阅公开题解、优秀论文或赛题讲评。
+当前阶段：DP-03 已接受为 B1；问题 1～5 的 best-found 结果已 accepted 并统一冻结。Q5 清理后保留 11 枚有效动作，B1 仍为 31.059626073 s；B2 始终只作选后补充评价。第一版 figures、正式论文源 `paper/paper.md` 和经完整视觉复核的 19 页最终 `paper/paper.docx` 均已完成并冻结；未查阅公开题解、优秀论文或赛题讲评。
 
 ## 当前入口
 
@@ -14,6 +14,9 @@
 - Accepted results：`results/accepted/q1.json`～`q5.json`
 - Frozen results：`results/frozen/q1.json`～`q5.json` 及 `result1.xlsx`～`result3.xlsx`
 - Frozen-only figures：`figures/fig1_shielding_geometry.*`、`fig2_q1_q3_q4_intervals.*`、`fig3_q5_timeline_allocation.*`
+- 正式论文源：`paper/paper.md`
+- 冻结最终论文：`paper/paper.docx`（SHA-256：`9A438F7EEA9CE8440CDFD575097554A8056046747A024B6A682579693C464709`）
+- DOCX 转换清单：`paper/paper.conversion.json`
 - 官方结果模板：`problem-statements/attachments/result1.xlsx`、`result2.xlsx`、`result3.xlsx`
 
 题目事实由原始 PDF 和官方附件控制；Markdown 只作为机器读取接口。若以后取得的全国组委会直链归档与当前镜像字节不一致，应立即停止下游工作并以全国组委会原件重新核对。

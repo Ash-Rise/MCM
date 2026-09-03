@@ -6,7 +6,7 @@
 
 ## Current Frontier
 
-问题 1～5 的 best-found 已 accepted 并统一冻结；Q5 严格无效动作清理、冻结表格机械校验及第一版 figures 已完成。正式论文源 `paper/paper.md` 已完成，并针对 Q3 共享航迹耦合、Q4 独立组合条件和 Q5 联合优化意义作了聚焦修订，通过关键数值、约束、图路径和内容边界自审；已删除冻结后不再允许使用的 working → accepted/frozen 反向覆盖脚本。本轮按用户要求未生成 DOCX。
+问题 1～5 的 best-found、冻结结果、正式 figures 和正文源 `paper/paper.md` 均已完成。正式 `paper/paper.docx` 已从该正文源生成，按项目格式基线完成机械排版并逐页复核；全文 19 页，含 9 张表、3 幅图和 228 个原生公式对象。Q3、Q4 及 Q5 的宽结果表采用横向分节，页码连续；未改写 `paper.md`。转换清单复验、Office XML 校验、匿名性与结构检查均通过，最终 DOCX 已冻结。
 
 ## Accepted
 
@@ -23,10 +23,13 @@
 - `results/frozen/result1.xlsx`～`result3.xlsx` 由对应 frozen JSON 直接生成，并已逐字段核对行数、指派、有效时长及运动/资源约束。
 - 全部优化结果都只声称为当前证据下的 best-found，不声称全局最优。
 - `figures/` 的三张第一版正式图只读取 frozen JSON，未调用求解器或改写正式结果。
+- `paper/paper.md` 是正文内容 authority；冻结后的 `paper/paper.docx` 是已认可的最终版式文件。
+- 最终 DOCX SHA-256：`9A438F7EEA9CE8440CDFD575097554A8056046747A024B6A682579693C464709`。
+- 转换清单 `paper/paper.conversion.json` 记录正文源、模板和后处理产物哈希。
 
 ## Next Actions
 
-1. 如进入排版阶段，以当前 `paper/paper.md` 为正文权威，按当届官方规则生成并视觉复核 `paper.docx`。
+1. 本项目论文与 DOCX 阶段已完成；如需提交打包，仅复制冻结产物，不再重排或改写。
 
 ## Boundaries
 

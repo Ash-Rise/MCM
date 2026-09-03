@@ -6,7 +6,7 @@
 
 ## Current Frontier
 
-问题 1～5 的 best-found 已 accepted 并统一冻结；Q5 严格无效动作清理、冻结表格机械校验及第一版 figures 已完成。本轮未产生新 DP，下一步进入论文写作。
+问题 1～5 的 best-found 已 accepted 并统一冻结；Q5 严格无效动作清理、冻结表格机械校验及第一版 figures 已完成。正式论文源 `paper/paper.md` 已完成，并通过关键数值、约束、图路径和内容边界自审；本轮按用户要求未生成 DOCX。
 
 ## Accepted
 
@@ -26,8 +26,7 @@
 
 ## Next Actions
 
-1. 以 frozen results 和现有 figures 完成 `paper.md`。
-2. 按 completeness 规则校验后生成并视觉复核 `paper.docx`。
+1. 如进入排版阶段，以当前 `paper/paper.md` 为正文权威，按当届官方规则生成并视觉复核 `paper.docx`。
 
 ## Boundaries
 

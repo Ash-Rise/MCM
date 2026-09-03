@@ -1,4 +1,4 @@
-profile_version: 3.2
+profile_version: 3.3
 name: ash-rise-chinese-modeling-paper
 scope: repository_global_paper_formatting_default
 priority:
@@ -9,10 +9,11 @@ priority:
 
 visual_calibration:
   reference_label: A题论文 V2.5
-  source_filename: 5改A题论文(v2.5).docx
-  source_sha256: e8827f194c651883e3deeddb34b5ceb9af8f92667ff190a560e8c30780eaef7a
-  source_size_bytes: 1629335
-  calibrated_on: '2026-08-28'
+  source_git_ref: v2.5
+  source_path: projects/2026-summer-assignment/solutions/problem-a-ambulance-dispatch/paper/v2.5/A题论文(v2.5).docx
+  source_sha256: e01e098acca83bbfa491a389e5b4297f2dd386b36cd8806e4dde808edf0c6796
+  source_size_bytes: 2466279
+  calibrated_on: '2026-09-03'
   generalized_scope: page_grid_paragraph_typography_and_table_defaults
   excluded_scope: problem_specific_manual_table_layout
 

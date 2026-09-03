@@ -258,10 +258,10 @@ def _sync_style_resources(document, profile: dict[str, Any]) -> None:
     }
     style_profiles = {
         "Normal": dict(typography["body"], **common),
+        "Body Text": dict(typography["body"], **common),
         "Title": dict(typography["title"], **common),
-        # Pandoc uses Heading 2 for the paper's top-level sections.
         "Heading 1": dict(typography["heading_level_1"], **common),
-        "Heading 2": dict(typography["heading_level_1"], **common),
+        "Heading 2": dict(typography["heading_level_2_and_3"], **common),
         "Heading 3": dict(typography["heading_level_2_and_3"], **common),
         "Heading 4": dict(typography["heading_level_2_and_3"], **common),
     }
@@ -281,6 +281,48 @@ def _sync_style_resources(document, profile: dict[str, Any]) -> None:
             east_asia_font=style_profile["east_asia_font"],
         )
         _set_literal_text_color(rpr, style_profile["font_color_hex"])
+        style.font.size = Pt(style_profile["size_pt"])
+        style.font.bold = style_profile.get("bold", False)
+        style.paragraph_format.alignment = _ALIGNMENTS[style_profile["alignment"]]
+        style.paragraph_format.line_spacing = style_profile["line_spacing_multiple"]
+        style.paragraph_format.space_before = Pt(style_profile.get("space_before_pt", 0))
+        style.paragraph_format.space_after = Pt(style_profile.get("space_after_pt", 0))
+        if "first_line_indent_pt" in style_profile:
+            style.paragraph_format.first_line_indent = Pt(
+                style_profile["first_line_indent_pt"]
+            )
+
+
+def normalize_heading_hierarchy(document) -> bool:
+    """Convert Pandoc's title/H2 hierarchy to the repository's Title/H1 hierarchy."""
+    if not document.paragraphs:
+        return False
+    first = document.paragraphs[0]
+    first_style = first.style.name if first.style else ""
+    body_styles = {
+        paragraph.style.name
+        for paragraph in document.paragraphs[1:]
+        if paragraph.style is not None
+    }
+    raw_pandoc_hierarchy = (
+        first_style == "Heading 1" and "Heading 2" in body_styles
+    ) or (
+        first_style == "Title"
+        and "Heading 1" not in body_styles
+        and "Heading 2" in body_styles
+    )
+    if not raw_pandoc_hierarchy:
+        return False
+    first.style = document.styles["Title"]
+    for paragraph in document.paragraphs[1:]:
+        style_name = paragraph.style.name if paragraph.style else ""
+        if style_name == "Heading 2":
+            paragraph.style = document.styles["Heading 1"]
+        elif style_name == "Heading 3":
+            paragraph.style = document.styles["Heading 2"]
+        elif style_name == "Heading 4":
+            paragraph.style = document.styles["Heading 3"]
+    return True
 
 
 def _sync_doc_defaults(document, profile: dict[str, Any]) -> None:
@@ -461,6 +503,76 @@ def validate_docx_resources(document, profile: dict[str, Any] | None = None) -> 
     return errors
 
 
+def validate_docx_layout(document, profile: dict[str, Any] | None = None) -> list[str]:
+    """Return violations of stable page, heading, and body-layout invariants."""
+    profile = profile or load_profile()
+    page = profile["page"]
+    typography = profile["typography"]
+    errors: list[str] = []
+    expected_section_values = {
+        "page_width": page["width_twips"],
+        "page_height": page["height_twips"],
+        "top_margin": page["margins_twips"]["top"],
+        "bottom_margin": page["margins_twips"]["bottom"],
+        "left_margin": page["margins_twips"]["left"],
+        "right_margin": page["margins_twips"]["right"],
+    }
+    for index, section in enumerate(document.sections, start=1):
+        for attribute, expected in expected_section_values.items():
+            actual = getattr(section, attribute).twips
+            if actual != expected:
+                errors.append(
+                    f"第 {index} 节 {attribute}={actual}，应为 {expected} twips"
+                )
+
+    expected_alignments = {
+        "Heading 1": _ALIGNMENTS[typography["heading_level_1"]["alignment"]],
+        "Heading 2": _ALIGNMENTS[
+            typography["heading_level_2_and_3"]["alignment"]
+        ],
+        "Heading 3": _ALIGNMENTS[
+            typography["heading_level_2_and_3"]["alignment"]
+        ],
+    }
+    for style_name, expected in expected_alignments.items():
+        try:
+            actual = document.styles[style_name].paragraph_format.alignment
+        except KeyError:
+            continue
+        if actual != expected:
+            errors.append(f"样式 {style_name} 对齐方式不符合 profile")
+
+    in_short_appendix = False
+    expected_body_spacing = typography["body"]["line_spacing_multiple"]
+    for index, paragraph in enumerate(document.paragraphs, start=1):
+        text = paragraph.text.strip()
+        style_name = paragraph.style.name if paragraph.style else ""
+        if style_name.startswith("Heading"):
+            if text.startswith("附录"):
+                in_short_appendix = True
+            expected = expected_alignments.get(style_name)
+            if expected is not None and paragraph.alignment != expected:
+                errors.append(f"第 {index} 段 {style_name} 对齐方式不符合 profile")
+            continue
+        if (
+            not text
+            or index == 1
+            or in_short_appendix
+            or re.match(r"^[图表]\s*\d+\s", text)
+            or re.match(r"^\[\d+\]", text)
+            or paragraph._p.findall(".//" + qn("w:drawing"))
+        ):
+            continue
+        actual_spacing = paragraph.paragraph_format.line_spacing
+        if not isinstance(actual_spacing, (int, float)) or not abs(
+            actual_spacing - expected_body_spacing
+        ) < 1e-9:
+            errors.append(
+                f"第 {index} 段正文行距不符合 profile: {actual_spacing!r}"
+            )
+    return errors
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -487,7 +599,9 @@ def normalize_docx_file(
     profile = load_profile()
     apply_profile(document, profile)
     normalize_docx_resources(document, profile)
-    errors = validate_docx_resources(document, profile)
+    errors = validate_docx_resources(document, profile) + validate_docx_layout(
+        document, profile
+    )
     if errors:
         raise ValueError("DOCX 资源规范化失败: " + "; ".join(errors))
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -653,6 +767,7 @@ def _format_tables(document, profile: dict[str, Any]) -> None:
 def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
     """Apply generic profile rules in place; project-specific layout comes later."""
     profile = profile or load_profile()
+    normalize_heading_hierarchy(document)
     page = profile["page"]
     typography = profile["typography"]
     math_font = profile["equations"]["math_font"]
@@ -671,6 +786,8 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
             math_font,
         },
     )
+    _sync_style_resources(document, profile)
+    _sync_doc_defaults(document, profile)
     page_number_typography = dict(
         typography["page_number"],
         latin_font=typography["latin_font"],
@@ -721,7 +838,11 @@ def apply_profile(document, profile: dict[str, Any] | None = None) -> None:
         if style_name.startswith("Heading"):
             _remove_numbering(paragraph._p)
             paragraph.paragraph_format.first_line_indent = Pt(0)
-            key = "heading_level_1" if style_name in {"Heading 1", "Heading 2"} else "heading_level_2_and_3"
+            key = (
+                "heading_level_1"
+                if style_name == "Heading 1"
+                else "heading_level_2_and_3"
+            )
             heading_profile = dict(typography[key], **common_typography)
             _apply_paragraph_format(paragraph, heading_profile)
             compact_text = re.sub(r"\s+", "", text)

@@ -2,7 +2,7 @@
 
 本目录是 2025 年全国大学生数学建模竞赛 A 题的独立冷启动项目。
 
-当前阶段：DP-03 已接受为 B1；问题 1～5 的 best-found 结果已 accepted 并统一冻结。Q5 清理后保留 11 枚有效动作，B1 仍为 31.059626073 s；B2 始终只作选后补充评价。第一版 figures、正式论文源 `paper/paper.md` 和经完整视觉复核的 19 页最终 `paper/paper.docx` 均已完成并冻结；未查阅公开题解、优秀论文或赛题讲评。
+当前阶段：DP-03 已接受为 B1；问题 1～5 的 best-found 结果已 accepted 并统一冻结。Q5 清理后保留 11 枚有效动作，B1 仍为 31.059626073 s；B2 始终只作选后补充评价。第一版 figures 和正式论文源 `paper/paper.md` 已完成；上一版 DOCX 的 frozen 状态因人工视觉验收失败而撤销。当前 `paper/paper.docx` 是统一纵向 A4 的 17 页 candidate，等待人工视觉验收，不得视为 frozen。未查阅公开题解、优秀论文或赛题讲评。
 
 ## 当前入口
 
@@ -15,7 +15,7 @@
 - Frozen results：`results/frozen/q1.json`～`q5.json` 及 `result1.xlsx`～`result3.xlsx`
 - Frozen-only figures：`figures/fig1_shielding_geometry.*`、`fig2_q1_q3_q4_intervals.*`、`fig3_q5_timeline_allocation.*`
 - 正式论文源：`paper/paper.md`
-- 冻结最终论文：`paper/paper.docx`（SHA-256：`9A438F7EEA9CE8440CDFD575097554A8056046747A024B6A682579693C464709`）
+- 待人工视觉验收的 DOCX candidate：`paper/paper.docx`
 - DOCX 转换清单：`paper/paper.conversion.json`
 - 官方结果模板：`problem-statements/attachments/result1.xlsx`、`result2.xlsx`、`result3.xlsx`
 

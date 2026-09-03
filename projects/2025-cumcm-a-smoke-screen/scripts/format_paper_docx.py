@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import argparse
-from copy import deepcopy
 import hashlib
 import json
 import os
@@ -30,18 +29,32 @@ TABLE_WIDTH_WEIGHTS = (
     (0.14, 0.14, 0.72),
     (0.18, 0.62, 0.20),
     (0.42, 0.58),
-    (0.03, 0.07, 0.055, 0.05, 0.05, 0.075, 0.225, 0.225, 0.22),
-    (0.04, 0.075, 0.045, 0.045, 0.045, 0.05, 0.23, 0.23, 0.19, 0.05),
+    (0.07, 0.16, 0.17, 0.40, 0.20),
+    (0.07, 0.15, 0.17, 0.40, 0.21),
     (0.12, 0.20, 0.18, 0.16, 0.34),
-    (0.07, 0.06, 0.055, 0.055, 0.07, 0.245, 0.245, 0.20),
-    (0.08, 0.78, 0.14),
+    (0.13, 0.18, 0.44, 0.25),
+    (0.08, 0.72, 0.20),
     (0.10, 0.62, 0.28),
 )
 
-LANDSCAPE_TABLE_INDICES = {3, 4, 5, 6, 7}
-LANDSCAPE_RANGES = (
-    ("七、问题 3", "九、问题 5"),
-    ("表 6 问题 5 各无人机共享航迹与烟幕弹指派", "十、数值检验"),
+COMPACT_TABLE_INDICES = {3, 4, 6}
+
+# Each tuple is (table index, column index, semantic child kind).  Pandoc keeps
+# adjacent display-math objects and text runs as separate OOXML children but
+# drops Markdown <br> tags inside table cells, so the formatter must restore
+# the intended line boundaries without converting native equations to text.
+COMPACT_CELL_BREAKS = (
+    (3, 1, "mixed"),
+    (3, 2, "math"),
+    (3, 3, "math"),
+    (3, 4, "text"),
+    (4, 1, "mixed"),
+    (4, 2, "math"),
+    (4, 3, "math"),
+    (4, 4, "text"),
+    (6, 1, "math"),
+    (6, 2, "math"),
+    (6, 3, "text"),
 )
 
 
@@ -201,16 +214,49 @@ def _set_table_cell_margins(table, horizontal_dxa: int = 45) -> None:
         margin.set(qn("w:w"), str(width))
 
 
-def _remap_heading_styles(document) -> None:
-    if not document.paragraphs:
-        raise ValueError("The generated document has no paragraphs")
-    document.paragraphs[0].style = document.styles["Title"]
-    for paragraph in document.paragraphs[1:]:
-        style_name = paragraph.style.name if paragraph.style else ""
-        if style_name == "Heading 2":
-            paragraph.style = document.styles["Heading 1"]
-        elif style_name == "Heading 3":
-            paragraph.style = document.styles["Heading 2"]
+def _insert_line_break_before(element) -> None:
+    run = OxmlElement("w:r")
+    run.append(OxmlElement("w:br"))
+    element.addprevious(run)
+
+
+def _restore_compact_table_line_breaks(document) -> None:
+    """Restore semantic line breaks that Pandoc drops inside Markdown tables."""
+    for table_index, column_index, child_kind in COMPACT_CELL_BREAKS:
+        table = document.tables[table_index]
+        for row in table.rows[1:]:
+            paragraph = row.cells[column_index].paragraphs[0]
+            if child_kind == "math":
+                children = list(paragraph._p.findall(qn("m:oMath")))
+                break_targets = children[1:]
+            elif child_kind == "text":
+                children = [
+                    child
+                    for child in paragraph._p.findall(qn("w:r"))
+                    if child.find(qn("w:t")) is not None
+                ]
+                break_targets = children[1:]
+            else:
+                math_children = list(paragraph._p.findall(qn("m:oMath")))
+                text_children = [
+                    child
+                    for child in paragraph._p.findall(qn("w:r"))
+                    if child.find(qn("w:t")) is not None
+                ]
+                if len(math_children) != 1 or not text_children:
+                    raise ValueError(
+                        f"Unexpected mixed cell structure in table {table_index + 1}, "
+                        f"column {column_index + 1}"
+                    )
+                break_targets = text_children[:1]
+
+            if not break_targets:
+                raise ValueError(
+                    f"No line-break targets in table {table_index + 1}, "
+                    f"column {column_index + 1}"
+                )
+            for target in break_targets:
+                _insert_line_break_before(target)
 
 
 def _remove_title_rule(document) -> None:
@@ -219,6 +265,17 @@ def _remove_title_rule(document) -> None:
         borders = properties.find(qn("w:pBdr"))
         if borders is not None:
             properties.remove(borders)
+
+
+def _fit_title_to_baseline_width(document) -> None:
+    """Keep this all-CJK title on one line without changing the profile font size."""
+    for run in document.paragraphs[0].runs:
+        properties = run._r.get_or_add_rPr()
+        scale = properties.find(qn("w:w"))
+        if scale is None:
+            scale = OxmlElement("w:w")
+            properties.append(scale)
+        scale.set(qn("w:val"), "94")
 
 
 def _footnote_text_by_id(document) -> dict[str, str]:
@@ -281,83 +338,6 @@ def _restore_superscript_citations(document) -> None:
         raise ValueError(f"Expected 3 citation markers, restored {replaced}")
 
 
-def _section_properties(template, *, landscape: bool):
-    properties = deepcopy(template)
-    page_numbering = properties.find(qn("w:pgNumType"))
-    if page_numbering is not None:
-        properties.remove(page_numbering)
-    section_type = properties.find(qn("w:type"))
-    if section_type is not None:
-        properties.remove(section_type)
-    section_type = OxmlElement("w:type")
-    properties.insert_element_before(
-        section_type,
-        "w:pgSz",
-        "w:pgMar",
-        "w:paperSrc",
-        "w:pgBorders",
-        "w:lnNumType",
-        "w:pgNumType",
-        "w:cols",
-        "w:formProt",
-        "w:vAlign",
-        "w:noEndnote",
-        "w:titlePg",
-        "w:textDirection",
-        "w:bidi",
-        "w:rtlGutter",
-        "w:docGrid",
-        "w:printerSettings",
-        "w:sectPrChange",
-    )
-    section_type.set(qn("w:val"), "nextPage")
-    page_size = properties.find(qn("w:pgSz"))
-    if page_size is None:
-        raise ValueError("Section properties do not contain page size")
-    if landscape:
-        page_size.set(qn("w:w"), "16838")
-        page_size.set(qn("w:h"), "11906")
-        page_size.set(qn("w:orient"), "landscape")
-    else:
-        page_size.set(qn("w:w"), "11906")
-        page_size.set(qn("w:h"), "16838")
-        page_size.attrib.pop(qn("w:orient"), None)
-    return properties
-
-
-def _insert_section_break_before(paragraph, properties) -> None:
-    section_paragraph = OxmlElement("w:p")
-    paragraph_properties = OxmlElement("w:pPr")
-    paragraph_properties.append(properties)
-    section_paragraph.append(paragraph_properties)
-    paragraph._p.addprevious(section_paragraph)
-
-
-def _find_paragraph_starting(document, prefix: str):
-    matches = [p for p in document.paragraphs if p.text.strip().startswith(prefix)]
-    if len(matches) != 1:
-        raise ValueError(f"Expected one paragraph starting with {prefix!r}, found {len(matches)}")
-    return matches[0]
-
-
-def _add_landscape_result_sections(document) -> None:
-    body_properties = document.element.body.sectPr
-    if body_properties is None:
-        raise ValueError("Document body does not contain final section properties")
-    page_numbering = body_properties.find(qn("w:pgNumType"))
-    if page_numbering is not None:
-        body_properties.remove(page_numbering)
-    portrait = _section_properties(body_properties, landscape=False)
-    landscape = _section_properties(body_properties, landscape=True)
-    for start_prefix, end_prefix in LANDSCAPE_RANGES:
-        _insert_section_break_before(
-            _find_paragraph_starting(document, start_prefix), deepcopy(portrait)
-        )
-        _insert_section_break_before(
-            _find_paragraph_starting(document, end_prefix), deepcopy(landscape)
-        )
-
-
 def _set_keep_rules(document) -> None:
     for paragraph in document.paragraphs:
         text = paragraph.text.strip()
@@ -405,10 +385,11 @@ def _request_field_update(document) -> None:
 
 
 def apply_layout(document) -> None:
-    _remap_heading_styles(document)
     _restore_superscript_citations(document)
+    _restore_compact_table_line_breaks(document)
     shared_format.apply_profile(document)
     _remove_title_rule(document)
+    _fit_title_to_baseline_width(document)
 
     profile = shared_format.load_profile()
     page = profile["page"]
@@ -421,20 +402,21 @@ def apply_layout(document) -> None:
         raise ValueError(
             f"Expected {len(TABLE_WIDTH_WEIGHTS)} tables, found {len(document.tables)}"
         )
-    landscape_width = page["height_twips"] - 2 * page["margins_twips"]["left"]
     for index, (table, weights) in enumerate(
         zip(document.tables, TABLE_WIDTH_WEIGHTS, strict=True)
     ):
-        table_width = landscape_width if index in LANDSCAPE_TABLE_INDICES else content_width
-        _set_table_geometry(table, weights, table_width)
-        if index in LANDSCAPE_TABLE_INDICES:
-            _set_table_font_size(table, 16)
+        _set_table_geometry(table, weights, content_width)
+        if index in COMPACT_TABLE_INDICES:
+            _set_table_font_size(table, 18)
             _set_table_cell_margins(table)
 
     _set_keep_rules(document)
     _set_figure_alt_text(document)
-    _add_landscape_result_sections(document)
     _request_field_update(document)
+
+    layout_errors = shared_format.validate_docx_layout(document)
+    if layout_errors:
+        raise ValueError("DOCX layout validation failed: " + "; ".join(layout_errors))
 
     title = document.paragraphs[0].text.strip()
     document.core_properties.title = title
@@ -452,8 +434,8 @@ def _update_manifest(manifest_path: Path, output_path: Path) -> None:
         {
             "tool": "scripts/format_paper_docx.py",
             "reason": (
-                "Applied the repository formatting profile, semantic table widths, "
-                "pagination keep rules, figure alt text, and anonymous metadata."
+                "Applied the repository formatting profile, portrait semantic table widths, "
+                "pagination keep rules, layout invariants, figure alt text, and anonymous metadata."
             ),
         }
     )

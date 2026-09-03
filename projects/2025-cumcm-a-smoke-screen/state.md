@@ -2,11 +2,11 @@
 
 ## Objective
 
-独立完成 2025 CUMCM A：可信数值结果 → 正式冻结 → 只消费 frozen results 的 figures → paper.md → 经完整度与视觉检查的 paper.docx。
+独立完成 2025 CUMCM A：可信数值结果 → 正式冻结 → 只消费 frozen results 的 figures → paper.md → 经人工视觉验收的最终 paper.docx。
 
 ## Current Frontier
 
-问题 1～5 的 best-found、冻结结果、正式 figures 和正文源 `paper/paper.md` 均已完成。正式 `paper/paper.docx` 已从该正文源生成，按项目格式基线完成机械排版并逐页复核；全文 19 页，含 9 张表、3 幅图和 228 个原生公式对象。Q3、Q4 及 Q5 的宽结果表采用横向分节，页码连续；未改写 `paper.md`。转换清单复验、Office XML 校验、匿名性与结构检查均通过，最终 DOCX 已冻结。
+问题 1～5 的 best-found、冻结结果和正式 figures 均未改变。上一版 DOCX 的人工视觉验收失败，其 frozen 状态已撤销。当前 `paper/paper.md` 仅补强摘要并重组 Q3～Q5 宽表字段；新生成的 `paper/paper.docx` 是待人工验收的 candidate，不是 frozen artifact。candidate 共 17 页、9 张表、3 幅图和 255 个原生公式对象，全文统一纵向 A4；摘要首页、二三级标题左对齐、正文行距、宽表、图表和分页已完成机械检查与逐页 rendered review。自动检查通过不代表人工视觉验收通过。
 
 ## Accepted
 
@@ -23,13 +23,12 @@
 - `results/frozen/result1.xlsx`～`result3.xlsx` 由对应 frozen JSON 直接生成，并已逐字段核对行数、指派、有效时长及运动/资源约束。
 - 全部优化结果都只声称为当前证据下的 best-found，不声称全局最优。
 - `figures/` 的三张第一版正式图只读取 frozen JSON，未调用求解器或改写正式结果。
-- `paper/paper.md` 是正文内容 authority；冻结后的 `paper/paper.docx` 是已认可的最终版式文件。
-- 最终 DOCX SHA-256：`9A438F7EEA9CE8440CDFD575097554A8056046747A024B6A682579693C464709`。
+- `paper/paper.md` 是正文内容 authority；`paper/paper.docx` 当前仅为 candidate，尚无已认可的最终版式文件。
 - 转换清单 `paper/paper.conversion.json` 记录正文源、模板和后处理产物哈希。
 
 ## Next Actions
 
-1. 本项目论文与 DOCX 阶段已完成；如需提交打包，仅复制冻结产物，不再重排或改写。
+1. 由用户对 PR 中的 candidate DOCX 做最终肉眼验收；在明确接受前不得 merge、freeze 或宣布 DOCX 阶段完成。
 
 ## Boundaries
 

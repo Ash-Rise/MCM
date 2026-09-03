@@ -6,7 +6,7 @@
 
 ## Current Frontier
 
-问题 1～5 的 best-found 已 accepted 并统一冻结；Q5 严格无效动作清理、冻结表格机械校验及第一版 figures 已完成。正式论文源 `paper/paper.md` 已完成，并通过关键数值、约束、图路径和内容边界自审；本轮按用户要求未生成 DOCX。
+问题 1～5 的 best-found 已 accepted 并统一冻结；Q5 严格无效动作清理、冻结表格机械校验及第一版 figures 已完成。正式论文源 `paper/paper.md` 已完成，并针对 Q3 共享航迹耦合、Q4 独立组合条件和 Q5 联合优化意义作了聚焦修订，通过关键数值、约束、图路径和内容边界自审；已删除冻结后不再允许使用的 working → accepted/frozen 反向覆盖脚本。本轮按用户要求未生成 DOCX。
 
 ## Accepted
 

@@ -1,0 +1,91 @@
+{
+  "status": "audit",
+  "purpose": "Q3 broad-basin test of whether the third-bomb zero contribution is regional",
+  "incumbent_union_duration_s": 6.360438477094366,
+  "runs": [
+    {
+      "sampled_duration_s": 6.5,
+      "active_bombs_in_search": 2,
+      "parameters": [
+        0.11075923153944167,
+        120.52645621748812,
+        0.004715939500425037,
+        0.005053637186724913,
+        1.4858475343571316,
+        0.06833961469631866,
+        0.0031627065227155526,
+        9.15402389513332
+      ],
+      "screen_union_duration_s": 6.3604384770943545,
+      "screen_individual_durations_s": [
+        2.8204403039478496,
+        4.335322908382289,
+        0.0
+      ]
+    },
+    {
+      "sampled_duration_s": 6.7,
+      "active_bombs_in_search": 3,
+      "parameters": [
+        3.1349166480849973,
+        131.3248126343266,
+        0.052703885141344387,
+        1.6491051445162723,
+        0.7544834934659903,
+        3.516856130772454,
+        4.581548670409726,
+        5.461029001988217
+      ],
+      "screen_union_duration_s": 6.689702644096442,
+      "screen_individual_durations_s": [
+        3.805405822403065,
+        2.3433937310313055,
+        1.8317119059412246
+      ]
+    },
+    {
+      "sampled_duration_s": 4.6000000000000005,
+      "active_bombs_in_search": 1,
+      "parameters": [
+        0.07952110763037545,
+        82.61055945785102,
+        0.7300579552948507,
+        9.383280293337144,
+        0.7012078744157151,
+        0.6986488530374224,
+        15.177944311628735,
+        3.9956006417228416
+      ],
+      "screen_union_duration_s": 4.531631878839121,
+      "screen_individual_durations_s": [
+        4.531631878839121,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "sampled_duration_s": 5.2,
+      "active_bombs_in_search": 3,
+      "parameters": [
+        3.1169051415186186,
+        73.92773757098419,
+        0.4756731448761755,
+        0.4312730387555197,
+        0.29702327337081247,
+        2.9472348672045516,
+        3.1307611466399967,
+        3.806348546198498
+      ],
+      "screen_union_duration_s": 5.206788739927033,
+      "screen_individual_durations_s": [
+        3.988045981820953,
+        3.591989421736068,
+        1.1293145671223463
+      ]
+    }
+  ],
+  "best_screened_union_duration_s": 6.689702644096442,
+  "best_screened_active_bombs": 3,
+  "best_fine_union_duration_s": 6.689702644096442,
+  "conclusion": "challenger_found"
+}

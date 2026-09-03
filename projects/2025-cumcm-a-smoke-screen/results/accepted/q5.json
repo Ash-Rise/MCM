@@ -1,5 +1,6 @@
 {
-  "status": "working_joint_coordinate_candidate",
+  "status": "accepted_best_found",
+  "acceptance_evidence": ["results/audits/q5_joint.json","results/audits/q5_broad.json","results/audits/q5_assignments.json"],
   "formal_semantics": "DP-03/B1 assigned-target accounting",
   "optimality_claim": "none; coordinate-wise joint trajectory and three-bomb refinement",
   "records": [

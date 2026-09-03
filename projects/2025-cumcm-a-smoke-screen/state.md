@@ -6,26 +6,28 @@
 
 ## Current Frontier
 
-问题 1、2 已 accepted；问题 3～5 已有可信 working lower bounds 和工作版结果模板。下一步加强问题 3～5 的替代候选/扰动证据，决定是否接受并统一冻结数值结果。本轮未产生新 DP。
+问题 1～5 的 best-found 已 accepted 并统一冻结；下一步进入只消费 `results/frozen/` 的 figures。本轮未产生新 DP。
 
 ## Accepted
 
 - DP-03/B1：问题 5 只按逐弹指派对象计入正式目标 $L_1+L_2+L_3$；B2 只作选后补充物理评价。
 - Q1：完整圆柱遮蔽 1.391642669 s。
 - Q2：完整圆柱遮蔽 4.588055444 s，作为有多起点、速度边界和高分辨率复核支撑的 best-found；不作全局最优声明。
+- Q3：扩大航迹盆地后三弹均有正贡献，并集 6.689702644 s。
+- Q4：三机各一弹，并集 11.397460410 s；独立分解、多起点和局部扰动审计均未发现更优解。
+- Q5：14 弹共享航迹联合方案，B1 的 M1/M2/M3 分别为 20.960407101、7.672175015、2.427043957 s，总计 31.059626073 s。B2 选后复算同值。
 
-## Working Results
+## Frozen Results
 
-- Q3：FY1 三弹，正式并集 6.360438477 s；四个高分辨率候选中当前值最高，第三弹在当前最优共享航迹上无正贡献。
-- Q4：FY1～FY3 各一弹，三个区间互不重叠，并集 11.397460410 s。
-- Q5：12 弹固定航迹扩展下界；B1 的 M1/M2/M3 分别为 18.485918080、7.672175015、2.427043957 s，总计 28.585137052 s。B2 选后复算同值，未参与排序。
-- `results/working/result1.xlsx`、`result2.xlsx`、`result3.xlsx` 已从对应 working JSON 转录并重载校验；均未冻结。
+- `results/frozen/q1.json`～`q5.json` 是后续数值主张的唯一输入。
+- `results/frozen/result1.xlsx`～`result3.xlsx` 与冻结 JSON 一致，并与工作版字节相同。
+- 全部优化结果都只声称为当前证据下的 best-found，不声称全局最优。
 
 ## Next Actions
 
-1. 对 Q3～Q5 做最小但足以改变接受判断的扰动与替代候选检查，重点审计 Q5 固定航迹贪心的遗漏空间。
-2. 接受后统一生成 frozen results；冻结前不得把 working XLSX 当正式结果。
-3. figures 只读取 frozen results，并在第一版后做 figure retrospective；随后完成论文与 DOCX 冻结。
+1. figures 只读取 frozen results，不调用求解器。
+2. 完成第一版后做 figure retrospective，区分图表设计与渲染样式问题。
+3. 随后完成 paper.md 与 DOCX 冻结。
 
 ## Boundaries
 

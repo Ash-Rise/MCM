@@ -1,0 +1,49 @@
+{
+  "status": "audit",
+  "purpose": "Q4 independent-component stability and non-overlap check",
+  "working_union_duration_s": 11.397460409891725,
+  "component_audits": [
+    {
+      "drone": "FY1",
+      "baseline_sampled_duration_s": 4.6000000000000005,
+      "trials": 600,
+      "feasible_trials": 451,
+      "best_sampled_improvement_s": 0.0,
+      "solver_multistart_sampled_durations_s": [
+        4.6000000000000005,
+        4.6000000000000005,
+        4.6000000000000005
+      ]
+    },
+    {
+      "drone": "FY2",
+      "baseline_sampled_duration_s": 4.0,
+      "trials": 600,
+      "feasible_trials": 133,
+      "best_sampled_improvement_s": 0.0,
+      "solver_multistart_sampled_durations_s": [
+        4.0,
+        4.0,
+        4.0
+      ]
+    },
+    {
+      "drone": "FY3",
+      "baseline_sampled_duration_s": 2.9000000000000004,
+      "trials": 600,
+      "feasible_trials": 70,
+      "best_sampled_improvement_s": 0.0,
+      "solver_multistart_sampled_durations_s": [
+        2.9000000000000004,
+        2.9000000000000004,
+        2.9000000000000004
+      ]
+    }
+  ],
+  "inter_component_gaps_s": [
+    8.272145933133658,
+    15.669056947940266
+  ],
+  "decomposition_valid": true,
+  "conclusion": "no_local_challenger"
+}

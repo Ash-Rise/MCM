@@ -132,6 +132,6 @@ cross-target incidental shielding 在本题中真实可行且足以改变方案�
 ## 10. 当前数值边界
 
 - 问题 1、2 已进入 `results/accepted/`；问题 2 的 4.588055 s 是有多起点、局部扰动、速度上界扫描和高分辨率端点复核支撑的 best-found，不声称全局最优。
-- 问题 3～5 已形成 `results/working/` 数值方案及对应工作版 XLSX。问题 3 的并集为 6.360438 s；问题 4 为 11.397460 s；问题 5 的 B1 下界为 28.585137 s。
-- 问题 5 当前方案由一弹/机指派枚举后固定航迹追加得到，B2 仅在选定后补算且本方案附带增益为 0；它仍是 working lower bound，不是 accepted 或 frozen result。
-- 当前没有新的 Question Gate 候选通过 admissibility 检查，也没有新增 DP。正式冻结前仍需加强问题 3～5 的扰动/替代候选证据并复核工作模板。
+- 问题 3～5 已 accepted 并进入 `results/frozen/`。问题 3 的并集为 6.689703 s；问题 4 为 11.397460 s；问题 5 的 B1 best-found 为 31.059626 s。
+- 问题 5 经历了“一弹/机基线 → 固定航迹追加 → 共享航迹与三弹联合坐标改进 → 跨航迹盆地 → 单指派变更邻域”审计；B2 始终只在选定后补算，最终方案附带增益为 0。
+- 当前没有新的 Question Gate 候选通过 admissibility 检查，也没有新增 DP。全部优化结果均是当前证据下的 best-found，不构成全局最优证明。

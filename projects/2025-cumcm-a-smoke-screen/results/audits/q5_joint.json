@@ -456,13 +456,13 @@
     "selected_bombs": 14
   },
   "audit": {
-    "incumbent_b1_s": 30.921158351390623,
-    "initial_coarse_s": 31.400000000000002,
+    "incumbent_b1_s": 31.059626073444953,
+    "initial_coarse_s": 31.6,
     "coordinate_trace": [
       {
         "drone": "FY1",
-        "before_s": 31.400000000000002,
-        "after_s": 31.5,
+        "before_s": 31.6,
+        "after_s": 31.6,
         "assignments": [
           "M1",
           "M1",
@@ -471,8 +471,8 @@
       },
       {
         "drone": "FY2",
-        "before_s": 31.5,
-        "after_s": 31.5,
+        "before_s": 31.6,
+        "after_s": 31.6,
         "assignments": [
           "M2",
           "M1",
@@ -481,8 +481,8 @@
       },
       {
         "drone": "FY3",
-        "before_s": 31.5,
-        "after_s": 31.5,
+        "before_s": 31.6,
+        "after_s": 31.6,
         "assignments": [
           "M3",
           "M1",
@@ -491,8 +491,8 @@
       },
       {
         "drone": "FY4",
-        "before_s": 31.5,
-        "after_s": 31.5,
+        "before_s": 31.6,
+        "after_s": 31.6,
         "assignments": [
           "M2",
           "M1",
@@ -501,7 +501,7 @@
       },
       {
         "drone": "FY5",
-        "before_s": 31.5,
+        "before_s": 31.6,
         "after_s": 31.6,
         "assignments": [
           "M1",

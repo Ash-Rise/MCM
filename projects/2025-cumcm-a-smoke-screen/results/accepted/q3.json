@@ -1,5 +1,6 @@
 {
-  "status": "working_broad_basin_candidate",
+  "status": "accepted_best_found",
+  "acceptance_evidence": ["results/audits/q3_global.json"],
   "optimality_claim": "none; broad-basin three-bomb search with high-resolution validation",
   "model": "complete-cylinder line-of-sight shielding",
   "heading_deg": 179.6174930605691,

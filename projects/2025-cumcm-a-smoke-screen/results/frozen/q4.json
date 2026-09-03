@@ -1,0 +1,119 @@
+{
+  "status": "frozen",
+  "frozen_from": "results/accepted/q4.json",
+  "acceptance_evidence": ["results/audits/q4_stability.json"],
+  "optimality_claim": "none; independent multistart strategies combined and evaluated by union",
+  "model": "complete-cylinder line-of-sight shielding",
+  "records": [
+    {
+      "drone": "FY1",
+      "heading_deg": 5.144284347370719,
+      "speed_m_s": 139.9999998302874,
+      "release_time_s": 0.8054292028352852,
+      "fuse_delay_s": 0.12201525176583047,
+      "explosion_time_s": 0.9274444546011157,
+      "release_point_m": [
+        17912.30589748317,
+        10.11053386120392,
+        1800.0
+      ],
+      "explosion_point_m": [
+        17929.319226907977,
+        11.642188450110151,
+        1799.927050163849
+      ],
+      "shielding_intervals_s": [
+        [
+          0.9275305460766804,
+          5.515585990442056
+        ]
+      ],
+      "individual_duration_s": 4.588055444365375
+    },
+    {
+      "drone": "FY2",
+      "heading_deg": 306.75252058812345,
+      "speed_m_s": 135.7873853809441,
+      "release_time_s": 8.369496236593388,
+      "fuse_delay_s": 4.225056355701322,
+      "explosion_time_s": 12.594552592294711,
+      "release_point_m": [
+        12680.01922107522,
+        489.4273831380257,
+        1400.0
+      ],
+      "explosion_point_m": [
+        13023.303864593066,
+        29.75567609079326,
+        1312.5296040766245
+      ],
+      "shielding_intervals_s": [
+        [
+          13.787731923575715,
+          17.747015894195467
+        ]
+      ],
+      "individual_duration_s": 3.9592839706197527
+    },
+    {
+      "drone": "FY3",
+      "heading_deg": 75.9276792796194,
+      "speed_m_s": 105.31870399865562,
+      "release_time_s": 28.734108294764344,
+      "fuse_delay_s": 1.2102156653249574,
+      "explosion_time_s": 29.9443239600893,
+      "release_point_m": [
+        6735.819261189865,
+        -64.57962475984095,
+        700.0
+      ],
+      "explosion_point_m": [
+        6766.810304573038,
+        59.05364361887587,
+        692.8233524126701
+      ],
+      "shielding_intervals_s": [
+        [
+          33.41607284213573,
+          36.26619383704233
+        ]
+      ],
+      "individual_duration_s": 2.8501209949065966
+    }
+  ],
+  "union_intervals_s": [
+    [
+      0.9275305460766804,
+      5.515585990442056
+    ],
+    [
+      13.787731923575715,
+      17.747015894195467
+    ],
+    [
+      33.41607284213573,
+      36.26619383704233
+    ]
+  ],
+  "effective_shielding_duration_s": 11.397460409891725,
+  "validation": {
+    "validation_surface_points": 15480,
+    "multistart_sampled_durations_s": {
+      "FY1": [
+        4.6000000000000005,
+        4.6000000000000005,
+        4.6000000000000005
+      ],
+      "FY2": [
+        4.0,
+        4.0,
+        4.0
+      ],
+      "FY3": [
+        2.9000000000000004,
+        2.9000000000000004,
+        2.9000000000000004
+      ]
+    }
+  }
+}

@@ -69,7 +69,12 @@ def write_q5() -> None:
 
 
 def validate() -> None:
-    expected = {"result1.xlsx": (3, 10), "result2.xlsx": (3, 10), "result3.xlsx": (12, 12)}
+    q5 = json.loads((OUTPUT / "q5.json").read_text(encoding="utf-8"))
+    expected = {
+        "result1.xlsx": (3, 10),
+        "result2.xlsx": (3, 10),
+        "result3.xlsx": (len(q5["records"]), 12),
+    }
     for name, (filled_rows, columns) in expected.items():
         sheet = openpyxl.load_workbook(OUTPUT / name, data_only=False).active
         rows = [row for row in range(2, sheet.max_row + 1) if sheet.cell(row, columns).value is not None]
